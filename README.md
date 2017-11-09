@@ -1,2 +1,5 @@
-# aws-extensions-for-dotnet-cli
-Extensions to the dotnet CLI to simplify the process of building and publishing .NET Core applications to AWS services
+AWS Extensions for .NET CLI
+
+## License
+
+This library is licensed under the Apache 2.0 License. 
