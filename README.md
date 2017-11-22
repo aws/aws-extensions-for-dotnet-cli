@@ -37,9 +37,9 @@ have the Lambda tool extension preconfigured.
 The following AWS services each have their own .NET CLI tool extension to make easy to deploy a .NET Core Application
 to them.
 
-* [Amazon Elastic Container Service](#amazonelasticcontainerservice)
-* [AWS Elastic Beanstalk](#awselasticbeanstalk)
-* [AWS Lambda](#awslambda)
+* [Amazon Elastic Container Service](#amazon-elastic-container-service-amazonecstools)
+* [AWS Elastic Beanstalk](#aws-elastic-beanstalk-amazonecstools)
+* [AWS Lambda](#aws-lambda-amazonecstools)
 
 
 ## Defaults File
