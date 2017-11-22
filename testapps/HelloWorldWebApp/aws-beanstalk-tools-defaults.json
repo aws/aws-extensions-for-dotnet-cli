@@ -1,0 +1,12 @@
+﻿{
+  "profile": "normj+vpc",
+  "region": "us-east-2",
+  "application": "cli-integ-test2",
+  "environment": "cli-integ-test-env2",
+  "ec2-key-pair" : "desktop",
+  "!!!solution-stack": "64bit Windows Server 2016 v1.2.0 running IIS 10.0",
+  "environment-type": "LoadBalanced",
+  "service-role": "arn:aws:iam::626492997873:role/aws-elasticbeanstalk-ec2-role",
+  "instance-profile": "arn:aws:iam::626492997873:instance-profile/admin-role",
+  "tags": "Tag1=Value1;Tag2=Value2"
+}

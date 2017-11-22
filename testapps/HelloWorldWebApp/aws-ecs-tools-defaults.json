@@ -1,0 +1,16 @@
+﻿{
+  "profile": "default",
+  "region": "us-west-2",
+  "tag": "helloworldwebapp/test",
+  "configuration": "Release",
+  "launch-type": "FARGATE",
+  "desired-count": 3,
+  "task-cpu": "256",
+  "task-memory": "512",
+  "cluster": "myapp2",
+  "cluster-service": "MyWebAppService",
+  "task-definition-name": "HelloWorldWebApp",
+  "container-name": "MyWebAppContainer",
+  "container-port-mapping": "0:80",
+  "container-memory-hard-limit": 512
+}

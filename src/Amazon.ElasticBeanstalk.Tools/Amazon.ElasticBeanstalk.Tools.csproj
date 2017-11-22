@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\buildtools\common.props" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>netcoreapp1.0;netcoreapp2.0</TargetFrameworks>
+    <PackageId>Amazon.ElasticBeanstalk.Tools</PackageId>
+    <PackageTags>AWS;Amazon;Beanstalk</PackageTags>
+    <PackageType>DotnetCliTool</PackageType>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>1.0.0</Version>
+    <AssemblyName>dotnet-eb</AssemblyName>
+    <Product>AWS Elastic Beanstalk Tools for .NET CLI</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Amazon.Common.DotNetCli.Tools\Amazon.Common.DotNetCli.Tools.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup Label="Package">
+    <None Include=".\bin\$(Configuration)\netcoreapp1.0\Amazon.Common.DotNetCli.Tools.dll" Pack="True" PackagePath="lib\netcoreapp1.0" />
+    <None Include=".\bin\$(Configuration)\netcoreapp2.0\Amazon.Common.DotNetCli.Tools.dll" Pack="True" PackagePath="lib\netcoreapp2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.ElasticBeanstalk" Version="3.3.6.2" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.5.3" />
+    <PackageReference Include="AWSSDK.S3" Version="3.3.14" />
+  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' Or '$(TargetFramework)' == 'netcoreapp2.0' ">
+    <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0"
+    DefaultTargets="full-build"
+    xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+
+	<DisableAssemblySigning></DisableAssemblySigning>
+    <AssemblyOriginatorKeyFile Condition=" '$(AssemblyOriginatorKeyFile)' == '' ">$(MSBuildThisFileDirectory)local-development.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <Target Name="full-build" DependsOnTargets="run-tests;build-nuget-packages">
+
+  </Target>
+
+  <Target Name="init" DependsOnTargets="">
+
+    <RemoveDir Directories="../Deployment"/>
+    <MakeDir Directories="../Deployment/nuget-packages"/>
+
+    <Exec Command="dotnet restore aws-extensions-for-dotnet-cli.sln"
+      WorkingDirectory="..\"/>
+  </Target>
+
+  <Target Name="run-tests" DependsOnTargets="build-nuget-packages">
+    <PropertyGroup>
+      <Command>dotnet test -c $(Configuration)</Command>
+    </PropertyGroup>
+    <Exec Command="$(Command)"
+        WorkingDirectory="..\test\Amazon.Common.DotNetCli.Tools.Test"/>
+    <Exec Command="$(Command)"
+        WorkingDirectory="..\test\Amazon.ECS.Tools.Test"/>
+  </Target>
+
+  <Target Name="build-nuget-packages" DependsOnTargets="init">
+
+    <Exec Command="dotnet msbuild aws-extensions-for-dotnet-cli.sln /t:Rebuild /p:Configuration=$(Configuration) /p:AssemblyOriginatorKeyFile=$(AssemblyOriginatorKeyFile) /p:DisableAssemblySigning=$(DisableAssemblySigning)"
+        WorkingDirectory="..\"/>
+
+    <PropertyGroup>
+      <Command>dotnet pack --no-build -c $(Configuration) -o ../../Deployment/nuget-packages</Command>
+    </PropertyGroup>
+
+    <Exec Command="$(Command)"
+        WorkingDirectory="..\src\Amazon.ECS.Tools"/>
+    <Exec Command="$(Command)"
+        WorkingDirectory="..\src\Amazon.ElasticBeanstalk.Tools"/>
+  </Target>
+</Project>
