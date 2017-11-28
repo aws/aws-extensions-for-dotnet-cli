@@ -411,6 +411,15 @@ namespace Amazon.ECS.Tools.Commands
 
                     registerRequest.ExecutionRoleArn = command.GetStringValueOrDefault(properties.TaskDefinitionExecutionRole, ECSDefinedCommandOptions.ARGUMENT_TD_EXECUTION_ROLE, true);
                 }
+                else
+                {
+                    registerRequest.ExecutionRoleArn = null;
+                }
+
+                if (registerRequest.NetworkMode != NetworkMode.Awsvpc)
+                {
+                    registerRequest.RequiresCompatibilities.Clear();
+                }
 
                 var registerResponse = await ecsClient.RegisterTaskDefinitionAsync(registerRequest);
                 logger?.WriteLine($"Registered new task definition revision {registerResponse.TaskDefinition.Revision}");
