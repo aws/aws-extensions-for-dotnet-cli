@@ -68,7 +68,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 }
                 catch (Exception e)
                 {
-                    throw new ElasticBeanstalkExceptions(string.Format("Error listing environment: {0}", e.Message), ElasticBeanstalkExceptions.EBCode.FailedToDeleteEnvironment);
+                    throw new ElasticBeanstalkExceptions(string.Format("Error listing environments: {0}", e.Message), ElasticBeanstalkExceptions.EBCode.FailedToDeleteEnvironment);
                 }
 
                 if (this.GetBoolValueOrDefault(this.PersistConfigFile, CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE, false).GetValueOrDefault())
@@ -84,7 +84,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             }
             catch (Exception e)
             {
-                this.Logger?.WriteLine($"Unknown error deleting Elastic Beanstalk environment: {e.Message}");
+                this.Logger?.WriteLine($"Unknown error listing Elastic Beanstalk environments: {e.Message}");
                 this.Logger?.WriteLine(e.StackTrace);
                 return false;
             }

@@ -120,7 +120,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                     }
                     catch(Exception e)
                     {
-                        throw new ElasticBeanstalkExceptions("Error creating beanstalk application: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedCreateApplication);
+                        throw new ElasticBeanstalkExceptions("Error creating Elastic Beanstalk application: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedCreateApplication);
                     }
                 }
 
@@ -168,7 +168,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 }
                 catch(Exception e)
                 {
-                    throw new ElasticBeanstalkExceptions("Error creating beanstalk application version: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedCreateApplicationVersion);
+                    throw new ElasticBeanstalkExceptions("Error creating Elastic Beanstalk application version: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedCreateApplicationVersion);
                 }
 
                 this.Logger?.WriteLine("Getting latest environment event date before update");
@@ -236,7 +236,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             }
             catch (Exception e)
             {
-                this.Logger?.WriteLine($"Unknown error executing deploying app to Elastic Beanstalk: {e.Message}");
+                this.Logger?.WriteLine($"Unknown error deploying application to Elastic Beanstalk: {e.Message}");
                 this.Logger?.WriteLine(e.StackTrace);
                 return false;
             }

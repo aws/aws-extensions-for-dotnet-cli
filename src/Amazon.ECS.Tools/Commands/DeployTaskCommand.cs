@@ -231,7 +231,7 @@ namespace Amazon.ECS.Tools.Commands
                 }
                 catch(Exception e)
                 {
-                    throw new DockerToolsException("Error deploy task: " + e.Message, DockerToolsException.ECSErrorCode.RunTaskFail);
+                    throw new DockerToolsException("Error executing deploy-task: " + e.Message, DockerToolsException.ECSErrorCode.RunTaskFail);
                 }
 
                 if (this.GetBoolValueOrDefault(this.PersistConfigFile, CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE, false).GetValueOrDefault())
@@ -247,7 +247,7 @@ namespace Amazon.ECS.Tools.Commands
             }
             catch (Exception e)
             {
-                this.Logger?.WriteLine($"Unknown error executing deploy task: {e.Message}");
+                this.Logger?.WriteLine($"Unknown error executing deploy-task: {e.Message}");
                 this.Logger?.WriteLine(e.StackTrace);
                 return false;
             }

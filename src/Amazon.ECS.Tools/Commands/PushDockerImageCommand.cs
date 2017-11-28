@@ -242,7 +242,7 @@ namespace Amazon.ECS.Tools.Commands
             }
 
 
-            this.Logger.WriteLine("Determine docker publish location to be {0}.", location);
+            this.Logger.WriteLine("Determined docker publish location to be {0}.", location);
             return location;
         }
     }

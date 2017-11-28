@@ -206,7 +206,7 @@ namespace Amazon.ECS.Tools.Commands
             }
             catch (Exception e)
             {
-                this.Logger?.WriteLine($"Unknown error executing deploy application to an ECS service: {e.Message}");
+                this.Logger?.WriteLine($"Unknown error executing deploy-application to an ECS service: {e.Message}");
                 this.Logger?.WriteLine(e.StackTrace);
                 return false;
             }

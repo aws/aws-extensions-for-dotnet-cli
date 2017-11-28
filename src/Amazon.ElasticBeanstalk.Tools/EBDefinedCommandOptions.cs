@@ -124,7 +124,7 @@ namespace Amazon.ElasticBeanstalk.Tools
         public static readonly CommandOption ARGUMENT_EB_ADDITIONAL_OPTIONS =
             new CommandOption
             {
-                Name = "Additional Optiions",
+                Name = "Additional Options",
                 Switch = "--additional-options",
                 ValueType = CommandOption.CommandOptionValueType.KeyValuePairs,
                 Description = "Additional options for the environment. Format is <option-namespace>,<option-name>=<option-value>;..."
