@@ -132,7 +132,7 @@ namespace Amazon.ECS.Tools.Commands
             }
             catch (Exception e)
             {
-                this.Logger?.WriteLine($"Unknown error executing docker push to Amazon EC2 Container Registry: {e.Message}");
+                this.Logger?.WriteLine($"Unknown error executing docker push to Amazon Elastic Container Registry: {e.Message}");
                 this.Logger?.WriteLine(e.StackTrace);
                 return false;
             }
