@@ -163,7 +163,7 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             return credentials;
         }
 
-        protected RegionEndpoint DetermineAWSRegion()
+        public RegionEndpoint DetermineAWSRegion()
         {
             // See if a region has been set but don't prompt if not set.
             var regionName = this.GetStringValueOrDefault(this.Region, CommonDefinedCommandOptions.ARGUMENT_AWS_REGION, false);

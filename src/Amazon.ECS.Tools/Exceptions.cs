@@ -35,6 +35,8 @@ namespace Amazon.ECS.Tools
 
             RunTaskFail,
 
+            LogGroupDescribeFailed,
+            LogGroupCreateFailed
         }
 
         public DockerToolsException(string message, ECSErrorCode code) : base(message, code.ToString(), null)

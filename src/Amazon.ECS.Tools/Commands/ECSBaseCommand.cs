@@ -8,6 +8,7 @@ using Amazon.Runtime;
 using Amazon.Runtime.CredentialManagement;
 
 using Amazon.CloudWatchEvents;
+using Amazon.CloudWatchLogs;
 using Amazon.ECR;
 using Amazon.ECS;
 
@@ -59,6 +60,25 @@ namespace Amazon.ECS.Tools.Commands
                 return this._cweClient;
             }
             set { this._cweClient = value; }
+        }
+
+        IAmazonCloudWatchLogs _cwlClient;
+        public IAmazonCloudWatchLogs CWLClient
+        {
+            get
+            {
+                if (this._cwlClient == null)
+                {
+                    SetUserAgentString();
+
+                    var config = new AmazonCloudWatchLogsConfig();
+                    config.RegionEndpoint = DetermineAWSRegion();
+
+                    this._cwlClient = new AmazonCloudWatchLogsClient(DetermineAWSCredentials(), config);
+                }
+                return this._cwlClient;
+            }
+            set { this._cwlClient = value; }
         }
 
         IAmazonECR _ecrClient;

@@ -1,4 +1,6 @@
-﻿using Amazon.Common.DotNetCli.Tools;
+﻿using Amazon.CloudWatchLogs;
+using Amazon.CloudWatchLogs.Model;
+using Amazon.Common.DotNetCli.Tools;
 using Amazon.ECS.Model;
 using System;
 using System.Collections.Generic;
@@ -421,6 +423,20 @@ namespace Amazon.ECS.Tools.Commands
                     registerRequest.RequiresCompatibilities.Clear();
                 }
 
+                var logGroup = "/ecs/" + ecsTaskDefinition + "/" + containerDefinition.Name;
+                await EnsureLogGroupExistsAsync(logger, command.CWLClient, logGroup);
+                containerDefinition.LogConfiguration = new LogConfiguration
+                {
+                    LogDriver = "awslogs",
+                    Options = new Dictionary<string, string>
+                    {
+                        {"awslogs-group", logGroup },
+                        {"awslogs-region", command.DetermineAWSRegion().SystemName },
+                        {"awslogs-stream-prefix", "ecs" }
+                    }
+                };
+                logger?.WriteLine("Configured ECS to log to the CloudWatch Log Group " + logGroup);
+
                 var registerResponse = await ecsClient.RegisterTaskDefinitionAsync(registerRequest);
                 logger?.WriteLine($"Registered new task definition revision {registerResponse.TaskDefinition.Revision}");
                 return registerResponse.TaskDefinition.TaskDefinitionArn;
@@ -434,5 +450,39 @@ namespace Amazon.ECS.Tools.Commands
                 throw new DockerToolsException($"Error updating ECS task definition {ecsTaskDefinition}: {e.Message}", DockerToolsException.ECSErrorCode.FailedToUpdateTaskDefinition);
             }
         }
-    }
+
+        public static async System.Threading.Tasks.Task EnsureLogGroupExistsAsync(IToolLogger logger, IAmazonCloudWatchLogs cwlClient, string logGroup)
+        {
+            try
+            {
+                var response = await cwlClient.DescribeLogGroupsAsync(new DescribeLogGroupsRequest
+                {
+                    LogGroupNamePrefix = logGroup
+                });
+
+                if (response.LogGroups.FirstOrDefault(x => string.Equals(logGroup, x.LogGroupName, StringComparison.Ordinal)) != null)
+                {
+                    logger?.WriteLine("Found existing log group " + logGroup + " for container");
+                    return;
+                }
+            }
+            catch(Exception e)
+            {
+                throw new DockerToolsException("Error checking log group " + logGroup + " existed for the container: " + e.Message, DockerToolsException.ECSErrorCode.LogGroupDescribeFailed);
+            }
+
+            try
+            {
+                await cwlClient.CreateLogGroupAsync(new CreateLogGroupRequest
+                {
+                    LogGroupName = logGroup
+                });
+                logger?.WriteLine("Created log group " + logGroup + " for the container");
+            }
+            catch(Exception e)
+            {
+                throw new DockerToolsException("Failed to create log group " + logGroup + " for the container: " + e.Message, DockerToolsException.ECSErrorCode.LogGroupCreateFailed);
+            }
+        }
+    }   
 }
