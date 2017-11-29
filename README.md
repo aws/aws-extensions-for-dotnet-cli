@@ -79,7 +79,7 @@ is set to true to persist all of its settings in the defaults file.
 
 
 
-### Amazon Elastic Container Service ([Amazon.ElasticBeanstalk.Tools](https://www.nuget.org/packages/Amazon.ElasticBeanstalk.Tools/))
+### Amazon Elastic Container Service ([Amazon.ECS.Tools](https://www.nuget.org/packages/Amazon.ECS.Tools/))
 ---
 
 This tool extension takes care of builindg a Docker image from a .NET application and then deploying 
@@ -144,7 +144,7 @@ dotnet ecs push-image
 Builds the Docker image from the .NET Core application and pushes it to Amazon Elastic Container Registery (ECR).
 The other ECS deployment tasks first run this command before continuing on with deployment.
 
-### AWS Elastic Beanstalk ([Amazon.ECS.Tools](https://www.nuget.org/packages/Amazon.ElasticBeanstalk.Tools/))
+### AWS Elastic Beanstalk ([Amazon.ElasticBeanstalk.Tools](https://www.nuget.org/packages/Amazon.ElasticBeanstalk.Tools/))
 ---
 
 This tool extension deploys ASP.NET Core applications to AWS Elastic Beanstalk environment.
