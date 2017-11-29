@@ -28,7 +28,7 @@
   <ItemGroup>
     <PackageReference Include="AWSSDK.ElasticBeanstalk" Version="3.3.6.2" />
     <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.5.3" />
-    <PackageReference Include="AWSSDK.S3" Version="3.3.14" />
+    <PackageReference Include="AWSSDK.S3" Version="3.3.15" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' Or '$(TargetFramework)' == 'netcoreapp2.0' ">
