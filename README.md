@@ -188,7 +188,7 @@ dotnet eb list-environments
 
 Lists all of the current running environments along with the URL to access the environment.
 
-### AWS Lambda ([Amazon.ECS.Tools](https://www.nuget.org/packages/Amazon.Lambda.Tools/))
+### AWS Lambda ([Amazon.Lambda.Tools](https://www.nuget.org/packages/Amazon.Lambda.Tools/))
 ---
 
 This tool extension deploys AWS Lambda .NET Core functions. 
