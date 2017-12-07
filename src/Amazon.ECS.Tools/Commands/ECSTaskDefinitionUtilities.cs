@@ -2,6 +2,7 @@
 using Amazon.CloudWatchLogs.Model;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.ECS.Model;
+using Amazon.IdentityManagement.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -312,11 +313,12 @@ namespace Amazon.ECS.Tools.Commands
                             {
                                 throw new DockerToolsException($"Port mapping {mapping} is invalid. Format should be <host-port>:<container-port>,<host-port>:<container-port>,...", DockerToolsException.CommonErrorCode.CommandLineParseError);
                             }
+                            int hostPort = !isFargate ? int.Parse(tokens[0]) : int.Parse(tokens[1]);
 
-                            logger?.WriteLine($"Adding port mapping host {tokens[0]} to container {tokens[1]}");
+                            logger?.WriteLine($"Adding port mapping host {hostPort} to container {tokens[1]}");
                             containerDefinition.PortMappings.Add(new PortMapping
                             {
-                                HostPort = int.Parse(tokens[0]),
+                                HostPort = hostPort,
                                 ContainerPort = int.Parse(tokens[1])
                             });
                         }
@@ -411,7 +413,18 @@ namespace Amazon.ECS.Tools.Commands
                     registerRequest.Memory = command.GetStringValueOrDefault(properties.TaskMemory, ECSDefinedCommandOptions.ARGUMENT_TD_MEMORY, true);
                     registerRequest.Cpu = command.GetStringValueOrDefault(properties.TaskCPU, ECSDefinedCommandOptions.ARGUMENT_TD_CPU, true);
 
-                    registerRequest.ExecutionRoleArn = command.GetStringValueOrDefault(properties.TaskDefinitionExecutionRole, ECSDefinedCommandOptions.ARGUMENT_TD_EXECUTION_ROLE, true);
+                    var taskExecutionRole = command.GetStringValueOrDefault(properties.TaskDefinitionExecutionRole, ECSDefinedCommandOptions.ARGUMENT_TD_EXECUTION_ROLE, false);
+                    if (!string.IsNullOrEmpty(taskExecutionRole))
+                    {
+                        registerRequest.ExecutionRoleArn = taskExecutionRole;
+                    }
+                    else if(string.IsNullOrEmpty(registerRequest.ExecutionRoleArn)) // If this is a redeployment check to see if the role was already set in a previous deployment.
+                    {
+                        if (string.IsNullOrEmpty(registerRequest.ExecutionRoleArn))
+                        {
+                            registerRequest.ExecutionRoleArn = await EnsureTaskExecutionRoleExists(logger, command);
+                        }
+                    }
                 }
                 else
                 {
@@ -483,6 +496,34 @@ namespace Amazon.ECS.Tools.Commands
             {
                 throw new DockerToolsException("Failed to create log group " + logGroup + " for the container: " + e.Message, DockerToolsException.ECSErrorCode.LogGroupCreateFailed);
             }
+        }
+
+        private const string DEFAULT_ECS_TASK_EXECUTION_ROLE = "ecsTaskExecutionRole";
+        public static async Task<string> EnsureTaskExecutionRoleExists(IToolLogger logger, ECSBaseCommand command)
+        {
+            bool roleExists = false;
+            try
+            {
+                var request = new GetRoleRequest { RoleName = DEFAULT_ECS_TASK_EXECUTION_ROLE };
+                var response = await command.IAMClient.GetRoleAsync(request).ConfigureAwait(false);
+                roleExists = true;
+                logger.WriteLine("Task Execution role \"{0}\" already exists.", DEFAULT_ECS_TASK_EXECUTION_ROLE);
+            }
+            catch (Amazon.IdentityManagement.Model.NoSuchEntityException)
+            {
+                roleExists = false;
+            }
+            catch(Exception e)
+            {
+                logger.WriteLine("Error checking to make sure role \"ecsTaskExecutionRole\" exists, continuing on assuming the role exists: " + e.Message);
+            }
+
+            if (roleExists)
+                return DEFAULT_ECS_TASK_EXECUTION_ROLE;
+
+            logger.WriteLine("Creating default \"{0}\" IAM role.", DEFAULT_ECS_TASK_EXECUTION_ROLE);
+            RoleHelper.CreateRole(command.IAMClient, DEFAULT_ECS_TASK_EXECUTION_ROLE, Amazon.Common.DotNetCli.Tools.Constants.ECS_TASKS_ASSUME_ROLE_POLICY, "CloudWatchLogsFullAccess", "AmazonEC2ContainerRegistryReadOnly");
+            return DEFAULT_ECS_TASK_EXECUTION_ROLE;
         }
     }   
 }
