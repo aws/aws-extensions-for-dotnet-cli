@@ -9,7 +9,7 @@ using ThirdParty.Json.LitJson;
 
 namespace Amazon.ECS.Tools.Commands
 {
-    public class DeployTaskCommand : ECSBaseCommand
+    public class DeployTaskCommand : ECSBaseDeployCommand
     {
         public const string COMMAND_NAME = "deploy-task";
         public const string COMMAND_DESCRIPTION = "Push the application to ECR and then runs it as a task on the ECS Cluster.";
@@ -40,50 +40,6 @@ namespace Amazon.ECS.Tools.Commands
         },
         TaskDefinitionProperties.CommandOptions);
 
-        PushDockerImageProperties _pushProperties;
-        public PushDockerImageProperties PushDockerImageProperties
-        {
-            get
-            {
-                if (this._pushProperties == null)
-                {
-                    this._pushProperties = new PushDockerImageProperties();
-                }
-
-                return this._pushProperties;
-            }
-            set { this._pushProperties = value; }
-        }
-
-        TaskDefinitionProperties _taskDefinitionProperties;
-        public TaskDefinitionProperties TaskDefinitionProperties
-        {
-            get
-            {
-                if (this._taskDefinitionProperties == null)
-                {
-                    this._taskDefinitionProperties = new TaskDefinitionProperties();
-                }
-
-                return this._taskDefinitionProperties;
-            }
-            set { this._taskDefinitionProperties = value; }
-        }
-
-        ClusterProperties _clusterProperties;
-        public ClusterProperties ClusterProperties
-        {
-            get
-            {
-                if (this._clusterProperties == null)
-                {
-                    this._clusterProperties = new ClusterProperties();
-                }
-
-                return this._clusterProperties;
-            }
-            set { this._clusterProperties = value; }
-        }
 
         DeployTaskProperties _deployTaskProperties;
         public DeployTaskProperties DeployTaskProperties
@@ -167,7 +123,7 @@ namespace Amazon.ECS.Tools.Commands
                     dockerImageTag = pushCommand.PushedImageUri;
                 }
 
-                var taskDefinitionArn = await ECSTaskDefinitionUtilities.CreateOrUpdateTaskDefinition(this.Logger, this.ECSClient,
+                var taskDefinitionArn = await ECSUtilities.CreateOrUpdateTaskDefinition(this.Logger, this.ECSClient,
                     this, this.TaskDefinitionProperties, dockerImageTag, IsFargateLaunch(this.ClusterProperties.LaunchType));
 
                 var ecsCluster = this.GetStringValueOrDefault(this.ClusterProperties.ECSCluster, ECSDefinedCommandOptions.ARGUMENT_ECS_CLUSTER, true);
@@ -187,24 +143,13 @@ namespace Amazon.ECS.Tools.Commands
                     LaunchType = launchType
                 };
 
-                Amazon.ECS.Model.NetworkConfiguration networkConfiguration = null;
                 if (IsFargateLaunch(this.ClusterProperties.LaunchType))
                 {
                     var subnets = this.GetStringValuesOrDefault(this.ClusterProperties.SubnetIds, ECSDefinedCommandOptions.ARGUMENT_LAUNCH_SUBNETS, false);
                     var securityGroups = this.GetStringValuesOrDefault(this.ClusterProperties.SecurityGroupIds, ECSDefinedCommandOptions.ARGUMENT_LAUNCH_SECURITYGROUPS, false);
 
-                    networkConfiguration = new Amazon.ECS.Model.NetworkConfiguration();
-                    networkConfiguration.AwsvpcConfiguration = new Amazon.ECS.Model.AwsVpcConfiguration
-                    {
-                        SecurityGroups = new List<string>(securityGroups),
-                        Subnets = new List<string>(subnets)
-                    };
-
-                    var assignPublicIp = this.GetBoolValueOrDefault(this.ClusterProperties.AssignPublicIpAddress, ECSDefinedCommandOptions.ARGUMENT_LAUNCH_ASSIGN_PUBLIC_IP, false);
-                    if (assignPublicIp.HasValue)
-                    {
-                        networkConfiguration.AwsvpcConfiguration.AssignPublicIp = assignPublicIp.Value ? AssignPublicIp.ENABLED : AssignPublicIp.DISABLED;
-                    }
+                    var networkConfiguration = new Amazon.ECS.Model.NetworkConfiguration();
+                    ECSUtilities.SetupNetworkConfiguration(this, networkConfiguration);
 
                     runTaskRequest.NetworkConfiguration = networkConfiguration;
 

@@ -16,7 +16,7 @@ using Amazon.Common.DotNetCli.Tools;
 
 namespace Amazon.ECS.Tools.Commands
 {
-    public class DeployScheduledTaskCommand : ECSBaseCommand
+    public class DeployScheduledTaskCommand : ECSBaseDeployCommand
     {
         public const string COMMAND_NAME = "deploy-scheduled-task";
         public const string COMMAND_DESCRIPTION = "Push the application to ECR and then sets up CloudWatch Event Schedule rule to run the application.";
@@ -41,20 +41,6 @@ namespace Amazon.ECS.Tools.Commands
         },
         TaskDefinitionProperties.CommandOptions);
 
-        PushDockerImageProperties _pushProperties;
-        public PushDockerImageProperties PushDockerImageProperties
-        {
-            get
-            {
-                if (this._pushProperties == null)
-                {
-                    this._pushProperties = new PushDockerImageProperties();
-                }
-
-                return this._pushProperties;
-            }
-            set { this._pushProperties = value; }
-        }
 
         DeployScheduledTaskProperties _deployScheduledTaskProperties;
         public DeployScheduledTaskProperties DeployScheduledTaskProperties
@@ -69,36 +55,6 @@ namespace Amazon.ECS.Tools.Commands
                 return this._deployScheduledTaskProperties;
             }
             set { this._deployScheduledTaskProperties = value; }
-        }
-
-        TaskDefinitionProperties _taskDefinitionProperties;
-        public TaskDefinitionProperties TaskDefinitionProperties
-        {
-            get
-            {
-                if (this._taskDefinitionProperties == null)
-                {
-                    this._taskDefinitionProperties = new TaskDefinitionProperties();
-                }
-
-                return this._taskDefinitionProperties;
-            }
-            set { this._taskDefinitionProperties = value; }
-        }
-
-        ClusterProperties _clusterProperties;
-        public ClusterProperties ClusterProperties
-        {
-            get
-            {
-                if (this._clusterProperties == null)
-                {
-                    this._clusterProperties = new ClusterProperties();
-                }
-
-                return this._clusterProperties;
-            }
-            set { this._clusterProperties = value; }
         }
 
         public bool? PersistConfigFile { get; set; }
@@ -168,7 +124,7 @@ namespace Amazon.ECS.Tools.Commands
                     dockerImageTag = pushCommand.PushedImageUri;
                 }
 
-                var taskDefinitionArn = await ECSTaskDefinitionUtilities.CreateOrUpdateTaskDefinition(this.Logger, this.ECSClient,
+                var taskDefinitionArn = await ECSUtilities.CreateOrUpdateTaskDefinition(this.Logger, this.ECSClient,
                     this, this.TaskDefinitionProperties, dockerImageTag, IsFargateLaunch(this.ClusterProperties.LaunchType));
 
                 var ecsCluster = this.GetStringValueOrDefault(this.ClusterProperties.ECSCluster, ECSDefinedCommandOptions.ARGUMENT_ECS_CLUSTER, true);
