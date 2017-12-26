@@ -82,18 +82,25 @@ namespace Amazon.ECS.Tools.Commands
                     dockerImageTag += ":latest";
 
                 var projectLocation = Utilities.DetermineProjectLocation(this.WorkingDirectory, this.ProjectLocation);
+                var dockerDetails = InspectDockerFile(projectLocation);
 
 
-                var dotnetCli = new DotNetCLIWrapper(this.Logger, projectLocation);
-                this.Logger?.WriteLine("Executing publish command");
-                if (dotnetCli.Publish(projectLocation, DetermineDockerCopyLocation(projectLocation), targetFramework, configuration) != 0)
+                if (!dockerDetails.SkipDotnetBuild)
                 {
-                    throw new DockerToolsException("Error executing \"dotnet publish\"", DockerToolsException.CommonErrorCode.DotnetPublishFailed);
+                    var dotnetCli = new DotNetCLIWrapper(this.Logger, projectLocation);
+                    this.Logger?.WriteLine("Executing publish command");
+                    if (dotnetCli.Publish(projectLocation, dockerDetails.ExpectedPublishLocation, targetFramework, configuration) != 0)
+                    {
+                        throw new DockerToolsException("Error executing \"dotnet publish\"", DockerToolsException.CommonErrorCode.DotnetPublishFailed);
+                    }
                 }
 
                 var dockerCli = new DockerCLIWrapper(this.Logger, projectLocation);
                 this.Logger?.WriteLine("Executing docker build");
-                if (dockerCli.Build(this.DefaultConfig, projectLocation, dockerImageTag) != 0)
+
+                string dockerBuildWorkingDirectory = dockerDetails.BuildFromSolutionDirectory ? DetermineSolutionDirectory(projectLocation) : projectLocation;
+
+                if (dockerCli.Build(this.DefaultConfig, dockerBuildWorkingDirectory, Path.Combine(projectLocation, "Dockerfile"), dockerImageTag) != 0)
                 {
                     throw new DockerToolsException("Error executing \"docker build\"", DockerToolsException.ECSErrorCode.DockerBuildFailed);
                 }
@@ -214,13 +221,14 @@ namespace Amazon.ECS.Tools.Commands
             this.PushDockerImageProperties.PersistSettings(this, data);
         }
 
-        private string DetermineDockerCopyLocation(string projectLocation)
+        private DockerDetails InspectDockerFile(string projectLocation)
         {
-            var location = "obj/Docker/publish";
+            var details = new DockerDetails();
 
             var dockerFilePath = Path.Combine(projectLocation, "Dockerfile");
             if (File.Exists(dockerFilePath))
             {
+                this.Logger?.WriteLine("Inspecting Dockerfile to figure how to build project and docker image");
                 using (var stream = File.OpenRead(dockerFilePath))
                 using (var reader = new StreamReader(stream))
                 {
@@ -234,16 +242,50 @@ namespace Amazon.ECS.Tools.Commands
                             if (end == -1)
                                 continue;
 
-                            location = line.Substring(start, end - start).Trim();
+                            details.ExpectedPublishLocation = line.Substring(start, end - start).Trim();
+                            this.Logger?.WriteLine("... Determined dotnet publish location configured to: " + details.ExpectedPublishLocation);
                             break;
+                        }
+                        else if(line.Replace(" ", "").StartsWith("RUNdotnetpublish"))
+                        {
+                            details.SkipDotnetBuild = true;
+                            this.Logger?.WriteLine("... Skip building project since it is done as part of Dockerfile");
+                        }
+                        else if(line.Replace(" ", "").StartsWith("COPY*.sln"))
+                        {
+                            details.BuildFromSolutionDirectory = true;
+                            this.Logger?.WriteLine("... Determined that docker build needs to be run from solution folder.");
                         }
                     }
                 }
+
+                if(!details.SkipDotnetBuild && string.IsNullOrEmpty(details.ExpectedPublishLocation))
+                {
+                    details.ExpectedPublishLocation = "obj/Docker/publish";
+                    this.Logger?.WriteLine("Warning: unable to determine dotnet publish folder location that Dockerfile expects. Assuming Visual Studio's default of " + details.ExpectedPublishLocation);
+                }
             }
 
+            return details;
+        }
 
-            this.Logger.WriteLine("Determined docker publish location to be {0}.", location);
-            return location;
+        public static string DetermineSolutionDirectory(string projectLocation)
+        {
+            if (Directory.GetFiles(projectLocation, "*.sln", SearchOption.TopDirectoryOnly).Length != 0)
+                return projectLocation;
+
+            var parent = Directory.GetParent(projectLocation).FullName;
+            if (parent == null)
+                throw new DockerToolsException("Unable to determine directory for the solution", DockerToolsException.ECSErrorCode.FailedToFindSolutionDirectory);
+
+            return DetermineSolutionDirectory(parent);
+        }
+
+        public class DockerDetails
+        {
+            public bool BuildFromSolutionDirectory { get; set; }
+            public bool SkipDotnetBuild { get; set; }
+            public string ExpectedPublishLocation { get; set; }
         }
     }
 }

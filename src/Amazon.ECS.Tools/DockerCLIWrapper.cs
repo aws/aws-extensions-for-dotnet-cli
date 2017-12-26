@@ -20,18 +20,18 @@ namespace Amazon.ECS.Tools
                 throw new Exception("Failed to locate docker CLI executable. Make sure the docker CLI is installed in the environment PATH.");
         }
 
-        public int Build(ECSToolsDefaults defaults, string projectLocation, string imageTag)
+        public int Build(ECSToolsDefaults defaults, string workingDirectory, string dockerFile, string imageTag)
         {
-            _logger?.WriteLine($"... invoking 'docker build', working folder '{projectLocation}, image name {imageTag}'");
+            _logger?.WriteLine($"... invoking 'docker build', working folder '{workingDirectory}, docker file {dockerFile}, image name {imageTag}'");
 
 
-            StringBuilder arguments = new StringBuilder($"build -t {imageTag} .");
+            StringBuilder arguments = new StringBuilder($"build -f \"{dockerFile}\" -t {imageTag} .");
 
             var psi = new ProcessStartInfo
             {
                 FileName = this._dockerCLI,
                 Arguments = arguments.ToString(),
-                WorkingDirectory = this._workingDirectory,
+                WorkingDirectory = workingDirectory,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
