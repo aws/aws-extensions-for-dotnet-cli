@@ -149,7 +149,7 @@ namespace Amazon.ECS.Tools.Commands
                     var securityGroups = this.GetStringValuesOrDefault(this.ClusterProperties.SecurityGroupIds, ECSDefinedCommandOptions.ARGUMENT_LAUNCH_SECURITYGROUPS, false);
 
                     var networkConfiguration = new Amazon.ECS.Model.NetworkConfiguration();
-                    ECSUtilities.SetupNetworkConfiguration(this, networkConfiguration);
+                    await ECSUtilities.SetupAwsVpcNetworkConfigurationAsync(this, networkConfiguration);
 
                     runTaskRequest.NetworkConfiguration = networkConfiguration;
 

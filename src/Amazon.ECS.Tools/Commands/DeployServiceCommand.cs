@@ -199,7 +199,7 @@ namespace Amazon.ECS.Tools.Commands
                         networkConfiguration = new NetworkConfiguration();
                     }
 
-                    ECSUtilities.SetupNetworkConfiguration(this, networkConfiguration);
+                    await ECSUtilities.SetupAwsVpcNetworkConfigurationAsync(this, networkConfiguration);
                 }
 
                 DeploymentConfiguration deploymentConfiguration = null;

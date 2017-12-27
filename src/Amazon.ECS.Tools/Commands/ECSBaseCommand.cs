@@ -9,6 +9,7 @@ using Amazon.Runtime.CredentialManagement;
 
 using Amazon.CloudWatchEvents;
 using Amazon.CloudWatchLogs;
+using Amazon.EC2;
 using Amazon.ECR;
 using Amazon.ECS;
 
@@ -117,6 +118,25 @@ namespace Amazon.ECS.Tools.Commands
                 return this._ecsClient;
             }
             set { this._ecsClient = value; }
+        }
+
+        IAmazonEC2 _ec2Client;
+        public IAmazonEC2 EC2Client
+        {
+            get
+            {
+                if (this._ec2Client == null)
+                {
+                    SetUserAgentString();
+
+                    var config = new AmazonEC2Config();
+                    config.RegionEndpoint = DetermineAWSRegion();
+
+                    this._ec2Client = new AmazonEC2Client(DetermineAWSCredentials(), config);
+                }
+                return this._ec2Client;
+            }
+            set { this._ec2Client = value; }
         }
 
         public bool IsFargateLaunch(string property)
