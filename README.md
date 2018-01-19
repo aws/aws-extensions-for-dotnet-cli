@@ -38,8 +38,8 @@ The following AWS services each have their own .NET CLI tool extension to make e
 to them.
 
 * [Amazon Elastic Container Service](#amazon-elastic-container-service-amazonecstools)
-* [AWS Elastic Beanstalk](#aws-elastic-beanstalk-amazonecstools)
-* [AWS Lambda](#aws-lambda-amazonecstools)
+* [AWS Elastic Beanstalk](#aws-elastic-beanstalk-amazonelasticbeanstalktools)
+* [AWS Lambda](#aws-lambda-amazonlambdatools)
 
 
 ## Defaults File
