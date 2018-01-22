@@ -91,14 +91,14 @@ namespace Amazon.ECS.Tools.Commands
                 var ecsTaskDefinition = this.GetStringValueOrDefault(this.TaskDefinitionProperties.TaskDefinitionName, ECSDefinedCommandOptions.ARGUMENT_TD_NAME, true);
 
 
-                string dockerImageTag = this.GetStringValueOrDefault(this.PushDockerImageProperties.DockerImageTag, ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG, true);
+                this.PushDockerImageProperties.DockerImageTag = this.GetStringValueOrDefault(this.PushDockerImageProperties.DockerImageTag, ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG, true).ToLower();
 
-                if (!dockerImageTag.Contains(":"))
-                    dockerImageTag += ":latest";
+                if (!this.PushDockerImageProperties.DockerImageTag.Contains(":"))
+                    this.PushDockerImageProperties.DockerImageTag += ":latest";
 
                 if (skipPush)
                 {
-                    dockerImageTag = await ECSUtilities.ExpandImageTagIfNecessary(this.Logger, this.ECRClient, dockerImageTag);
+                    this.PushDockerImageProperties.DockerImageTag = await ECSUtilities.ExpandImageTagIfNecessary(this.Logger, this.ECRClient, this.PushDockerImageProperties.DockerImageTag);
                 }
                 else
                 {
@@ -121,11 +121,11 @@ namespace Amazon.ECS.Tools.Commands
                     if (!success)
                         return false;
 
-                    dockerImageTag = pushCommand.PushedImageUri;
+                    this.PushDockerImageProperties.DockerImageTag = pushCommand.PushedImageUri;
                 }
 
                 var taskDefinitionArn = await ECSUtilities.CreateOrUpdateTaskDefinition(this.Logger, this.ECSClient,
-                    this, this.TaskDefinitionProperties, dockerImageTag, IsFargateLaunch(this.ClusterProperties.LaunchType));
+                    this, this.TaskDefinitionProperties, this.PushDockerImageProperties.DockerImageTag, IsFargateLaunch(this.ClusterProperties.LaunchType));
 
                 var ecsCluster = this.GetStringValueOrDefault(this.ClusterProperties.ECSCluster, ECSDefinedCommandOptions.ARGUMENT_ECS_CLUSTER, true);
 

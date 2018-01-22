@@ -76,10 +76,10 @@ namespace Amazon.ECS.Tools.Commands
             {
                 string configuration = this.GetStringValueOrDefault(this.PushDockerImageProperties.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false) ?? "Release";
                 string targetFramework = this.GetStringValueOrDefault(this.PushDockerImageProperties.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
-                string dockerImageTag = this.GetStringValueOrDefault(this.PushDockerImageProperties.DockerImageTag, ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG, true);
+                this.PushDockerImageProperties.DockerImageTag = this.GetStringValueOrDefault(this.PushDockerImageProperties.DockerImageTag, ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG, true).ToLower();
 
-                if (!dockerImageTag.Contains(":"))
-                    dockerImageTag += ":latest";
+                if (!this.PushDockerImageProperties.DockerImageTag.Contains(":"))
+                    this.PushDockerImageProperties.DockerImageTag += ":latest";
 
                 var projectLocation = Utilities.DetermineProjectLocation(this.WorkingDirectory, this.ProjectLocation);
                 var dockerDetails = InspectDockerFile(projectLocation);
@@ -100,18 +100,18 @@ namespace Amazon.ECS.Tools.Commands
 
                 string dockerBuildWorkingDirectory = dockerDetails.BuildFromSolutionDirectory ? DetermineSolutionDirectory(projectLocation) : projectLocation;
 
-                if (dockerCli.Build(this.DefaultConfig, dockerBuildWorkingDirectory, Path.Combine(projectLocation, "Dockerfile"), dockerImageTag) != 0)
+                if (dockerCli.Build(this.DefaultConfig, dockerBuildWorkingDirectory, Path.Combine(projectLocation, "Dockerfile"), this.PushDockerImageProperties.DockerImageTag) != 0)
                 {
                     throw new DockerToolsException("Error executing \"docker build\"", DockerToolsException.ECSErrorCode.DockerBuildFailed);
                 }
 
                 await InitiateDockerLogin(dockerCli);
 
-                Repository repository = await SetupECRRepository(dockerImageTag.Substring(0, dockerImageTag.IndexOf(':')));
+                Repository repository = await SetupECRRepository(this.PushDockerImageProperties.DockerImageTag.Substring(0, this.PushDockerImageProperties.DockerImageTag.IndexOf(':')));
 
-                var targetTag = repository.RepositoryUri + dockerImageTag.Substring(dockerImageTag.IndexOf(':'));
-                this.Logger?.WriteLine($"Taging image {dockerImageTag} with {targetTag}");
-                if (dockerCli.Tag(dockerImageTag, targetTag) != 0)
+                var targetTag = repository.RepositoryUri + this.PushDockerImageProperties.DockerImageTag.Substring(this.PushDockerImageProperties.DockerImageTag.IndexOf(':'));
+                this.Logger?.WriteLine($"Taging image {this.PushDockerImageProperties.DockerImageTag} with {targetTag}");
+                if (dockerCli.Tag(this.PushDockerImageProperties.DockerImageTag, targetTag) != 0)
                 {
                     throw new DockerToolsException("Error executing \"docker tag\"", DockerToolsException.ECSErrorCode.DockerTagFail);
                 }
