@@ -128,8 +128,9 @@ namespace Amazon.ECS.Tools.Commands
                     this, this.TaskDefinitionProperties, this.PushDockerImageProperties.DockerImageTag, IsFargateLaunch(this.ClusterProperties.LaunchType));
 
                 var ecsCluster = this.GetStringValueOrDefault(this.ClusterProperties.ECSCluster, ECSDefinedCommandOptions.ARGUMENT_ECS_CLUSTER, true);
+                await ECSUtilities.EnsureClusterExistsAsync(this.Logger, this.ECSClient, ecsCluster);
 
-                if(!ecsCluster.Contains(":"))
+                if (!ecsCluster.Contains(":"))
                 {
                     var arnPrefix = taskDefinitionArn.Substring(0, taskDefinitionArn.LastIndexOf(":task"));
                     ecsCluster = arnPrefix + ":cluster/" + ecsCluster;

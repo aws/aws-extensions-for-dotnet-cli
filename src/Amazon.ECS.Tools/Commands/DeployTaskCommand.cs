@@ -127,6 +127,7 @@ namespace Amazon.ECS.Tools.Commands
                     this, this.TaskDefinitionProperties, this.PushDockerImageProperties.DockerImageTag, IsFargateLaunch(this.ClusterProperties.LaunchType));
 
                 var ecsCluster = this.GetStringValueOrDefault(this.ClusterProperties.ECSCluster, ECSDefinedCommandOptions.ARGUMENT_ECS_CLUSTER, true);
+                await ECSUtilities.EnsureClusterExistsAsync(this.Logger, this.ECSClient, ecsCluster);
 
                 var taskCount = this.GetIntValueOrDefault(this.DeployTaskProperties.TaskCount, ECSDefinedCommandOptions.ARGUMENT_ECS_TASK_COUNT, false);
                 if (!taskCount.HasValue)
