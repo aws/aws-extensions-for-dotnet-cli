@@ -83,6 +83,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_APP_PATH.ConfigFileKey, command.GetStringValueOrDefault(this.UrlPath, EBDefinedCommandOptions.ARGUMENT_APP_PATH, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_IIS_WEBSITE.ConfigFileKey, command.GetStringValueOrDefault(this.IISWebSite, EBDefinedCommandOptions.ARGUMENT_IIS_WEBSITE, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_EB_TAGS.ConfigFileKey, ElasticBeanstalkToolsDefaults.FormatKeyValue(command.GetKeyValuePairOrDefault(this.Tags, EBDefinedCommandOptions.ARGUMENT_EB_TAGS, false)));
+            data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_ENABLE_XRAY.ConfigFileKey, command.GetBoolValueOrDefault(this.EnableXRay, EBDefinedCommandOptions.ARGUMENT_ENABLE_XRAY, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_EB_ADDITIONAL_OPTIONS.ConfigFileKey, ElasticBeanstalkToolsDefaults.FormatKeyValue(command.GetKeyValuePairOrDefault(this.AdditionalOptions, EBDefinedCommandOptions.ARGUMENT_EB_ADDITIONAL_OPTIONS, false)));
 
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_SOLUTION_STACK.ConfigFileKey, command.GetStringValueOrDefault(this.SolutionStack, EBDefinedCommandOptions.ARGUMENT_SOLUTION_STACK, false));
