@@ -36,6 +36,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             EBDefinedCommandOptions.ARGUMENT_EC2_KEYPAIR,
             EBDefinedCommandOptions.ARGUMENT_INSTANCE_TYPE,
             EBDefinedCommandOptions.ARGUMENT_HEALTH_CHECK_URL,
+            EBDefinedCommandOptions.ARGUMENT_ENABLE_XRAY,
             EBDefinedCommandOptions.ARGUMENT_INSTANCE_PROFILE,
             EBDefinedCommandOptions.ARGUMENT_SERVICE_ROLE,
 
@@ -372,6 +373,19 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                         Value = kvp.Value
                     });
                 }
+            }
+
+            var enableXRay = this.GetBoolValueOrDefault(this.DeployEnvironmentOptions.EnableXRay, EBDefinedCommandOptions.ARGUMENT_ENABLE_XRAY, false);
+            if(enableXRay.HasValue)
+            {
+                settings.Add(new ConfigurationOptionSetting()
+                {
+                    Namespace = "aws:elasticbeanstalk:xray",
+                    OptionName = "XRayEnabled",
+                    Value = enableXRay.Value.ToString()
+                });
+
+                this.Logger?.WriteLine($"Enable AWS X-Ray: {enableXRay.Value}");
             }
         }
 

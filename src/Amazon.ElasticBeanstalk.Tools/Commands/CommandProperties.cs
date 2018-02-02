@@ -16,6 +16,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
         public string UrlPath { get; set; }
         public string IISWebSite { get; set; }
         public bool? WaitForUpdate { get; set; }
+        public bool? EnableXRay { get; set; }
         public Dictionary<string,string> Tags { get; set; }
         public Dictionary<string, string> AdditionalOptions { get; set; }
 
@@ -68,6 +69,8 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 this.InstanceProfile = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_SERVICE_ROLE.Switch)) != null)
                 this.ServiceRole = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_ENABLE_XRAY.Switch)) != null)
+                this.EnableXRay = tuple.Item2.BoolValue;
         }
 
 

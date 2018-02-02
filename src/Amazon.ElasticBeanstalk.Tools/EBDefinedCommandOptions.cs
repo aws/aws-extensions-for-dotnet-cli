@@ -121,6 +121,14 @@ namespace Amazon.ElasticBeanstalk.Tools
                 ValueType = CommandOption.CommandOptionValueType.BoolValue,
                 Description = "Wait for the environment update to complete before exiting."
             };
+        public static readonly CommandOption ARGUMENT_ENABLE_XRAY =
+            new CommandOption
+            {
+                Name = "Enable AWS X-Ray",
+                Switch = "--enable-xray",
+                ValueType = CommandOption.CommandOptionValueType.BoolValue,
+                Description = "If set to true then the AWS X-Ray daemon will be enabled on EC2 instances running the application."
+            };
         public static readonly CommandOption ARGUMENT_EB_ADDITIONAL_OPTIONS =
             new CommandOption
             {
