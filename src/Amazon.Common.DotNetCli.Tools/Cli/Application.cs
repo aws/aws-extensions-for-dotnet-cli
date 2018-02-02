@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Reflection;
 
 using Amazon.Common.DotNetCli.Tools.Commands;
 using System.IO;
@@ -28,6 +29,8 @@ namespace Amazon.Common.DotNetCli.Tools.CLi
         {
             try
             {
+                PrintToolTitle();
+
                 if (args.Length == 0)
                 {
                     PrintUsage();
@@ -109,7 +112,7 @@ namespace Amazon.Common.DotNetCli.Tools.CLi
             return null;
         }
 
-        private void PrintUsageHeader()
+        private void PrintToolTitle()
         {
             var sb = new StringBuilder(this.ToolDisplayName);
             var version = Utilities.DetermineToolVersion();
@@ -124,7 +127,6 @@ namespace Amazon.Common.DotNetCli.Tools.CLi
 
         private void PrintUsage()
         {
-            PrintUsageHeader();
 
             const int NAME_WIDTH = 23;
             Console.WriteLine("\t");
@@ -155,8 +157,6 @@ namespace Amazon.Common.DotNetCli.Tools.CLi
 
         private void PrintUsage(string command)
         {
-            PrintUsageHeader();
-
             var commandInfo = FindCommandInfo(command);
             if (commandInfo != null)
                 PrintUsage(commandInfo.Name, commandInfo.Description, commandInfo.CommandOptions, commandInfo.Argument);
