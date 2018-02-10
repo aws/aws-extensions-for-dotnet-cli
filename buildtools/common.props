@@ -13,9 +13,9 @@
 
   </PropertyGroup>
   
-  <PropertyGroup Condition="'$(DisableAssemblySigning)'!='true'">
+  <PropertyGroup>
     <AssemblyOriginatorKeyFile Condition=" '$(AssemblyOriginatorKeyFile)' == '' ">$(MSBuildThisFileDirectory)local-development.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly>true</SignAssembly>  
+    <SignAssembly>false</SignAssembly>  
   </PropertyGroup>
 
 

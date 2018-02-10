@@ -6,7 +6,7 @@
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
 
-	<DisableAssemblySigning></DisableAssemblySigning>
+	<SignAssembly Condition=" '$(SignAssembly)' == '' ">true</SignAssembly>
     <AssemblyOriginatorKeyFile Condition=" '$(AssemblyOriginatorKeyFile)' == '' ">$(MSBuildThisFileDirectory)local-development.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
@@ -35,7 +35,7 @@
 
   <Target Name="build-nuget-packages" DependsOnTargets="init">
 
-    <Exec Command="dotnet msbuild aws-extensions-for-dotnet-cli.sln /t:Rebuild /p:Configuration=$(Configuration) /p:AssemblyOriginatorKeyFile=$(AssemblyOriginatorKeyFile) /p:DisableAssemblySigning=$(DisableAssemblySigning)"
+    <Exec Command="dotnet msbuild aws-extensions-for-dotnet-cli.sln /t:Rebuild /p:Configuration=$(Configuration) /p:AssemblyOriginatorKeyFile=$(AssemblyOriginatorKeyFile) /p:SignAssembly=$(SignAssembly)"
         WorkingDirectory="..\"/>
 
     <PropertyGroup>

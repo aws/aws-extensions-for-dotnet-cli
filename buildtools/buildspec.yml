@@ -3,7 +3,7 @@ version: 0.2
 phases:
   build:
     commands:
-      - dotnet msbuild ./buildtools/build.proj /p:DisableAssemblySigning=true
+      - dotnet msbuild ./buildtools/build.proj /p:SignAssembly=false
 artifacts:
   files:
     - Deployment/*
