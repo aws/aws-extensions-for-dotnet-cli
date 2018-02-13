@@ -21,3 +21,6 @@
 **/node_modules/
 **/TestGenerations/
 
+**/.vscode
+**/.idea
+*.userprefs
