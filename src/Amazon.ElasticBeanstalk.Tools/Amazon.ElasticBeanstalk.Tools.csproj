@@ -9,7 +9,7 @@
     <PackageTags>AWS;Amazon;Beanstalk</PackageTags>
     <PackageType>DotnetCliTool</PackageType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <AssemblyName>dotnet-eb</AssemblyName>
     <Product>AWS Elastic Beanstalk Tools for .NET CLI</Product>
     <Description>Amazon.ElasticBeanstalk.Tools adds commands to the dotnet cli to deploy ASP.NET Core applications to AWS Elastic Beanstalk. For example to deploy an ASP.NET Core application from the command execute "dotnet eb deploy-environment" on the command line.</Description>
@@ -30,6 +30,7 @@
     <PackageReference Include="AWSSDK.ElasticBeanstalk" Version="3.3.6.2" />
     <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.5.3" />
     <PackageReference Include="AWSSDK.S3" Version="3.3.15" />
+    <PackageReference Include="AWSSDK.SecurityToken" Version="3.3.3.3" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' Or '$(TargetFramework)' == 'netcoreapp2.0' ">

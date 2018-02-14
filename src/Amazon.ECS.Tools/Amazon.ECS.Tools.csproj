@@ -27,6 +27,7 @@
     <PackageReference Include="AWSSDK.ECS" Version="3.3.10" />
     <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.5.3" />
     <PackageReference Include="AWSSDK.S3" Version="3.3.16.2" />
+    <PackageReference Include="AWSSDK.SecurityToken" Version="3.3.3.3" />
   </ItemGroup>
 
   <ItemGroup>
