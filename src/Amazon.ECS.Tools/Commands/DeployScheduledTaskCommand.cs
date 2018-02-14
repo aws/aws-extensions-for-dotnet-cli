@@ -137,7 +137,7 @@ namespace Amazon.ECS.Tools.Commands
                 }
 
                 var ruleName = this.GetStringValueOrDefault(this.DeployScheduledTaskProperties.ScheduleTaskRule, ECSDefinedCommandOptions.ARGUMENT_SCHEDULED_RULE_NAME, true);
-                var targetName = this.GetStringValueOrDefault(this.DeployScheduledTaskProperties.ScheduleTaskRule, ECSDefinedCommandOptions.ARGUMENT_SCHEDULED_RULE_NAME, false);
+                var targetName = this.GetStringValueOrDefault(this.DeployScheduledTaskProperties.ScheduleTaskRuleTarget, ECSDefinedCommandOptions.ARGUMENT_SCHEDULED_RULE_TARGET, false);
                 if (string.IsNullOrEmpty(targetName))
                     targetName = ruleName;
 
