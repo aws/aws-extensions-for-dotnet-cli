@@ -375,7 +375,7 @@ namespace Amazon.ECS.Tools.Commands
 
         internal void PersistSettings(ECSBaseCommand command, JsonData data)
         {
-            data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_SCHEDULED_RULE_TARGET.ConfigFileKey, command.GetStringValueOrDefault(this.ScheduleTaskRule, ECSDefinedCommandOptions.ARGUMENT_SCHEDULED_RULE_NAME, false));
+            data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_SCHEDULED_RULE_NAME.ConfigFileKey, command.GetStringValueOrDefault(this.ScheduleTaskRule, ECSDefinedCommandOptions.ARGUMENT_SCHEDULED_RULE_NAME, false));
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_SCHEDULED_RULE_TARGET.ConfigFileKey, command.GetStringValueOrDefault(this.ScheduleTaskRuleTarget, ECSDefinedCommandOptions.ARGUMENT_SCHEDULED_RULE_TARGET, false));
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_SCHEDULE_EXPRESSION.ConfigFileKey, command.GetStringValueOrDefault(this.ScheduleExpression, ECSDefinedCommandOptions.ARGUMENT_SCHEDULE_EXPRESSION, false));
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_CLOUDWATCHEVENT_ROLE.ConfigFileKey, command.GetStringValueOrDefault(this.CloudWatchEventIAMRole, ECSDefinedCommandOptions.ARGUMENT_CLOUDWATCHEVENT_ROLE, false));
