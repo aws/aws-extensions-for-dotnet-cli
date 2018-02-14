@@ -1,5 +1,20 @@
+### Release 2018-02-14
+
+* **Amazon.ECS.Tools (1.1.1)**
+    * Added dependency to **AWSSDK.SecurityToken** to support profiles that use assume role features of Security Token Service.
+    * Allow task defintion cpu and memory to be read from **aws-ecs-tools-defaults.json** either as a string or number. Previously only string was supported.
+    * Fixed issue with reading desired count from **aws-ecs-tools-defaults.json**.
+    * Fixed issue persisting last settings for scheduled task to **aws-ecs-tools-defaults.json**.
+
+* **Amazon.ElasticBeanstalk.Tools (1.1.1)**
+    * Added dependency to **AWSSDK.SecurityToken** to support profiles that use assume role features of Security Token Service.
+
+### Release 2018-02-02
+* **Amazon.ElasticBeanstalk.Tools (1.1.0)**
+    * Add **--enable-xray** switch to enable the AWS X-Ray daemon in the environment
+
 ### Release 2018-01-21
-* **Amazon.ECS.Tools (1.0.0)**
+* **Amazon.ECS.Tools (1.1.0)**
   * Use default subnets if no subnets provided for Fargate deployments
   * Inspect Docker file to see if **dotnet publish** needs to run before **docker build**
   * If redeploying to an existing Fargate service reuse network configuration if one is not provided
