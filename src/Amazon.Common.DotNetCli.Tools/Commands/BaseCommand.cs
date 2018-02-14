@@ -215,6 +215,11 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
                 var configDefault = DefaultConfig[option.Switch] as string;
                 return configDefault;
             }
+            else if(DefaultConfig[option.Switch] is int)
+            {
+                var configDefault = (int)DefaultConfig[option.Switch];
+                return configDefault.ToString();
+            }
             else if (required && !this.DisableInteractive)
             {
                 return PromptForValue(option);

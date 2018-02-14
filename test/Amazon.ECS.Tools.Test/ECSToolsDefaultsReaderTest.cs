@@ -9,7 +9,6 @@ using Xunit;
 
 using Amazon.ECS.Tools;
 
-using ThirdParty.Json.LitJson;
 using Amazon.Tools.TestHelpers;
 using Amazon.ECS.Tools.Commands;
 using Amazon.Common.DotNetCli.Tools.Options;
@@ -34,7 +33,19 @@ namespace Amazon.ECS.Tools.Test
         {
             var command = new DeployServiceCommand(new TestToolLogger(), Utilities.GetTestProjectPath("HelloWorldWebApp"), new string[0]);
 
-            Assert.Equal("us-west-2", command.GetStringValueOrDefault(command.Region, CommonDefinedCommandOptions.ARGUMENT_AWS_REGION, true));
+            Assert.Equal("us-west-2", command.GetStringValueOrDefault(command.Region, CommonDefinedCommandOptions.ARGUMENT_AWS_REGION, false));
+        }
+
+        [Fact]
+        public void GetTaskCPUFromDefaultsAsInt()
+        {
+            var command = new DeployServiceCommand(new TestToolLogger(), Utilities.GetTestProjectPath("HelloWorldWebApp"), new string[0]);
+
+            // CPU is set in aws-ecs-tools-defaults.json as a number
+            Assert.Equal("256", command.GetStringValueOrDefault(command.TaskDefinitionProperties.TaskCPU, ECSDefinedCommandOptions.ARGUMENT_TD_CPU, false));
+
+            // Memory is set in aws-ecs-tools-defaults.json as a string
+            Assert.Equal("512", command.GetStringValueOrDefault(command.TaskDefinitionProperties.TaskMemory, ECSDefinedCommandOptions.ARGUMENT_TD_MEMORY, false));
         }
     }
 }
