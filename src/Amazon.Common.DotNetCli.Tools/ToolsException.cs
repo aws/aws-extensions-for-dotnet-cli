@@ -13,6 +13,7 @@ namespace Amazon.Common.DotNetCli.Tools
             DefaultsParseFail,
             CommandLineParseError,
             ProfileNotFound,
+            ProfileNotCreateable,
             RegionNotConfigured,
             MissingRequiredParameter,
             PersistConfigError,
@@ -26,7 +27,10 @@ namespace Amazon.Common.DotNetCli.Tools
             PolicyNotFound,
 
             FailedToFindZipProgram,
+            
+            BucketInDifferentRegionThenClient,
 
+            S3GetBucketLocation,
             S3UploadError
 
         }

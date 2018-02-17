@@ -71,6 +71,16 @@ namespace Amazon.Common.DotNetCli.Tools.Options
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = "The location of the project, if not set the current directory will be assumed."
             };
+        
+        public static readonly CommandOption ARGUMENT_MSBUILD_PARAMETERS =
+            new CommandOption
+            {
+                Name = "MSBuild Parameters",
+                Switch = "--msbuild-parameters",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "Additional msbuild parameters passed to the 'dotnet publish' command",
+            };
+        
 
         public static readonly CommandOption ARGUMENT_CONFIG_FILE =
             new CommandOption

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Amazon.Common.DotNetCli.Tools.Options
 {
@@ -22,11 +21,7 @@ namespace Amazon.Common.DotNetCli.Tools.Options
             for (int i = 0; i < arguments.Length; i++)
             {
                 // Collect arguments that are not attached to a switch. This is currently always the function name.
-                if (!arguments[i].StartsWith("-"))
-                {
-                    values.Arguments.Add(arguments[i]);
-                }
-                else
+                if (arguments[i].StartsWith("-"))
                 {
                     var option = FindCommandOption(options, arguments[i]);
                     if (option != null)
@@ -44,24 +39,24 @@ namespace Amazon.Common.DotNetCli.Tools.Options
                             {
                                 case CommandOption.CommandOptionValueType.StringValue:
                                 case CommandOption.CommandOptionValueType.JsonValue:
-                                    value.StringValue = arguments?[i + 1];
+                                    value.StringValue = arguments[i + 1];
                                     break;
                                 case CommandOption.CommandOptionValueType.CommaDelimitedList:
-                                    value.StringValues = arguments?[i + 1].SplitByComma();
+                                    value.StringValues = arguments[i + 1].SplitByComma();
                                     break;
                                 case CommandOption.CommandOptionValueType.KeyValuePairs:
                                     value.KeyValuePairs = Utilities.ParseKeyValueOption(arguments[i + 1]);
                                     break;
                                 case CommandOption.CommandOptionValueType.IntValue:
                                     int iv;
-                                    if (!int.TryParse(arguments?[i + 1], out iv))
-                                        throw new Exception($"Argument {arguments?[i]} expects an integer value but received an {arguments?[i + 1]}");
+                                    if (!int.TryParse(arguments[i + 1], out iv))
+                                        throw new Exception($"Argument {arguments[i]} expects an integer value but received an {arguments[i + 1]}");
                                     value.IntValue = iv;
                                     break;
                                 case CommandOption.CommandOptionValueType.BoolValue:
                                     bool bv;
-                                    if (!bool.TryParse(arguments?[i + 1], out bv))
-                                        throw new Exception($"Argument {arguments?[i]} expects either {bool.TrueString} or {bool.FalseString} value but received an {arguments?[i + 1]}");
+                                    if (!bool.TryParse(arguments[i + 1], out bv))
+                                        throw new Exception($"Argument {arguments[i]} expects either {bool.TrueString} or {bool.FalseString} value but received an {arguments[i + 1]}");
                                     value.BoolValue = bv;
                                     break;
                             }
@@ -70,6 +65,22 @@ namespace Amazon.Common.DotNetCli.Tools.Options
 
                         values.AddOption(option, value);
                     }
+                }
+                // Arguments starting /p: are msbuild parameters that should be passed into the dotnet package command
+                else if (arguments[i].StartsWith("/p:"))
+                {
+                    if (string.IsNullOrEmpty(values.MSBuildParameters))
+                    {
+                        values.MSBuildParameters = arguments[i];
+                    }
+                    else
+                    {
+                        values.MSBuildParameters += " " + arguments[i];
+                    }
+                }
+                else
+                {
+                    values.Arguments.Add(arguments[i]);
                 }
             }
 

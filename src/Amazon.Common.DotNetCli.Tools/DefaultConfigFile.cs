@@ -105,7 +105,7 @@ namespace Amazon.Common.DotNetCli.Tools
             }
         }
 
-        private JsonData GetValue(CommandOption option)
+        protected JsonData GetValue(CommandOption option)
         {
             var key = option.Switch.Substring(2);
             return this._rootData[key];
@@ -136,10 +136,7 @@ namespace Amazon.Common.DotNetCli.Tools
 
         public static string FormatCommaDelimitedList(string[] values)
         {
-            if (values == null)
-                return null;
-
-            return string.Join(",", values);
+            return values == null ? null : string.Join(",", values);
         }
 
         public static string FormatKeyValue(IDictionary<string, string> values)

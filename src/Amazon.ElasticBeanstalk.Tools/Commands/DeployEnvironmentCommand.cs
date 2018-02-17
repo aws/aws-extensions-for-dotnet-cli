@@ -129,7 +129,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
                 var dotnetCli = new DotNetCLIWrapper(this.Logger, projectLocation);
 
-                var publishLocation = Utilities.DeterminePublishLocation(projectLocation, configuration, targetFramework);
+                var publishLocation = Utilities.DeterminePublishLocation(null,  projectLocation, configuration, targetFramework);
                 this.Logger?.WriteLine("Determine publish location: " + publishLocation);
 
 

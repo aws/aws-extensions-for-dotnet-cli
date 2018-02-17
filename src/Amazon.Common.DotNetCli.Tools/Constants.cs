@@ -76,5 +76,24 @@ namespace Amazon.Common.DotNetCli.Tools
 }
 ".Trim();
 
+
+      public static readonly string LAMBDA_PRINCIPAL = "lambda.amazonaws.com";
+      public static readonly string LAMBDA_TASKS_ASSUME_ROLE_POLICY =
+        @"
+{
+  ""Version"": ""2012-10-17"",
+  ""Statement"": [
+    {
+      ""Sid"": """",
+      ""Effect"": ""Allow"",
+      ""Principal"": {
+        ""Service"": ""lambda.amazonaws.com""
+      },
+      ""Action"": ""sts:AssumeRole""
+    }
+  ]
+}
+".Trim();
+
     }
 }

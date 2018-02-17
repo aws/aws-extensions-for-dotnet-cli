@@ -1,7 +1,6 @@
 ﻿using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
-using Amazon.S3.Transfer;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.XPath;
+using Amazon.Util;
 
 namespace Amazon.Common.DotNetCli.Tools
 {
@@ -32,9 +32,9 @@ namespace Amazon.Common.DotNetCli.Tools
         /// <param name="configuration"></param>
         /// <param name="targetFramework"></param>
         /// <returns></returns>
-        public static string DeterminePublishLocation(string projectLocation, string configuration, string targetFramework)
+        public static string DeterminePublishLocation(string workingDirectory, string projectLocation, string configuration, string targetFramework)
         {
-            var path = Path.Combine(projectLocation,
+            var path = Path.Combine(DetermineProjectLocation(workingDirectory, projectLocation),
                     "bin",
                     configuration,
                     targetFramework,
@@ -51,11 +51,7 @@ namespace Amazon.Common.DotNetCli.Tools
             var xdoc = XDocument.Load(files[0]);
 
             var element = xdoc.XPathSelectElement("//PropertyGroup/TargetFramework");
-            if (element != null)
-                return element.Value;
-
-
-            return null;
+            return element?.Value;
         }
 
         /// <summary>
@@ -72,18 +68,37 @@ namespace Amazon.Common.DotNetCli.Tools
             {
                 location = workingDirectory;
             }
+            else if (string.IsNullOrEmpty(workingDirectory))
+            {
+                location = projectLocation;
+            }
             else
             {
-                if (Path.IsPathRooted(projectLocation))
-                    location = projectLocation;
-                else
-                    location = Path.Combine(workingDirectory, projectLocation);
+                location = Path.IsPathRooted(projectLocation) ? projectLocation : Path.Combine(workingDirectory, projectLocation);
             }
 
             if (location.EndsWith(@"\") || location.EndsWith(@"/"))
                 location = location.Substring(0, location.Length - 1);
 
             return location;
+        }
+        
+        /// <summary>
+        /// Determine where the dotnet build directory is.
+        /// </summary>
+        /// <param name="workingDirectory"></param>
+        /// <param name="projectLocation"></param>
+        /// <param name="configuration"></param>
+        /// <param name="targetFramework"></param>
+        /// <returns></returns>
+        public static string DetermineBuildLocation(string workingDirectory, string projectLocation, string configuration, string targetFramework)
+        {
+            var path = Path.Combine(
+                DetermineProjectLocation(workingDirectory, projectLocation),
+                "bin",
+                configuration,
+                targetFramework);
+            return path;
         }
 
         /// <summary>
@@ -99,14 +114,12 @@ namespace Amazon.Common.DotNetCli.Tools
 
             try
             {
-                int currentPos = 0;
+                var currentPos = 0;
                 while (currentPos != -1 && currentPos < option.Length)
                 {
-                    string name;
-                    GetNextToken(option, '=', ref currentPos, out name);
+                    GetNextToken(option, '=', ref currentPos, out var name);
 
-                    string value;
-                    GetNextToken(option, ';', ref currentPos, out value);
+                    GetNextToken(option, ';', ref currentPos, out var value);
 
                     if (string.IsNullOrEmpty(name))
                         throw new ToolsException($"Error parsing option ({option}), format should be <key1>=<value1>;<key2>=<value2>", ToolsException.CommonErrorCode.CommandLineParseError);
@@ -184,9 +197,10 @@ namespace Amazon.Common.DotNetCli.Tools
             }
             catch (Exception)
             {
+                // ignored
             }
 
-            return attribute != null ? attribute.InformationalVersion : null;
+            return attribute?.InformationalVersion;
         }
 
         public static void ZipDirectory(IToolLogger logger, string directory, string zipArchivePath)
@@ -210,7 +224,7 @@ namespace Amazon.Common.DotNetCli.Tools
             else
             {
                 // Use the native zip utility if it exist which will maintain linux/osx file permissions
-                var zipCLI = DotNetCLIWrapper.FindExecutableInPath("zip");
+                var zipCLI = AbstractCLIWrapper.FindExecutableInPath("zip");
                 if (!string.IsNullOrEmpty(zipCLI))
                 {
                     BundleWithZipCLI(zipCLI, zipArchivePath, directory, logger);
@@ -231,7 +245,6 @@ namespace Amazon.Common.DotNetCli.Tools
         /// This will skip all files in the runtimes folder because they have already been flatten to the root.
         /// </summary>
         /// <param name="publishLocation"></param>
-        /// <param name="flattenRuntime">If true the runtimes folder will be flatten</param>
         /// <returns></returns>
         private static IDictionary<string, string> GetFilesToIncludeInArchive(string publishLocation)
         {
@@ -254,7 +267,6 @@ namespace Amazon.Common.DotNetCli.Tools
         /// </summary>
         /// <param name="zipArchivePath">The path and name of the zip archive to create.</param>
         /// <param name="publishLocation">The location to be bundled.</param>
-        /// <param name="flattenRuntime">If true the runtimes folder will be flatten</param>
         /// <param name="logger">Logger instance.</param>
         private static void BundleWithDotNetCompression(string zipArchivePath, string publishLocation, IToolLogger logger)
         {
@@ -277,18 +289,10 @@ namespace Amazon.Common.DotNetCli.Tools
         /// <param name="zipCLI">The path to the located zip binary.</param>
         /// <param name="zipArchivePath">The path and name of the zip archive to create.</param>
         /// <param name="publishLocation">The location to be bundled.</param>
-        /// <param name="flattenRuntime">If true the runtimes folder will be flatten</param>
         /// <param name="logger">Logger instance.</param>
         private static void BundleWithZipCLI(string zipCLI, string zipArchivePath, string publishLocation, IToolLogger logger)
         {
             var args = new StringBuilder("\"" + zipArchivePath + "\"");
-
-            // so that we can archive content in subfolders, take the length of the
-            // path to the root publish location and we'll just substring the
-            // found files so the subpaths are retained
-            var publishRootLength = publishLocation.Length;
-            if (publishLocation[publishRootLength - 1] != Path.DirectorySeparatorChar)
-                publishRootLength++;
 
             var allFiles = GetFilesToIncludeInArchive(publishLocation);
             foreach (var kvp in allFiles)
@@ -333,6 +337,57 @@ namespace Amazon.Common.DotNetCli.Tools
                 }
             }
         }
+        
+        public static async Task ValidateBucketRegionAsync(IAmazonS3 s3Client, string s3Bucket)
+        {
+            string bucketRegion;
+            try
+            {
+                bucketRegion = await Utilities.GetBucketRegionAsync(s3Client, s3Bucket);
+            }
+            catch(Exception e)
+            {
+                throw new ToolsException($"Error determining region for bucket {s3Bucket}: {e.Message}", ToolsException.CommonErrorCode.S3GetBucketLocation, e);
+            }
+
+            var configuredRegion = s3Client.Config.RegionEndpoint?.SystemName;
+            if(configuredRegion == null && !string.IsNullOrEmpty(s3Client.Config.ServiceURL))
+            {
+                configuredRegion = AWSSDKUtils.DetermineRegion(s3Client.Config.ServiceURL);
+            }
+
+            // If we still don't know the region and assume we are running in a non standard way and assume the caller
+            // knows what they are doing.
+            if (configuredRegion == null)
+                return;
+            
+            if (!string.Equals(bucketRegion, configuredRegion))
+            {
+                throw new ToolsException($"Error: S3 bucket must be in the same region as the configured region {configuredRegion}. {s3Bucket} is in the region {bucketRegion}.", ToolsException.CommonErrorCode.BucketInDifferentRegionThenClient);
+            }
+
+        }
+
+        public static async Task<string> GetBucketRegionAsync(IAmazonS3 s3Client, string bucket)
+        {
+            try
+            {
+                var request = new GetBucketLocationRequest { BucketName = bucket };
+                var response = await s3Client.GetBucketLocationAsync(request);
+
+                // Handle the legacy naming conventions
+                if (response.Location == S3Region.US)
+                    return "us-east-1";
+                if (response.Location == S3Region.EU)
+                    return "eu-west-1";
+
+                return response.Location.Value;
+            }
+            catch(Exception e)
+            {
+                throw new ToolsException($"Error determining region for bucket {bucket}: {e.Message}", ToolsException.CommonErrorCode.S3GetBucketLocation, e);
+            }
+        }
 
         public static async Task<bool> EnsureBucketExistsAsync(IToolLogger logger, IAmazonS3 s3Client, string bucketName)
         {
@@ -340,7 +395,7 @@ namespace Amazon.Common.DotNetCli.Tools
             logger?.WriteLine("Making sure bucket '" + bucketName + "' exists");
             try
             {
-                var response =  await s3Client.PutBucketAsync(new PutBucketRequest() { BucketName = bucketName, UseClientRegion = true });
+                await s3Client.PutBucketAsync(new PutBucketRequest() { BucketName = bucketName, UseClientRegion = true });
                 ret = true;
             }
             catch (AmazonS3Exception exc)
@@ -391,9 +446,9 @@ namespace Amazon.Common.DotNetCli.Tools
             {
                 BucketName = bucket,
                 Key = key,
-                InputStream = stream
+                InputStream = stream,
+                StreamTransferProgress = Utilities.CreateProgressHandler(logger)
             };
-            request.StreamTransferProgress = Utilities.CreateProgressHandler(logger);
 
             try
             {
@@ -410,17 +465,16 @@ namespace Amazon.Common.DotNetCli.Tools
         const int UPLOAD_PROGRESS_INCREMENT = 10;
         private static EventHandler<StreamTransferProgressArgs> CreateProgressHandler(IToolLogger logger)
         {
-            int percentToUpdateOn = UPLOAD_PROGRESS_INCREMENT;
+            var percentToUpdateOn = UPLOAD_PROGRESS_INCREMENT;
             EventHandler<StreamTransferProgressArgs> handler = ((s, e) =>
             {
-                if (e.PercentDone == percentToUpdateOn || e.PercentDone > percentToUpdateOn)
-                {
-                    int increment = e.PercentDone % UPLOAD_PROGRESS_INCREMENT;
-                    if (increment == 0)
-                        increment = UPLOAD_PROGRESS_INCREMENT;
-                    percentToUpdateOn = e.PercentDone + increment;
-                    logger?.WriteLine($"... Progress: {e.PercentDone}%");
-                }
+                if (e.PercentDone != percentToUpdateOn && e.PercentDone <= percentToUpdateOn) return;
+                
+                var increment = e.PercentDone % UPLOAD_PROGRESS_INCREMENT;
+                if (increment == 0)
+                    increment = UPLOAD_PROGRESS_INCREMENT;
+                percentToUpdateOn = e.PercentDone + increment;
+                logger?.WriteLine($"... Progress: {e.PercentDone}%");
             });
 
             return handler;

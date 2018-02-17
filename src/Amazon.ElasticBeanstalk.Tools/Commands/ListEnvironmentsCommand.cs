@@ -3,7 +3,6 @@ using Amazon.Common.DotNetCli.Tools.Options;
 using Amazon.ElasticBeanstalk.Model;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using ThirdParty.Json.LitJson;
 
@@ -61,7 +60,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                             if (environment.Status == EnvironmentStatus.Terminated)
                                 continue;
 
-                            this.Logger?.WriteLine((environment.EnvironmentName + " (" + environment.Status + "/" + environment.Health + ")").PadRight(45) + "  http://" + environment.CNAME ?? environment.EndpointURL + "/");
+                            this.Logger?.WriteLine((environment.EnvironmentName + " (" + environment.Status + "/" + environment.Health + ")").PadRight(45) + "  http://" + (environment.CNAME ?? environment.EndpointURL) + "/");
                         }
 
                     } while (!string.IsNullOrEmpty(response.NextToken));
