@@ -21,7 +21,7 @@ namespace Amazon.ECS.Tools.Test
         public void LoadDefaultsDirectly()
         {
             var defaults = new ECSToolsDefaults();
-            defaults.LoadDefaults(Utilities.GetTestProjectPath("HelloWorldWebApp"), ECSToolsDefaults.DEFAULT_FILE_NAME);
+            defaults.LoadDefaults(TestUtilities.GetTestProjectPath("HelloWorldWebApp"), ECSToolsDefaults.DEFAULT_FILE_NAME);
 
             Assert.Equal(defaults["region"], "us-west-2");
 
@@ -31,7 +31,7 @@ namespace Amazon.ECS.Tools.Test
         [Fact]
         public void CommandInferRegionFromDefaults()
         {
-            var command = new DeployServiceCommand(new TestToolLogger(), Utilities.GetTestProjectPath("HelloWorldWebApp"), new string[0]);
+            var command = new DeployServiceCommand(new TestToolLogger(), TestUtilities.GetTestProjectPath("HelloWorldWebApp"), new string[0]);
 
             Assert.Equal("us-west-2", command.GetStringValueOrDefault(command.Region, CommonDefinedCommandOptions.ARGUMENT_AWS_REGION, false));
         }
@@ -39,7 +39,7 @@ namespace Amazon.ECS.Tools.Test
         [Fact]
         public void GetTaskCPUFromDefaultsAsInt()
         {
-            var command = new DeployServiceCommand(new TestToolLogger(), Utilities.GetTestProjectPath("HelloWorldWebApp"), new string[0]);
+            var command = new DeployServiceCommand(new TestToolLogger(), TestUtilities.GetTestProjectPath("HelloWorldWebApp"), new string[0]);
 
             // CPU is set in aws-ecs-tools-defaults.json as a number
             Assert.Equal("256", command.GetStringValueOrDefault(command.TaskDefinitionProperties.TaskCPU, ECSDefinedCommandOptions.ARGUMENT_TD_CPU, false));

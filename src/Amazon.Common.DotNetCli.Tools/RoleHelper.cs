@@ -137,7 +137,7 @@ namespace Amazon.Common.DotNetCli.Tools
             return task.Result;
         }
 
-        public static string CreateRole(IAmazonIdentityManagementService iamClient, string roleName, string assuleRolePolicy, params string[] managedPolicies)
+        public static string CreateRole(IAmazonIdentityManagementService iamClient, string roleName, string assumeRolePolicy, params string[] managedPolicies)
         {
             if (managedPolicies != null && managedPolicies.Length > 0)
             {
@@ -153,7 +153,7 @@ namespace Amazon.Common.DotNetCli.Tools
                 CreateRoleRequest request = new CreateRoleRequest
                 {
                     RoleName = roleName,
-                    AssumeRolePolicyDocument = assuleRolePolicy
+                    AssumeRolePolicyDocument = assumeRolePolicy
                 };
 
                 var response = iamClient.CreateRoleAsync(request).Result;

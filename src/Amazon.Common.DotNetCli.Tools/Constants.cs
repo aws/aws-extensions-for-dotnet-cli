@@ -78,7 +78,7 @@ namespace Amazon.Common.DotNetCli.Tools
 
 
       public static readonly string LAMBDA_PRINCIPAL = "lambda.amazonaws.com";
-      public static readonly string LAMBDA_TASKS_ASSUME_ROLE_POLICY =
+      public static readonly string LAMBDA_ASSUME_ROLE_POLICY =
         @"
 {
   ""Version"": ""2012-10-17"",

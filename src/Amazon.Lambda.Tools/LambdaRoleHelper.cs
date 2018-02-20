@@ -95,7 +95,7 @@ namespace Amazon.Lambda.Tools
                 managedPolicyArn = LambdaConstants.AWS_MANAGED_POLICY_ARN_PREFIX + selectedPolicy.Path + selectedPolicy.PolicyName;
             }
 
-            var roleArn = RoleHelper.CreateRole(this.IAMClient, roleName, Constants.LAMBDA_TASKS_ASSUME_ROLE_POLICY, managedPolicyArn);
+            var roleArn = RoleHelper.CreateRole(this.IAMClient, roleName, Constants.LAMBDA_ASSUME_ROLE_POLICY, managedPolicyArn);
 
             return roleArn;
 
