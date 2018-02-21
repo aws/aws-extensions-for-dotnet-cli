@@ -65,7 +65,7 @@ namespace Amazon.Lambda.Tools.Test
         [Fact]
         public void ParseErrors()
         {
-            Assert.Throws(typeof(LambdaToolsException), () => Utilities.ParseKeyValueOption("=aaa"));
+            Assert.Throws(typeof(ToolsException), () => Utilities.ParseKeyValueOption("=aaa"));
         }
 
         [Fact]

@@ -13,7 +13,7 @@ namespace Amazon.Lambda.Tools.Test
         private string GetTestProjectPath()
         {
             var assembly = this.GetType().GetTypeInfo().Assembly;
-            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../TestFunction/");
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestFunction/");
             return fullPath;
         }
 
@@ -21,13 +21,13 @@ namespace Amazon.Lambda.Tools.Test
         public void LoadDefaultsDirectly()
         {
             var defaults = new LambdaToolsDefaults();
-            defaults.LoadDefaults(TestUtilities.GetTestProjectPath("HelloWorldWebApp"), LambdaToolsDefaults.DEFAULT_FILE_NAME);
+            defaults.LoadDefaults(GetTestProjectPath(), LambdaToolsDefaults.DEFAULT_FILE_NAME);
 
-            Assert.Equal(defaults.Region, "us-east-2");
-            Assert.Equal(defaults["region"], "us-east-2");
+            Assert.Equal("us-east-2", defaults.Region);
+            Assert.Equal("us-east-2", defaults["region"]);
 
-            Assert.Equal(defaults["disable-version-check"], true);
-            Assert.Equal(defaults["function-memory-size"], 128);
+            Assert.Equal(true, defaults["disable-version-check"]);
+            Assert.Equal(128, defaults["function-memory-size"]);
 
         }
 

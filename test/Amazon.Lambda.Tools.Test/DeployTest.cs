@@ -56,7 +56,7 @@ namespace Amazon.Lambda.Tools.Test
         {
             var assembly = this.GetType().GetTypeInfo().Assembly;
 
-            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../TestFunction");
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestFunction");
             var command = new DeployFunctionCommand(new ConsoleToolLogger(), fullPath, new string[0]);
             command.FunctionName = "test-function-" + DateTime.Now.Ticks;
             command.Handler = "TestFunction::TestFunction.Function::ToUpper";
@@ -66,6 +66,7 @@ namespace Amazon.Lambda.Tools.Test
             command.Configuration = "Release";
             command.TargetFramework = "netcoreapp1.0";
             command.Runtime = "dotnetcore1.0";
+            command.DisableInteractive = true;
 
             var created = await command.ExecuteAsync();
             try
@@ -104,7 +105,7 @@ namespace Amazon.Lambda.Tools.Test
 
                 var assembly = this.GetType().GetTypeInfo().Assembly;
 
-                var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../TestFunction");
+                var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestFunction");
                 var initialDeployCommand = new DeployFunctionCommand(new ConsoleToolLogger(), fullPath, new string[0]);
                 initialDeployCommand.FunctionName = "test-function-" + DateTime.Now.Ticks;
                 initialDeployCommand.Handler = "TestFunction::TestFunction.Function::ToUpper";
@@ -115,6 +116,7 @@ namespace Amazon.Lambda.Tools.Test
                 initialDeployCommand.TargetFramework = "netcoreapp1.0";
                 initialDeployCommand.Runtime = "dotnetcore1.0";
                 initialDeployCommand.DeadLetterTargetArn = queueArn;
+                initialDeployCommand.DisableInteractive = true;
 
 
                 var created = await initialDeployCommand.ExecuteAsync();
@@ -130,6 +132,7 @@ namespace Amazon.Lambda.Tools.Test
                     redeployCommand.Configuration = "Release";
                     redeployCommand.TargetFramework = "netcoreapp1.0";
                     redeployCommand.Runtime = "dotnetcore1.0";
+                    redeployCommand.DisableInteractive = true;
 
                     var redeployed = await redeployCommand.ExecuteAsync();
                     Assert.True(redeployed);
@@ -143,6 +146,7 @@ namespace Amazon.Lambda.Tools.Test
                     redeployCommand.TargetFramework = "netcoreapp1.0";
                     redeployCommand.Runtime = "dotnetcore1.0";
                     redeployCommand.DeadLetterTargetArn = "";
+                    redeployCommand.DisableInteractive = true;
 
                     redeployed = await redeployCommand.ExecuteAsync();
                     Assert.True(redeployed);
@@ -178,8 +182,9 @@ namespace Amazon.Lambda.Tools.Test
 
                 var assembly = this.GetType().GetTypeInfo().Assembly;
 
-                var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../TemplateSubstitutionTestProjects/StateMachineDefinitionStringTest");
+                var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TemplateSubstitutionTestProjects/StateMachineDefinitionStringTest");
                 var command = new DeployServerlessCommand(new TestToolLogger(), fullPath, new string[0]);
+                command.DisableInteractive = true;
                 command.Configuration = "Release";
                 command.TargetFramework = "netcoreapp1.0";
                 command.StackName = "DeployStepFunctionWithTemplateSubstitution-" + DateTime.Now.Ticks;
@@ -241,7 +246,7 @@ namespace Amazon.Lambda.Tools.Test
         {
             var assembly = this.GetType().GetTypeInfo().Assembly;
 
-            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../TestWebApp");
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestServerlessWebApp");
             var command = new PackageCICommand(new ConsoleToolLogger(), fullPath, new string[0]);
             command.Region = "us-west-2";
             command.Configuration = "Release";
@@ -249,6 +254,7 @@ namespace Amazon.Lambda.Tools.Test
             command.CloudFormationTemplate = "serverless.template";
             command.CloudFormationOutputTemplate = Path.Combine(Path.GetTempPath(),  "output-serverless.template");
             command.S3Bucket = "serverless-package-test-" + DateTime.Now.Ticks;
+            command.DisableInteractive = true;
 
             if (File.Exists(command.CloudFormationOutputTemplate))
                 File.Delete(command.CloudFormationOutputTemplate);

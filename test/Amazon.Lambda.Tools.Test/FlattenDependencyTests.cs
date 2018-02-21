@@ -14,7 +14,7 @@ namespace Amazon.Lambda.Tools.Test
         private string GetTestProjectPath(string project)
         {
             var assembly = this.GetType().GetTypeInfo().Assembly;
-            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../FlattenDependencyTestProjects/" + project);
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/FlattenDependencyTestProjects/" + project);
             return fullPath;
         }
 

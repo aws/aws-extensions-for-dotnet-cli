@@ -1,0 +1,11 @@
+﻿{
+  "Comment": "Workflow of polls being activated and deactivated",
+  "StartAt": "Schedule",
+  "States": {
+    "Schedule": {
+      "Type": "Task",
+      "Resource": "${LambdaTask.Arn}",
+      "End": true
+    }
+  }
+}
