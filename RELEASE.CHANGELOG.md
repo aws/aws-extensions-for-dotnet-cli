@@ -1,3 +1,9 @@
+### Release 2018-02-25
+
+* **Amazon.ECS.Tools (1.1.2)**
+    * Fixed issue with docker tag incorrectly being written out to the aws-beanstalk-tools-defaults.json.
+    * Fixed error handling when searching for the solution file for the project being deployed.
+
 ### Release 2018-02-14
 
 * **Amazon.ECS.Tools (1.1.1)**

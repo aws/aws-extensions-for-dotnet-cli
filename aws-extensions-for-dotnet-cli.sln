@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2006
+VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A5EA2C7D-846F-4266-8423-EFC4BA0FE4B6}"
 EndProject
@@ -26,6 +26,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{90827CB6-7488-4B53-904B-F045BCC754F3}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
+		RELEASE.CHANGELOG.md = RELEASE.CHANGELOG.md
 	EndProjectSection
 EndProject
 Global
