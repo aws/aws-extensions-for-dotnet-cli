@@ -274,7 +274,7 @@ namespace Amazon.ECS.Tools.Commands
             if (Directory.GetFiles(projectLocation, "*.sln", SearchOption.TopDirectoryOnly).Length != 0)
                 return projectLocation;
 
-            var parent = Directory.GetParent(projectLocation).FullName;
+            var parent = Directory.GetParent(projectLocation)?.FullName;
             if (parent == null)
                 throw new DockerToolsException("Unable to determine directory for the solution", DockerToolsException.ECSErrorCode.FailedToFindSolutionDirectory);
 
