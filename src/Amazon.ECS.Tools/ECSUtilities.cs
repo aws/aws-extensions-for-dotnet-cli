@@ -122,7 +122,7 @@ namespace Amazon.ECS.Tools
             {
                 logger.WriteLine($"Checking to see if cluster {clusterName} exists");
                 var response = await ecsClient.DescribeClustersAsync(new DescribeClustersRequest { Clusters = new List<string> { clusterName } });
-                if(response.Clusters.Count == 0)
+                if (response.Clusters.Count == 0 || string.Equals(response.Clusters[0].Status, "INACTIVE", StringComparison.OrdinalIgnoreCase))
                 {
                     logger.WriteLine($"... Cluster does not exist, creating cluster {clusterName}");
                     await ecsClient.CreateClusterAsync(new CreateClusterRequest { ClusterName = clusterName });
