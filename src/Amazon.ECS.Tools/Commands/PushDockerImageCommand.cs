@@ -235,6 +235,8 @@ namespace Amazon.ECS.Tools.Commands
                     string line;
                     while ((line = reader.ReadLine()) != null)
                     {
+                        var noSpaceLine = line.Replace(" ", "");
+
                         if (line.StartsWith("COPY ") && line.Contains(":-"))
                         {
                             int start = line.IndexOf(":-") + 2;
@@ -246,12 +248,12 @@ namespace Amazon.ECS.Tools.Commands
                             this.Logger?.WriteLine("... Determined dotnet publish location configured to: " + details.ExpectedPublishLocation);
                             break;
                         }
-                        else if(line.Replace(" ", "").StartsWith("RUNdotnetpublish"))
+                        else if(noSpaceLine.StartsWith("RUNdotnetpublish"))
                         {
                             details.SkipDotnetBuild = true;
                             this.Logger?.WriteLine("... Skip building project since it is done as part of Dockerfile");
                         }
-                        else if(line.Replace(" ", "").StartsWith("COPY*.sln"))
+                        else if(noSpaceLine.StartsWith("COPY") && noSpaceLine.EndsWith(".sln./"))
                         {
                             details.BuildFromSolutionDirectory = true;
                             this.Logger?.WriteLine("... Determined that docker build needs to be run from solution folder.");
