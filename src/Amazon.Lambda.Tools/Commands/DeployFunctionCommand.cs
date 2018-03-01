@@ -116,189 +116,166 @@ namespace Amazon.Lambda.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
-            try
+            string projectLocation = this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false);
+            string zipArchivePath = null;
+            string package = this.GetStringValueOrDefault(this.Package, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE, false);
+            if(string.IsNullOrEmpty(package))
             {
-                string projectLocation = this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false);
-                string zipArchivePath = null;
-                string package = this.GetStringValueOrDefault(this.Package, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE, false);
-                if(string.IsNullOrEmpty(package))
+                string configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, true);
+                string targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
+                string msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
+
+                ValidateTargetFrameworkAndLambdaRuntime();
+
+                bool disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
+                LambdaPackager.CreateApplicationBundle(this.DefaultConfig, this.Logger, this.WorkingDirectory, projectLocation, configuration, targetFramework, msbuildParameters, disableVersionCheck, out _, ref zipArchivePath);
+                if (string.IsNullOrEmpty(zipArchivePath))
+                    return false;
+            }
+            else
+            {
+                if(!File.Exists(package))
+                    throw new LambdaToolsException($"Package {package} does not exist", LambdaToolsException.LambdaErrorCode.InvalidPackage);
+                if(!string.Equals(Path.GetExtension(package), ".zip", StringComparison.OrdinalIgnoreCase))
+                    throw new LambdaToolsException($"Package {package} must be a zip file", LambdaToolsException.LambdaErrorCode.InvalidPackage);
+
+                this.Logger.WriteLine($"Skipping compilation and using precompiled package {package}");
+                zipArchivePath = package;
+            }
+
+
+            using (var stream = new MemoryStream(File.ReadAllBytes(zipArchivePath)))
+            {
+                var s3Bucket = this.GetStringValueOrDefault(this.S3Bucket, LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET, false);
+                string s3Key = null;
+                if (!string.IsNullOrEmpty(s3Bucket))
                 {
-                    string configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, true);
-                    string targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
-                    string msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
+                    await Utilities.ValidateBucketRegionAsync(this.S3Client, s3Bucket);
 
-                    ValidateTargetFrameworkAndLambdaRuntime();
-
-                    bool disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
-                    LambdaPackager.CreateApplicationBundle(this.DefaultConfig, this.Logger, this.WorkingDirectory, projectLocation, configuration, targetFramework, msbuildParameters, disableVersionCheck, out _, ref zipArchivePath);
-                    if (string.IsNullOrEmpty(zipArchivePath))
-                        return false;
+                    var functionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true);
+                    var s3Prefix = this.GetStringValueOrDefault(this.S3Prefix, LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX, false);
+                    s3Key = await Utilities.UploadToS3Async(this.Logger, this.S3Client, s3Bucket, s3Prefix, functionName, stream);
                 }
-                else
+
+
+                var currentConfiguration = await GetFunctionConfigurationAsync();
+                if (currentConfiguration == null)
                 {
-                    if(!File.Exists(package))
-                        throw new LambdaToolsException($"Package {package} does not exist", LambdaToolsException.LambdaErrorCode.InvalidPackage);
-                    if(!string.Equals(Path.GetExtension(package), ".zip", StringComparison.OrdinalIgnoreCase))
-                        throw new LambdaToolsException($"Package {package} must be a zip file", LambdaToolsException.LambdaErrorCode.InvalidPackage);
-
-                    this.Logger.WriteLine($"Skipping compilation and using precompiled package {package}");
-                    zipArchivePath = package;
-                }
-
-
-                using (var stream = new MemoryStream(File.ReadAllBytes(zipArchivePath)))
-                {
-                    var s3Bucket = this.GetStringValueOrDefault(this.S3Bucket, LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET, false);
-                    string s3Key = null;
-                    if (!string.IsNullOrEmpty(s3Bucket))
+                    this.Logger.WriteLine($"Creating new Lambda function {this.FunctionName}");
+                    var createRequest = new CreateFunctionRequest
                     {
-                        await Utilities.ValidateBucketRegionAsync(this.S3Client, s3Bucket);
-
-                        var functionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true);
-                        var s3Prefix = this.GetStringValueOrDefault(this.S3Prefix, LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX, false);
-                        s3Key = await Utilities.UploadToS3Async(this.Logger, this.S3Client, s3Bucket, s3Prefix, functionName, stream);
-                    }
-
-
-                    var currentConfiguration = await GetFunctionConfigurationAsync();
-                    if (currentConfiguration == null)
-                    {
-                        this.Logger.WriteLine($"Creating new Lambda function {this.FunctionName}");
-                        var createRequest = new CreateFunctionRequest
+                        FunctionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true),
+                        Description = this.GetStringValueOrDefault(this.Description, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_DESCRIPTION, false),
+                        Role = this.GetStringValueOrDefault(this.Role, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE, true),
+                        Handler = this.GetStringValueOrDefault(this.Handler, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER, true),
+                        Publish = this.GetBoolValueOrDefault(this.Publish, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_PUBLISH, false).GetValueOrDefault(),
+                        MemorySize = this.GetIntValueOrDefault(this.MemorySize, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_MEMORY_SIZE, true).GetValueOrDefault(),
+                        Runtime = this.GetStringValueOrDefault(this.Runtime, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME, true),
+                        Timeout = this.GetIntValueOrDefault(this.Timeout, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT, true).GetValueOrDefault(),
+                        KMSKeyArn = this.GetStringValueOrDefault(this.KMSKeyArn, LambdaDefinedCommandOptions.ARGUMENT_KMS_KEY_ARN, false),
+                        VpcConfig = new VpcConfig
                         {
-                            FunctionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true),
-                            Description = this.GetStringValueOrDefault(this.Description, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_DESCRIPTION, false),
-                            Role = this.GetStringValueOrDefault(this.Role, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE, true),
-                            Handler = this.GetStringValueOrDefault(this.Handler, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER, true),
-                            Publish = this.GetBoolValueOrDefault(this.Publish, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_PUBLISH, false).GetValueOrDefault(),
-                            MemorySize = this.GetIntValueOrDefault(this.MemorySize, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_MEMORY_SIZE, true).GetValueOrDefault(),
-                            Runtime = this.GetStringValueOrDefault(this.Runtime, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME, true),
-                            Timeout = this.GetIntValueOrDefault(this.Timeout, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT, true).GetValueOrDefault(),
-                            KMSKeyArn = this.GetStringValueOrDefault(this.KMSKeyArn, LambdaDefinedCommandOptions.ARGUMENT_KMS_KEY_ARN, false),
-                            VpcConfig = new VpcConfig
-                            {
-                                SubnetIds = this.GetStringValuesOrDefault(this.SubnetIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SUBNETS, false)?.ToList(),
-                                SecurityGroupIds = this.GetStringValuesOrDefault(this.SecurityGroupIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SECURITY_GROUPS, false)?.ToList()
-                            }
+                            SubnetIds = this.GetStringValuesOrDefault(this.SubnetIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SUBNETS, false)?.ToList(),
+                            SecurityGroupIds = this.GetStringValuesOrDefault(this.SecurityGroupIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SECURITY_GROUPS, false)?.ToList()
+                        }
+                    };
+
+                    var environmentVariables = this.GetKeyValuePairOrDefault(this.EnvironmentVariables, LambdaDefinedCommandOptions.ARGUMENT_ENVIRONMENT_VARIABLES, false);
+                    if(environmentVariables != null && environmentVariables.Count > 0)
+                    {
+                        createRequest.Environment = new Model.Environment
+                        {
+                            Variables = environmentVariables
                         };
 
-                        var environmentVariables = this.GetKeyValuePairOrDefault(this.EnvironmentVariables, LambdaDefinedCommandOptions.ARGUMENT_ENVIRONMENT_VARIABLES, false);
-                        if(environmentVariables != null && environmentVariables.Count > 0)
-                        {
-                            createRequest.Environment = new Model.Environment
-                            {
-                                Variables = environmentVariables
-                            };
+                    }
 
-                        }
+                    var tags = this.GetKeyValuePairOrDefault(this.Tags, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TAGS, false);
+                    if(tags != null && tags.Count > 0)
+                    {
+                        createRequest.Tags = tags;
+                    }
 
-                        var tags = this.GetKeyValuePairOrDefault(this.Tags, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TAGS, false);
-                        if(tags != null && tags.Count > 0)
-                        {
-                            createRequest.Tags = tags;
-                        }
+                    var deadLetterQueue = this.GetStringValueOrDefault(this.DeadLetterTargetArn, LambdaDefinedCommandOptions.ARGUMENT_DEADLETTER_TARGET_ARN, false);
+                    if(!string.IsNullOrEmpty(deadLetterQueue))
+                    {
+                        createRequest.DeadLetterConfig = new DeadLetterConfig {TargetArn = deadLetterQueue };
+                    }
 
-                        var deadLetterQueue = this.GetStringValueOrDefault(this.DeadLetterTargetArn, LambdaDefinedCommandOptions.ARGUMENT_DEADLETTER_TARGET_ARN, false);
-                        if(!string.IsNullOrEmpty(deadLetterQueue))
-                        {
-                            createRequest.DeadLetterConfig = new DeadLetterConfig {TargetArn = deadLetterQueue };
-                        }
+                    var tracingMode = this.GetStringValueOrDefault(this.TracingMode, LambdaDefinedCommandOptions.ARGUMENT_TRACING_MODE, false);
+                    if(!string.IsNullOrEmpty(tracingMode))
+                    {
+                        createRequest.TracingConfig = new TracingConfig { Mode = tracingMode };
+                    }
 
-                        var tracingMode = this.GetStringValueOrDefault(this.TracingMode, LambdaDefinedCommandOptions.ARGUMENT_TRACING_MODE, false);
-                        if(!string.IsNullOrEmpty(tracingMode))
+                    if (s3Bucket != null)
+                    {
+                        createRequest.Code = new FunctionCode
                         {
-                            createRequest.TracingConfig = new TracingConfig { Mode = tracingMode };
-                        }
-
-                        if (s3Bucket != null)
-                        {
-                            createRequest.Code = new FunctionCode
-                            {
-                                S3Bucket = s3Bucket,
-                                S3Key = s3Key
-                            };
-                        }
-                        else
-                        {
-                            createRequest.Code = new FunctionCode
-                            {
-                                ZipFile = stream
-                            };
-                        }
-
-
-                        try
-                        {
-                            await this.LambdaClient.CreateFunctionAsync(createRequest);
-                            this.Logger.WriteLine("New Lambda function created");
-                        }
-                        catch (Exception e)
-                        {
-                            throw new LambdaToolsException($"Error creating Lambda function: {e.Message}", LambdaToolsException.LambdaErrorCode.LambdaCreateFunction, e);
-                        }
+                            S3Bucket = s3Bucket,
+                            S3Key = s3Key
+                        };
                     }
                     else
                     {
-                        this.Logger.WriteLine($"Updating code for existing function {this.FunctionName}");
-
-                        var updateCodeRequest = new UpdateFunctionCodeRequest
+                        createRequest.Code = new FunctionCode
                         {
-                            FunctionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true)
+                            ZipFile = stream
                         };
+                    }
 
-                        if (s3Bucket != null)
-                        {
-                            updateCodeRequest.S3Bucket = s3Bucket;
-                            updateCodeRequest.S3Key = s3Key;
-                        }
-                        else
-                        {
-                            updateCodeRequest.ZipFile = stream;
-                        }
 
-                        try
-                        {
-                            await this.LambdaClient.UpdateFunctionCodeAsync(updateCodeRequest);
-                        }
-                        catch (Exception e)
-                        {
-                            throw new LambdaToolsException($"Error updating code for Lambda function: {e.Message}", LambdaToolsException.LambdaErrorCode.LambdaUpdateFunctionCode, e);
-                        }
-
-                        await base.UpdateConfigAsync(currentConfiguration);
-
-                        await base.ApplyTags(currentConfiguration.FunctionArn);
-
-                        var publish = this.GetBoolValueOrDefault(this.Publish, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_PUBLISH, false).GetValueOrDefault();
-                        if(publish)
-                        {
-                            await base.PublishFunctionAsync(updateCodeRequest.FunctionName);
-                        }
+                    try
+                    {
+                        await this.LambdaClient.CreateFunctionAsync(createRequest);
+                        this.Logger.WriteLine("New Lambda function created");
+                    }
+                    catch (Exception e)
+                    {
+                        throw new LambdaToolsException($"Error creating Lambda function: {e.Message}", LambdaToolsException.LambdaErrorCode.LambdaCreateFunction, e);
                     }
                 }
-
-                return true;
-            }
-            catch (ToolsException e)
-            {
-                this.Logger.WriteLine(e.Message);
-                this.LastToolsException = e;
-                return false;
-            }
-            catch (Exception e)
-            {
-                this.Logger.WriteLine($"Unknown error executing Lambda deployment: {e.Message}");
-                this.Logger.WriteLine(e.StackTrace);
-                var inner = e.InnerException;
-                for (var i = 1; inner != null; i++)
+                else
                 {
-                    this.Logger.WriteLine(new string('\t', i) + inner.Message);
-                    this.Logger.WriteLine(new string('\t', i) + inner.StackTrace);
-                    inner = inner.InnerException;
-                }
+                    this.Logger.WriteLine($"Updating code for existing function {this.FunctionName}");
 
-                return false;
+                    var updateCodeRequest = new UpdateFunctionCodeRequest
+                    {
+                        FunctionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true)
+                    };
+
+                    if (s3Bucket != null)
+                    {
+                        updateCodeRequest.S3Bucket = s3Bucket;
+                        updateCodeRequest.S3Key = s3Key;
+                    }
+                    else
+                    {
+                        updateCodeRequest.ZipFile = stream;
+                    }
+
+                    try
+                    {
+                        await this.LambdaClient.UpdateFunctionCodeAsync(updateCodeRequest);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new LambdaToolsException($"Error updating code for Lambda function: {e.Message}", LambdaToolsException.LambdaErrorCode.LambdaUpdateFunctionCode, e);
+                    }
+
+                    await base.UpdateConfigAsync(currentConfiguration);
+
+                    await base.ApplyTags(currentConfiguration.FunctionArn);
+
+                    var publish = this.GetBoolValueOrDefault(this.Publish, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_PUBLISH, false).GetValueOrDefault();
+                    if(publish)
+                    {
+                        await base.PublishFunctionAsync(updateCodeRequest.FunctionName);
+                    }
+                }
             }
+
+            return true;
         }
 
         private void ValidateTargetFrameworkAndLambdaRuntime()

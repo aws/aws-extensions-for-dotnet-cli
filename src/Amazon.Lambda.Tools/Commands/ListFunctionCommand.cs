@@ -39,43 +39,28 @@ namespace Amazon.Lambda.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
-            try
+            ListFunctionsRequest request = new ListFunctionsRequest();
+            ListFunctionsResponse response = null;
+            do
             {
-                ListFunctionsRequest request = new ListFunctionsRequest();
-                ListFunctionsResponse response = null;
-                do
+                if (response != null)
+                    request.Marker = response.NextMarker;
+
+                try
                 {
-                    if (response != null)
-                        request.Marker = response.NextMarker;
+                    response = await this.LambdaClient.ListFunctionsAsync(request);
+                }
+                catch (Exception e)
+                {
+                    throw new LambdaToolsException("Error listing Lambda functions: " + e.Message, LambdaToolsException.LambdaErrorCode.LambdaListFunctions, e);
+                }
 
-                    try
-                    {
-                        response = await this.LambdaClient.ListFunctionsAsync(request);
-                    }
-                    catch (Exception e)
-                    {
-                        throw new LambdaToolsException("Error listing Lambda functions: " + e.Message, LambdaToolsException.LambdaErrorCode.LambdaListFunctions, e);
-                    }
+                foreach (var function in response.Functions)
+                {
+                    this.Logger.WriteLine((function.FunctionName.PadRight(40) + " (" + function.Runtime + ")").PadRight(10) + "\t" + function.Description);
+                }
 
-                    foreach (var function in response.Functions)
-                    {
-                        this.Logger.WriteLine((function.FunctionName.PadRight(40) + " (" + function.Runtime + ")").PadRight(10) + "\t" + function.Description);
-                    }
-
-                } while (!string.IsNullOrEmpty(response.NextMarker));
-            }
-            catch (ToolsException e)
-            {
-                this.Logger.WriteLine(e.Message);
-                this.LastToolsException = e;
-                return false;
-            }
-            catch (Exception e)
-            {
-                this.Logger.WriteLine($"Unknown error listing Lambda functions: {e.Message}");
-                this.Logger.WriteLine(e.StackTrace);
-                return false;
-            }
+            } while (!string.IsNullOrEmpty(response.NextMarker));
 
             return true;
         }

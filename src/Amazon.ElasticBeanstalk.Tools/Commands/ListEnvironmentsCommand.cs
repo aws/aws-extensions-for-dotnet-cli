@@ -36,44 +36,30 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
         {
             try
             {
-                try
-                {
-                    var response = new DescribeEnvironmentsResponse();
+                var response = new DescribeEnvironmentsResponse();
 
-                    do
+                do
+                {
+                    response = await this.EBClient.DescribeEnvironmentsAsync(new DescribeEnvironmentsRequest
                     {
-                        response = await this.EBClient.DescribeEnvironmentsAsync(new DescribeEnvironmentsRequest
-                        {
-                            NextToken = response.NextToken
-                        });
+                        NextToken = response.NextToken
+                    });
 
-                        foreach(var environment in response.Environments)
-                        {
-                            if (environment.Status == EnvironmentStatus.Terminated)
-                                continue;
+                    foreach(var environment in response.Environments)
+                    {
+                        if (environment.Status == EnvironmentStatus.Terminated)
+                            continue;
 
-                            this.Logger?.WriteLine((environment.EnvironmentName + " (" + environment.Status + "/" + environment.Health + ")").PadRight(45) + "  http://" + (environment.CNAME ?? environment.EndpointURL) + "/");
-                        }
+                        this.Logger?.WriteLine((environment.EnvironmentName + " (" + environment.Status + "/" + environment.Health + ")").PadRight(45) + "  http://" + (environment.CNAME ?? environment.EndpointURL) + "/");
+                    }
 
-                    } while (!string.IsNullOrEmpty(response.NextToken));
-                }
-                catch (Exception e)
-                {
-                    throw new ElasticBeanstalkExceptions(string.Format("Error listing environments: {0}", e.Message), ElasticBeanstalkExceptions.EBCode.FailedToDeleteEnvironment);
-                }
-            }
-            catch (ToolsException e)
-            {
-                this.Logger?.WriteLine(e.Message);
-                this.LastToolsException = e;
-                return false;
+                } while (!string.IsNullOrEmpty(response.NextToken));
             }
             catch (Exception e)
             {
-                this.Logger?.WriteLine($"Unknown error listing Elastic Beanstalk environments: {e.Message}");
-                this.Logger?.WriteLine(e.StackTrace);
-                return false;
+                throw new ElasticBeanstalkExceptions(string.Format("Error listing environments: {0}", e.Message), ElasticBeanstalkExceptions.EBCode.FailedToDeleteEnvironment);
             }
+
             return true;
         }
 

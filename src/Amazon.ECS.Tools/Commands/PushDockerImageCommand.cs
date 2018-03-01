@@ -64,71 +64,58 @@ namespace Amazon.ECS.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
-            try
+
+            var configuration = this.GetStringValueOrDefault(this.PushDockerImageProperties.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false) ?? "Release";
+            var targetFramework = this.GetStringValueOrDefault(this.PushDockerImageProperties.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
+            this.PushDockerImageProperties.DockerImageTag = this.GetStringValueOrDefault(this.PushDockerImageProperties.DockerImageTag, ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG, true).ToLower();
+
+            if (!this.PushDockerImageProperties.DockerImageTag.Contains(":"))
+                this.PushDockerImageProperties.DockerImageTag += ":latest";
+
+            var projectLocation = Utilities.DetermineProjectLocation(this.WorkingDirectory, this.ProjectLocation);
+            var dockerDetails = InspectDockerFile(projectLocation);
+
+
+            if (!dockerDetails.SkipDotnetBuild)
             {
-                string configuration = this.GetStringValueOrDefault(this.PushDockerImageProperties.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false) ?? "Release";
-                string targetFramework = this.GetStringValueOrDefault(this.PushDockerImageProperties.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
-                this.PushDockerImageProperties.DockerImageTag = this.GetStringValueOrDefault(this.PushDockerImageProperties.DockerImageTag, ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG, true).ToLower();
-
-                if (!this.PushDockerImageProperties.DockerImageTag.Contains(":"))
-                    this.PushDockerImageProperties.DockerImageTag += ":latest";
-
-                var projectLocation = Utilities.DetermineProjectLocation(this.WorkingDirectory, this.ProjectLocation);
-                var dockerDetails = InspectDockerFile(projectLocation);
-
-
-                if (!dockerDetails.SkipDotnetBuild)
+                var dotnetCli = new DotNetCLIWrapper(this.Logger, projectLocation);
+                this.Logger?.WriteLine("Executing publish command");
+                if (dotnetCli.Publish(projectLocation, dockerDetails.ExpectedPublishLocation, targetFramework, configuration) != 0)
                 {
-                    var dotnetCli = new DotNetCLIWrapper(this.Logger, projectLocation);
-                    this.Logger?.WriteLine("Executing publish command");
-                    if (dotnetCli.Publish(projectLocation, dockerDetails.ExpectedPublishLocation, targetFramework, configuration) != 0)
-                    {
-                        throw new DockerToolsException("Error executing \"dotnet publish\"", DockerToolsException.CommonErrorCode.DotnetPublishFailed);
-                    }
+                    throw new DockerToolsException("Error executing \"dotnet publish\"", DockerToolsException.CommonErrorCode.DotnetPublishFailed);
                 }
-
-                var dockerCli = new DockerCLIWrapper(this.Logger, projectLocation);
-                this.Logger?.WriteLine("Executing docker build");
-
-                string dockerBuildWorkingDirectory = dockerDetails.BuildFromSolutionDirectory ? DetermineSolutionDirectory(projectLocation) : projectLocation;
-
-                if (dockerCli.Build(this.DefaultConfig, dockerBuildWorkingDirectory, Path.Combine(projectLocation, "Dockerfile"), this.PushDockerImageProperties.DockerImageTag) != 0)
-                {
-                    throw new DockerToolsException("Error executing \"docker build\"", DockerToolsException.ECSErrorCode.DockerBuildFailed);
-                }
-
-                await InitiateDockerLogin(dockerCli);
-
-                Repository repository = await SetupECRRepository(this.PushDockerImageProperties.DockerImageTag.Substring(0, this.PushDockerImageProperties.DockerImageTag.IndexOf(':')));
-
-                var targetTag = repository.RepositoryUri + this.PushDockerImageProperties.DockerImageTag.Substring(this.PushDockerImageProperties.DockerImageTag.IndexOf(':'));
-                this.Logger?.WriteLine($"Taging image {this.PushDockerImageProperties.DockerImageTag} with {targetTag}");
-                if (dockerCli.Tag(this.PushDockerImageProperties.DockerImageTag, targetTag) != 0)
-                {
-                    throw new DockerToolsException("Error executing \"docker tag\"", DockerToolsException.ECSErrorCode.DockerTagFail);
-                }
-
-                this.Logger?.WriteLine("Pushing image to ECR repository");
-                if (dockerCli.Push(targetTag) != 0)
-                {
-                    throw new DockerToolsException("Error executing \"docker push\"", DockerToolsException.ECSErrorCode.DockerPushFail);
-                }
-
-                this.PushedImageUri = targetTag;
-                this.Logger?.WriteLine($"Image {this.PushedImageUri} Push Complete. ");
             }
-            catch (DockerToolsException e)
+
+            var dockerCli = new DockerCLIWrapper(this.Logger, projectLocation);
+            this.Logger?.WriteLine("Executing docker build");
+
+            string dockerBuildWorkingDirectory = dockerDetails.BuildFromSolutionDirectory ? DetermineSolutionDirectory(projectLocation) : projectLocation;
+
+            if (dockerCli.Build(this.DefaultConfig, dockerBuildWorkingDirectory, Path.Combine(projectLocation, "Dockerfile"), this.PushDockerImageProperties.DockerImageTag) != 0)
             {
-                this.Logger?.WriteLine(e.Message);
-                this.LastToolsException = e;
-                return false;
+                throw new DockerToolsException("Error executing \"docker build\"", DockerToolsException.ECSErrorCode.DockerBuildFailed);
             }
-            catch (Exception e)
+
+            await InitiateDockerLogin(dockerCli);
+
+            Repository repository = await SetupECRRepository(this.PushDockerImageProperties.DockerImageTag.Substring(0, this.PushDockerImageProperties.DockerImageTag.IndexOf(':')));
+
+            var targetTag = repository.RepositoryUri + this.PushDockerImageProperties.DockerImageTag.Substring(this.PushDockerImageProperties.DockerImageTag.IndexOf(':'));
+            this.Logger?.WriteLine($"Taging image {this.PushDockerImageProperties.DockerImageTag} with {targetTag}");
+            if (dockerCli.Tag(this.PushDockerImageProperties.DockerImageTag, targetTag) != 0)
             {
-                this.Logger?.WriteLine($"Unknown error executing docker push to Amazon Elastic Container Registry: {e.Message}");
-                this.Logger?.WriteLine(e.StackTrace);
-                return false;
+                throw new DockerToolsException("Error executing \"docker tag\"", DockerToolsException.ECSErrorCode.DockerTagFail);
             }
+
+            this.Logger?.WriteLine("Pushing image to ECR repository");
+            if (dockerCli.Push(targetTag) != 0)
+            {
+                throw new DockerToolsException("Error executing \"docker push\"", DockerToolsException.ECSErrorCode.DockerPushFail);
+            }
+
+            this.PushedImageUri = targetTag;
+            this.Logger?.WriteLine($"Image {this.PushedImageUri} Push Complete. ");
+
             return true;
         }
 

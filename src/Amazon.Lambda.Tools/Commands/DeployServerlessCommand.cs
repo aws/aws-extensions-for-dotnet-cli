@@ -126,248 +126,233 @@ namespace Amazon.Lambda.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
+            string projectLocation = this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false);
+            string stackName = this.GetStringValueOrDefault(this.StackName, LambdaDefinedCommandOptions.ARGUMENT_STACK_NAME, true);
+            string s3Bucket = this.GetStringValueOrDefault(this.S3Bucket, LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET, true);
+            string s3Prefix = this.GetStringValueOrDefault(this.S3Prefix, LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX, false);
+            string templatePath = this.GetStringValueOrDefault(this.CloudFormationTemplate, LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_TEMPLATE, true);
+
+            await Utilities.ValidateBucketRegionAsync(this.S3Client, s3Bucket);
+
+            if (!Path.IsPathRooted(templatePath))
+            {
+                templatePath = Path.Combine(Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation), templatePath);
+            }
+
+            if (!File.Exists(templatePath))
+                throw new LambdaToolsException($"Template file {templatePath} cannot be found.", LambdaToolsException.LambdaErrorCode.ServerlessTemplateNotFound);
+
+
+            // Build and bundle up the users project.
+            string zipArchivePath = null;
+            string package = this.GetStringValueOrDefault(this.Package, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE, false);
+            if(string.IsNullOrEmpty(package))
+            {
+                string configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, true);
+                string targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
+                string msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
+                bool disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
+
+                LambdaPackager.CreateApplicationBundle(this.DefaultConfig, this.Logger, this.WorkingDirectory, projectLocation, configuration, targetFramework, msbuildParameters, disableVersionCheck, out _, ref zipArchivePath);
+                if (string.IsNullOrEmpty(zipArchivePath))
+                    return false;
+            }
+            else
+            {
+                if (!File.Exists(package))
+                    throw new LambdaToolsException($"Package {package} does not exist", LambdaToolsException.LambdaErrorCode.InvalidPackage);
+                if (!string.Equals(Path.GetExtension(package), ".zip", StringComparison.OrdinalIgnoreCase))
+                    throw new LambdaToolsException($"Package {package} must be a zip file", LambdaToolsException.LambdaErrorCode.InvalidPackage);
+
+                this.Logger.WriteLine($"Skipping compilation and using precompiled package {package}");
+                zipArchivePath = package;
+            }
+
+
+            // Upload the app bundle to S3
+            string s3KeyApplicationBundle;
+            using (var stream = new MemoryStream(File.ReadAllBytes(zipArchivePath)))
+            {
+                s3KeyApplicationBundle = await Utilities.UploadToS3Async(this.Logger, this.S3Client, s3Bucket, s3Prefix, stackName, stream);
+            }
+
+            // Read in the serverless template and update all the locations for Lambda functions to point to the app bundle that was just uploaded.
+            string templateBody = File.ReadAllText(templatePath);
+
+            // Process any template substitutions
+            templateBody = LambdaUtilities.ProcessTemplateSubstitions(this.Logger, templateBody, this.GetKeyValuePairOrDefault(this.TemplateSubstitutions, LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_TEMPLATE_SUBSTITUTIONS, false), Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation));
+
+            templateBody = LambdaUtilities.UpdateCodeLocationInTemplate(templateBody, s3Bucket, s3KeyApplicationBundle);
+
+            // Upload the template to S3 instead of sending it straight to CloudFormation to avoid the size limitation
+            string s3KeyTemplate;
+            using (var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(templateBody)))
+            {
+                s3KeyTemplate = await Utilities.UploadToS3Async(this.Logger, this.S3Client, s3Bucket, s3Prefix, stackName + "-" + Path.GetFileName(templatePath), stream);
+            }
+
+            var existingStack = await GetExistingStackAsync(stackName);
+            this.Logger.WriteLine("Found existing stack: " + (existingStack != null));
+            var changeSetName = "Lambda-Tools-" + DateTime.Now.Ticks;
+
+            // Determine if the stack is in a good state to be updated.
+            ChangeSetType changeSetType;
+            if (existingStack == null || existingStack.StackStatus == StackStatus.REVIEW_IN_PROGRESS || existingStack.StackStatus == StackStatus.DELETE_COMPLETE)
+            {
+                changeSetType = ChangeSetType.CREATE;
+            }
+            // If the status was ROLLBACK_COMPLETE that means the stack failed on initial creation
+            // and the resources were cleaned up. It is safe to delete the stack so we can recreate it.
+            else if (existingStack.StackStatus == StackStatus.ROLLBACK_COMPLETE)
+            {
+                await DeleteRollbackCompleteStackAsync(existingStack);
+                changeSetType = ChangeSetType.CREATE;
+            }
+            // If the status was ROLLBACK_IN_PROGRESS that means the initial creation is failing.
+            // Wait to see if it goes into ROLLBACK_COMPLETE status meaning everything got cleaned up and then delete it.
+            else if (existingStack.StackStatus == StackStatus.ROLLBACK_IN_PROGRESS)
+            {
+                existingStack = await WaitForNoLongerInProgress(existingStack.StackName);
+                if (existingStack != null && existingStack.StackStatus == StackStatus.ROLLBACK_COMPLETE)
+                    await DeleteRollbackCompleteStackAsync(existingStack);
+
+                changeSetType = ChangeSetType.CREATE;
+            }
+            // If the status was DELETE_IN_PROGRESS then just wait for delete to complete 
+            else if (existingStack.StackStatus == StackStatus.DELETE_IN_PROGRESS)
+            {
+                await WaitForNoLongerInProgress(existingStack.StackName);
+                changeSetType = ChangeSetType.CREATE;
+            }
+            // The Stack state is in a normal state and ready to be updated.
+            else if (existingStack.StackStatus == StackStatus.CREATE_COMPLETE ||
+                    existingStack.StackStatus == StackStatus.UPDATE_COMPLETE ||
+                    existingStack.StackStatus == StackStatus.UPDATE_ROLLBACK_COMPLETE)
+            {
+                changeSetType = ChangeSetType.UPDATE;
+            }
+            // All other states means the Stack is in an inconsistent state.
+            else
+            {
+                this.Logger.WriteLine($"The stack's current state of {existingStack.StackStatus} is invalid for updating");
+                return false;
+
+            }
+
+            CreateChangeSetResponse changeSetResponse;
             try
             {
-                string projectLocation = this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false);
-                string stackName = this.GetStringValueOrDefault(this.StackName, LambdaDefinedCommandOptions.ARGUMENT_STACK_NAME, true);
-                string s3Bucket = this.GetStringValueOrDefault(this.S3Bucket, LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET, true);
-                string s3Prefix = this.GetStringValueOrDefault(this.S3Prefix, LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX, false);
-                string templatePath = this.GetStringValueOrDefault(this.CloudFormationTemplate, LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_TEMPLATE, true);
-
-                await Utilities.ValidateBucketRegionAsync(this.S3Client, s3Bucket);
-
-                if (!Path.IsPathRooted(templatePath))
+                var definedParameters = GetTemplateDefinedParameters(templateBody);
+                var templateParameters = GetTemplateParameters(changeSetType == ChangeSetType.UPDATE ? existingStack : null, definedParameters);
+                if (templateParameters != null && templateParameters.Any())
                 {
-                    templatePath = Path.Combine(Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation), templatePath);
-                }
-
-                if (!File.Exists(templatePath))
-                    throw new LambdaToolsException($"Template file {templatePath} cannot be found.", LambdaToolsException.LambdaErrorCode.ServerlessTemplateNotFound);
-
-
-                // Build and bundle up the users project.
-                string zipArchivePath = null;
-                string package = this.GetStringValueOrDefault(this.Package, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE, false);
-                if(string.IsNullOrEmpty(package))
-                {
-                    string configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, true);
-                    string targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
-                    string msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
-                    bool disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
-
-                    LambdaPackager.CreateApplicationBundle(this.DefaultConfig, this.Logger, this.WorkingDirectory, projectLocation, configuration, targetFramework, msbuildParameters, disableVersionCheck, out _, ref zipArchivePath);
-                    if (string.IsNullOrEmpty(zipArchivePath))
-                        return false;
-                }
-                else
-                {
-                    if (!File.Exists(package))
-                        throw new LambdaToolsException($"Package {package} does not exist", LambdaToolsException.LambdaErrorCode.InvalidPackage);
-                    if (!string.Equals(Path.GetExtension(package), ".zip", StringComparison.OrdinalIgnoreCase))
-                        throw new LambdaToolsException($"Package {package} must be a zip file", LambdaToolsException.LambdaErrorCode.InvalidPackage);
-
-                    this.Logger.WriteLine($"Skipping compilation and using precompiled package {package}");
-                    zipArchivePath = package;
-                }
-
-
-                // Upload the app bundle to S3
-                string s3KeyApplicationBundle;
-                using (var stream = new MemoryStream(File.ReadAllBytes(zipArchivePath)))
-                {
-                    s3KeyApplicationBundle = await Utilities.UploadToS3Async(this.Logger, this.S3Client, s3Bucket, s3Prefix, stackName, stream);
-                }
-
-                // Read in the serverless template and update all the locations for Lambda functions to point to the app bundle that was just uploaded.
-                string templateBody = File.ReadAllText(templatePath);
-
-                // Process any template substitutions
-                templateBody = LambdaUtilities.ProcessTemplateSubstitions(this.Logger, templateBody, this.GetKeyValuePairOrDefault(this.TemplateSubstitutions, LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_TEMPLATE_SUBSTITUTIONS, false), Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation));
-
-                templateBody = LambdaUtilities.UpdateCodeLocationInTemplate(templateBody, s3Bucket, s3KeyApplicationBundle);
-
-                // Upload the template to S3 instead of sending it straight to CloudFormation to avoid the size limitation
-                string s3KeyTemplate;
-                using (var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(templateBody)))
-                {
-                    s3KeyTemplate = await Utilities.UploadToS3Async(this.Logger, this.S3Client, s3Bucket, s3Prefix, stackName + "-" + Path.GetFileName(templatePath), stream);
-                }
-
-                var existingStack = await GetExistingStackAsync(stackName);
-                this.Logger.WriteLine("Found existing stack: " + (existingStack != null));
-                var changeSetName = "Lambda-Tools-" + DateTime.Now.Ticks;
-
-                // Determine if the stack is in a good state to be updated.
-                ChangeSetType changeSetType;
-                if (existingStack == null || existingStack.StackStatus == StackStatus.REVIEW_IN_PROGRESS || existingStack.StackStatus == StackStatus.DELETE_COMPLETE)
-                {
-                    changeSetType = ChangeSetType.CREATE;
-                }
-                // If the status was ROLLBACK_COMPLETE that means the stack failed on initial creation
-                // and the resources were cleaned up. It is safe to delete the stack so we can recreate it.
-                else if (existingStack.StackStatus == StackStatus.ROLLBACK_COMPLETE)
-                {
-                    await DeleteRollbackCompleteStackAsync(existingStack);
-                    changeSetType = ChangeSetType.CREATE;
-                }
-                // If the status was ROLLBACK_IN_PROGRESS that means the initial creation is failing.
-                // Wait to see if it goes into ROLLBACK_COMPLETE status meaning everything got cleaned up and then delete it.
-                else if (existingStack.StackStatus == StackStatus.ROLLBACK_IN_PROGRESS)
-                {
-                    existingStack = await WaitForNoLongerInProgress(existingStack.StackName);
-                    if (existingStack != null && existingStack.StackStatus == StackStatus.ROLLBACK_COMPLETE)
-                        await DeleteRollbackCompleteStackAsync(existingStack);
-
-                    changeSetType = ChangeSetType.CREATE;
-                }
-                // If the status was DELETE_IN_PROGRESS then just wait for delete to complete 
-                else if (existingStack.StackStatus == StackStatus.DELETE_IN_PROGRESS)
-                {
-                    await WaitForNoLongerInProgress(existingStack.StackName);
-                    changeSetType = ChangeSetType.CREATE;
-                }
-                // The Stack state is in a normal state and ready to be updated.
-                else if (existingStack.StackStatus == StackStatus.CREATE_COMPLETE ||
-                        existingStack.StackStatus == StackStatus.UPDATE_COMPLETE ||
-                        existingStack.StackStatus == StackStatus.UPDATE_ROLLBACK_COMPLETE)
-                {
-                    changeSetType = ChangeSetType.UPDATE;
-                }
-                // All other states means the Stack is in an inconsistent state.
-                else
-                {
-                    this.Logger.WriteLine($"The stack's current state of {existingStack.StackStatus} is invalid for updating");
-                    return false;
-
-                }
-
-                CreateChangeSetResponse changeSetResponse;
-                try
-                {
-                    var definedParameters = GetTemplateDefinedParameters(templateBody);
-                    var templateParameters = GetTemplateParameters(changeSetType == ChangeSetType.UPDATE ? existingStack : null, definedParameters);
-                    if (templateParameters != null && templateParameters.Any())
+                    var setParameters = templateParameters.Where(x => !x.UsePreviousValue);
+                    // ReSharper disable once PossibleMultipleEnumeration
+                    if (setParameters.Any())
                     {
-                        var setParameters = templateParameters.Where(x => !x.UsePreviousValue);
-                        // ReSharper disable once PossibleMultipleEnumeration
-                        if (setParameters.Any())
+                        this.Logger.WriteLine("Template Parameters Applied:");
+                        foreach (var parameter in setParameters)
                         {
-                            this.Logger.WriteLine("Template Parameters Applied:");
-                            foreach (var parameter in setParameters)
-                            {
-                                this.Logger.WriteLine($"\t{parameter.ParameterKey}: {parameter.ParameterValue}");
-                            }
+                            this.Logger.WriteLine($"\t{parameter.ParameterKey}: {parameter.ParameterValue}");
                         }
                     }
-
-                    var capabilities = new List<string>();
-                    var disabledCapabilties = GetStringValuesOrDefault(this.DisabledCapabilities, LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_DISABLE_CAPABILITIES, false);
-
-                    if (disabledCapabilties?.FirstOrDefault(x => string.Equals(x, "CAPABILITY_IAM", StringComparison.OrdinalIgnoreCase)) == null)
-                    {
-                        capabilities.Add("CAPABILITY_IAM");
-                    }
-                    if (disabledCapabilties?.FirstOrDefault(x => string.Equals(x, "CAPABILITY_NAMED_IAM", StringComparison.OrdinalIgnoreCase)) == null)
-                    {
-                        capabilities.Add("CAPABILITY_NAMED_IAM");
-                    }
-
-                    var changeSetRequest = new CreateChangeSetRequest
-                    {
-                        StackName = stackName,
-                        Parameters = templateParameters,
-                        ChangeSetName = changeSetName,
-                        ChangeSetType = changeSetType,
-                        Capabilities = capabilities,
-                        RoleARN = this.GetStringValueOrDefault(this.CloudFormationRole, LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_ROLE, false),
-                        Tags = new List<Tag> { new Tag { Key = LambdaConstants.SERVERLESS_TAG_NAME, Value = "true" } }
-                    };
-
-                    if(new FileInfo(templatePath).Length < LambdaConstants.MAX_TEMPLATE_BODY_IN_REQUEST_SIZE)
-                    {
-                        changeSetRequest.TemplateBody = templateBody;
-                    }
-                    else
-                    {
-                        changeSetRequest.TemplateURL = this.S3Client.GetPreSignedURL(new S3.Model.GetPreSignedUrlRequest { BucketName = s3Bucket, Key = s3KeyTemplate, Expires = DateTime.Now.AddHours(1) });
-                    }
-
-                    // Create the change set which performs the transformation on the Serverless resources in the template.
-                    changeSetResponse = await this.CloudFormationClient.CreateChangeSetAsync(changeSetRequest);
-
-
-                    this.Logger.WriteLine("CloudFormation change set created");
                 }
-                catch(LambdaToolsException)
+
+                var capabilities = new List<string>();
+                var disabledCapabilties = GetStringValuesOrDefault(this.DisabledCapabilities, LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_DISABLE_CAPABILITIES, false);
+
+                if (disabledCapabilties?.FirstOrDefault(x => string.Equals(x, "CAPABILITY_IAM", StringComparison.OrdinalIgnoreCase)) == null)
                 {
-                    throw;
+                    capabilities.Add("CAPABILITY_IAM");
                 }
-                catch (Exception e)
+                if (disabledCapabilties?.FirstOrDefault(x => string.Equals(x, "CAPABILITY_NAMED_IAM", StringComparison.OrdinalIgnoreCase)) == null)
                 {
-                    throw new LambdaToolsException($"Error creating CloudFormation change set: {e.Message}", LambdaToolsException.LambdaErrorCode.CloudFormationCreateStack, e);
+                    capabilities.Add("CAPABILITY_NAMED_IAM");
                 }
 
-                // The change set can take a few seconds to be reviewed and be ready to be executed.
-                if (!await WaitForChangeSetBeingAvailableAsync(changeSetResponse.Id))
-                    return false;
-
-                var executeChangeSetRequest = new ExecuteChangeSetRequest
+                var changeSetRequest = new CreateChangeSetRequest
                 {
                     StackName = stackName,
-                    ChangeSetName = changeSetResponse.Id
+                    Parameters = templateParameters,
+                    ChangeSetName = changeSetName,
+                    ChangeSetType = changeSetType,
+                    Capabilities = capabilities,
+                    RoleARN = this.GetStringValueOrDefault(this.CloudFormationRole, LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_ROLE, false),
+                    Tags = new List<Tag> { new Tag { Key = LambdaConstants.SERVERLESS_TAG_NAME, Value = "true" } }
                 };
 
-                // Execute the change set.
-                DateTime timeChangeSetExecuted = DateTime.Now;
-                try
+                if(new FileInfo(templatePath).Length < LambdaConstants.MAX_TEMPLATE_BODY_IN_REQUEST_SIZE)
                 {
-                    await this.CloudFormationClient.ExecuteChangeSetAsync(executeChangeSetRequest);
-                    if (changeSetType == ChangeSetType.CREATE)
-                        this.Logger.WriteLine($"Created CloudFormation stack {stackName}");
-                    else
-                        this.Logger.WriteLine($"Initiated CloudFormation stack update on {stackName}");
+                    changeSetRequest.TemplateBody = templateBody;
                 }
-                catch (Exception e)
+                else
                 {
-                    throw new LambdaToolsException($"Error executing CloudFormation change set: {e.Message}", LambdaToolsException.LambdaErrorCode.CloudFormationCreateChangeSet, e);
+                    changeSetRequest.TemplateURL = this.S3Client.GetPreSignedURL(new S3.Model.GetPreSignedUrlRequest { BucketName = s3Bucket, Key = s3KeyTemplate, Expires = DateTime.Now.AddHours(1) });
                 }
 
-                // Wait for the stack to finish unless the user opts out of waiting. The VS Toolkit opts out and
-                // instead shows the stack view in the IDE, enabling the user to view progress.
-                var shouldWait = GetBoolValueOrDefault(this.WaitForStackToComplete, LambdaDefinedCommandOptions.ARGUMENT_STACK_WAIT, false);
-                if (!shouldWait.HasValue || shouldWait.Value)
-                {
-                    var updatedStack = await WaitStackToCompleteAsync(stackName, timeChangeSetExecuted);
+                // Create the change set which performs the transformation on the Serverless resources in the template.
+                changeSetResponse = await this.CloudFormationClient.CreateChangeSetAsync(changeSetRequest);
 
-                    if (updatedStack.StackStatus == StackStatus.CREATE_COMPLETE || updatedStack.StackStatus == StackStatus.UPDATE_COMPLETE)
-                    {
-                        this.Logger.WriteLine($"Stack finished updating with status: {updatedStack.StackStatus}");
 
-                        // Display the output parameters.
-                        DisplayOutputs(updatedStack);
-                    }
-                    else
-                    {
-
-                        this.Logger.WriteLine($"Stack update failed with status: {updatedStack.StackStatus} ({updatedStack.StackStatusReason})");
-                        return false;
-                    }
-                }
-
-                return true;
+                this.Logger.WriteLine("CloudFormation change set created");
             }
-            catch (ToolsException e)
+            catch(LambdaToolsException)
             {
-                this.Logger.WriteLine(e.Message);
-                this.LastToolsException = e;
-                return false;
+                throw;
             }
             catch (Exception e)
             {
-                this.Logger.WriteLine($"Unknown error executing AWS Serverless deployment: {e.Message}");
-                this.Logger.WriteLine(e.StackTrace);
-                return false;
+                throw new LambdaToolsException($"Error creating CloudFormation change set: {e.Message}", LambdaToolsException.LambdaErrorCode.CloudFormationCreateStack, e);
             }
+
+            // The change set can take a few seconds to be reviewed and be ready to be executed.
+            if (!await WaitForChangeSetBeingAvailableAsync(changeSetResponse.Id))
+                return false;
+
+            var executeChangeSetRequest = new ExecuteChangeSetRequest
+            {
+                StackName = stackName,
+                ChangeSetName = changeSetResponse.Id
+            };
+
+            // Execute the change set.
+            DateTime timeChangeSetExecuted = DateTime.Now;
+            try
+            {
+                await this.CloudFormationClient.ExecuteChangeSetAsync(executeChangeSetRequest);
+                if (changeSetType == ChangeSetType.CREATE)
+                    this.Logger.WriteLine($"Created CloudFormation stack {stackName}");
+                else
+                    this.Logger.WriteLine($"Initiated CloudFormation stack update on {stackName}");
+            }
+            catch (Exception e)
+            {
+                throw new LambdaToolsException($"Error executing CloudFormation change set: {e.Message}", LambdaToolsException.LambdaErrorCode.CloudFormationCreateChangeSet, e);
+            }
+
+            // Wait for the stack to finish unless the user opts out of waiting. The VS Toolkit opts out and
+            // instead shows the stack view in the IDE, enabling the user to view progress.
+            var shouldWait = GetBoolValueOrDefault(this.WaitForStackToComplete, LambdaDefinedCommandOptions.ARGUMENT_STACK_WAIT, false);
+            if (!shouldWait.HasValue || shouldWait.Value)
+            {
+                var updatedStack = await WaitStackToCompleteAsync(stackName, timeChangeSetExecuted);
+
+                if (updatedStack.StackStatus == StackStatus.CREATE_COMPLETE || updatedStack.StackStatus == StackStatus.UPDATE_COMPLETE)
+                {
+                    this.Logger.WriteLine($"Stack finished updating with status: {updatedStack.StackStatus}");
+
+                    // Display the output parameters.
+                    DisplayOutputs(updatedStack);
+                }
+                else
+                {
+
+                    this.Logger.WriteLine($"Stack update failed with status: {updatedStack.StackStatus} ({updatedStack.StackStatusReason})");
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>

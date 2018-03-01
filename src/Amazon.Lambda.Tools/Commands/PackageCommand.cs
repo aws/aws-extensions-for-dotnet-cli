@@ -84,41 +84,25 @@ namespace Amazon.Lambda.Tools.Commands
 
             return Task.Run(() =>
             {
+                var configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, true);
+                var targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
+                var projectLocation = this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false);
+                var msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
+                var disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
 
-                try
+                var zipArchivePath = GetStringValueOrDefault(this.OutputPackageFileName, LambdaDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE, false);
+
+                var success = LambdaPackager.CreateApplicationBundle(this.DefaultConfig, this.Logger, this.WorkingDirectory, projectLocation, configuration, targetFramework, msbuildParameters, disableVersionCheck, out _, ref zipArchivePath);
+                if (!success)
                 {
-                    var configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, true);
-                    var targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
-                    var projectLocation = this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false);
-                    var msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
-                    var disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
-
-                    var zipArchivePath = GetStringValueOrDefault(this.OutputPackageFileName, LambdaDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE, false);
-
-                    var success = LambdaPackager.CreateApplicationBundle(this.DefaultConfig, this.Logger, this.WorkingDirectory, projectLocation, configuration, targetFramework, msbuildParameters, disableVersionCheck, out _, ref zipArchivePath);
-                    if (!success)
-                    {
-                        this.Logger.WriteLine("Failed to create application package");
-                        return false;
-                    }
-
-
-                    this.Logger.WriteLine("Lambda project successfully packaged: " + zipArchivePath);
-
-                    return true;
-                }
-                catch (ToolsException e)
-                {
-                    this.Logger.WriteLine(e.Message);
-                    this.LastToolsException = e;
+                    this.Logger.WriteLine("Failed to create application package");
                     return false;
                 }
-                catch (Exception e)
-                {
-                    this.Logger.WriteLine($"Unknown error executing Lambda packaging: {e.Message}");
-                    this.Logger.WriteLine(e.StackTrace);
-                    return false;
-                }
+
+
+                this.Logger.WriteLine("Lambda project successfully packaged: " + zipArchivePath);
+
+                return true;
             });
         }
         

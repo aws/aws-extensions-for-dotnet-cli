@@ -62,64 +62,49 @@ namespace Amazon.Lambda.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
+
+            var invokeRequest = new InvokeRequest
+            {
+                FunctionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true),
+                LogType = LogType.Tail
+            };
+
+            if (!string.IsNullOrWhiteSpace(this.Payload))
+            {
+                if (File.Exists(this.Payload))
+                {
+                    Logger.WriteLine($"Reading {Path.GetFullPath(this.Payload)} as input to Lambda function");
+                    invokeRequest.Payload = File.ReadAllText(this.Payload);
+                }
+                else
+                {
+                    invokeRequest.Payload = this.Payload.Trim();
+                }
+
+                if(!invokeRequest.Payload.StartsWith("{"))
+                {
+                    invokeRequest.Payload = "\"" + invokeRequest.Payload + "\"";
+                }
+            }
+
+            InvokeResponse response;
             try
             {
-                var invokeRequest = new InvokeRequest
-                {
-                    FunctionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true),
-                    LogType = LogType.Tail
-                };
-
-                if (!string.IsNullOrWhiteSpace(this.Payload))
-                {
-                    if (File.Exists(this.Payload))
-                    {
-                        Logger.WriteLine($"Reading {Path.GetFullPath(this.Payload)} as input to Lambda function");
-                        invokeRequest.Payload = File.ReadAllText(this.Payload);
-                    }
-                    else
-                    {
-                        invokeRequest.Payload = this.Payload.Trim();
-                    }
-
-                    if(!invokeRequest.Payload.StartsWith("{"))
-                    {
-                        invokeRequest.Payload = "\"" + invokeRequest.Payload + "\"";
-                    }
-                }
-
-                InvokeResponse response;
-                try
-                {
-                    response = await this.LambdaClient.InvokeAsync(invokeRequest);
-                }
-                catch(Exception e)
-                {
-                    throw new LambdaToolsException("Error invoking Lambda function: " + e.Message, LambdaToolsException.LambdaErrorCode.LambdaInvokeFunction, e);
-                }
-
-                this.Logger.WriteLine("Payload:");
-
-                PrintPayload(response);
-
-                this.Logger.WriteLine("");
-                this.Logger.WriteLine("Log Tail:");
-                var log = System.Text.UTF8Encoding.UTF8.GetString(Convert.FromBase64String(response.LogResult));
-                this.Logger.WriteLine(log);
-
+                response = await this.LambdaClient.InvokeAsync(invokeRequest);
             }
-            catch (ToolsException e)
+            catch(Exception e)
             {
-                this.Logger.WriteLine(e.Message);
-                this.LastToolsException = e;
-                return false;
+                throw new LambdaToolsException("Error invoking Lambda function: " + e.Message, LambdaToolsException.LambdaErrorCode.LambdaInvokeFunction, e);
             }
-            catch (Exception e)
-            {
-                this.Logger.WriteLine($"Unknown error invoking Lambda function: {e.Message}");
-                this.Logger.WriteLine(e.StackTrace);
-                return false;
-            }
+
+            this.Logger.WriteLine("Payload:");
+
+            PrintPayload(response);
+
+            this.Logger.WriteLine("");
+            this.Logger.WriteLine("Log Tail:");
+            var log = System.Text.UTF8Encoding.UTF8.GetString(Convert.FromBase64String(response.LogResult));
+            this.Logger.WriteLine(log);
 
             return true;
         }

@@ -76,126 +76,111 @@ namespace Amazon.ECS.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
+            var skipPush = this.GetBoolValueOrDefault(this.DeployScheduledTaskProperties.SkipImagePush, ECSDefinedCommandOptions.ARGUMENT_SKIP_IMAGE_PUSH, false).GetValueOrDefault();
+            var ecsContainer = this.GetStringValueOrDefault(this.TaskDefinitionProperties.ContainerName, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_NAME, true);
+            var ecsTaskDefinition = this.GetStringValueOrDefault(this.TaskDefinitionProperties.TaskDefinitionName, ECSDefinedCommandOptions.ARGUMENT_TD_NAME, true);
+
+
+            this.PushDockerImageProperties.DockerImageTag = this.GetStringValueOrDefault(this.PushDockerImageProperties.DockerImageTag, ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG, true).ToLower();
+
+            if (!this.PushDockerImageProperties.DockerImageTag.Contains(":"))
+                this.PushDockerImageProperties.DockerImageTag += ":latest";
+
+            if (skipPush)
+            {
+                this.PushDockerImageProperties.DockerImageTag = await ECSUtilities.ExpandImageTagIfNecessary(this.Logger, this.ECRClient, this.PushDockerImageProperties.DockerImageTag);
+            }
+            else
+            {
+                var pushCommand = new PushDockerImageCommand(this.Logger, this.WorkingDirectory, this.OriginalCommandLineArguments)
+                {
+                    ConfigFile = this.ConfigFile,
+                    DisableInteractive = this.DisableInteractive,
+                    Credentials = this.Credentials,
+                    ECRClient = this.ECRClient,
+                    Profile = this.Profile,
+                    ProfileLocation = this.ProfileLocation,
+                    ProjectLocation = this.ProjectLocation,
+                    Region = this.Region,
+                    WorkingDirectory = this.WorkingDirectory,
+
+                    PushDockerImageProperties = this.PushDockerImageProperties,
+                };
+                var success = await pushCommand.ExecuteAsync();
+
+                if (!success)
+                    return false;
+
+                this.PushDockerImageProperties.DockerImageTag = pushCommand.PushedImageUri;
+            }
+
+            var taskDefinitionArn = await ECSUtilities.CreateOrUpdateTaskDefinition(this.Logger, this.ECSClient,
+                this, this.TaskDefinitionProperties, this.PushDockerImageProperties.DockerImageTag, IsFargateLaunch(this.ClusterProperties.LaunchType));
+
+            var ecsCluster = this.GetStringValueOrDefault(this.ClusterProperties.ECSCluster, ECSDefinedCommandOptions.ARGUMENT_ECS_CLUSTER, true);
+            await ECSUtilities.EnsureClusterExistsAsync(this.Logger, this.ECSClient, ecsCluster);
+
+            if (!ecsCluster.Contains(":"))
+            {
+                var arnPrefix = taskDefinitionArn.Substring(0, taskDefinitionArn.LastIndexOf(":task"));
+                ecsCluster = arnPrefix + ":cluster/" + ecsCluster;
+            }
+
+            var ruleName = this.GetStringValueOrDefault(this.DeployScheduledTaskProperties.ScheduleTaskRule, ECSDefinedCommandOptions.ARGUMENT_SCHEDULED_RULE_NAME, true);
+            var targetName = this.GetStringValueOrDefault(this.DeployScheduledTaskProperties.ScheduleTaskRuleTarget, ECSDefinedCommandOptions.ARGUMENT_SCHEDULED_RULE_TARGET, false);
+            if (string.IsNullOrEmpty(targetName))
+                targetName = ruleName;
+
+            var scheduleExpression = this.GetStringValueOrDefault(this.DeployScheduledTaskProperties.ScheduleExpression, ECSDefinedCommandOptions.ARGUMENT_SCHEDULE_EXPRESSION, true);
+            var cweRole = this.GetStringValueOrDefault(this.DeployScheduledTaskProperties.CloudWatchEventIAMRole, ECSDefinedCommandOptions.ARGUMENT_CLOUDWATCHEVENT_ROLE, true);
+            var desiredCount = this.GetIntValueOrDefault(this.DeployScheduledTaskProperties.DesiredCount, ECSDefinedCommandOptions.ARGUMENT_ECS_DESIRED_COUNT, false);
+            if (!desiredCount.HasValue)
+                desiredCount = 1;
+
+            string ruleArn = null;
             try
             {
-                var skipPush = this.GetBoolValueOrDefault(this.DeployScheduledTaskProperties.SkipImagePush, ECSDefinedCommandOptions.ARGUMENT_SKIP_IMAGE_PUSH, false).GetValueOrDefault();
-                var ecsContainer = this.GetStringValueOrDefault(this.TaskDefinitionProperties.ContainerName, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_NAME, true);
-                var ecsTaskDefinition = this.GetStringValueOrDefault(this.TaskDefinitionProperties.TaskDefinitionName, ECSDefinedCommandOptions.ARGUMENT_TD_NAME, true);
-
-
-                this.PushDockerImageProperties.DockerImageTag = this.GetStringValueOrDefault(this.PushDockerImageProperties.DockerImageTag, ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG, true).ToLower();
-
-                if (!this.PushDockerImageProperties.DockerImageTag.Contains(":"))
-                    this.PushDockerImageProperties.DockerImageTag += ":latest";
-
-                if (skipPush)
+                ruleArn = (await this.CWEClient.PutRuleAsync(new PutRuleRequest
                 {
-                    this.PushDockerImageProperties.DockerImageTag = await ECSUtilities.ExpandImageTagIfNecessary(this.Logger, this.ECRClient, this.PushDockerImageProperties.DockerImageTag);
-                }
-                else
+                    Name = ruleName,
+                    ScheduleExpression = scheduleExpression,
+                    State = RuleState.ENABLED
+                })).RuleArn;
+
+                this.Logger?.WriteLine($"Put CloudWatch Event rule {ruleName} with expression {scheduleExpression}");
+            }
+            catch(Exception e)
+            {
+                throw new DockerToolsException("Error creating CloudWatch Event rule: " + e.Message, DockerToolsException.ECSErrorCode.PutRuleFail);
+            }
+
+            try
+            {
+                await this.CWEClient.PutTargetsAsync(new PutTargetsRequest
                 {
-                    var pushCommand = new PushDockerImageCommand(this.Logger, this.WorkingDirectory, this.OriginalCommandLineArguments)
+                    Rule = ruleName,
+                    Targets = new List<Target>
                     {
-                        ConfigFile = this.ConfigFile,
-                        DisableInteractive = this.DisableInteractive,
-                        Credentials = this.Credentials,
-                        ECRClient = this.ECRClient,
-                        Profile = this.Profile,
-                        ProfileLocation = this.ProfileLocation,
-                        ProjectLocation = this.ProjectLocation,
-                        Region = this.Region,
-                        WorkingDirectory = this.WorkingDirectory,
-
-                        PushDockerImageProperties = this.PushDockerImageProperties,
-                    };
-                    var success = await pushCommand.ExecuteAsync();
-
-                    if (!success)
-                        return false;
-
-                    this.PushDockerImageProperties.DockerImageTag = pushCommand.PushedImageUri;
-                }
-
-                var taskDefinitionArn = await ECSUtilities.CreateOrUpdateTaskDefinition(this.Logger, this.ECSClient,
-                    this, this.TaskDefinitionProperties, this.PushDockerImageProperties.DockerImageTag, IsFargateLaunch(this.ClusterProperties.LaunchType));
-
-                var ecsCluster = this.GetStringValueOrDefault(this.ClusterProperties.ECSCluster, ECSDefinedCommandOptions.ARGUMENT_ECS_CLUSTER, true);
-                await ECSUtilities.EnsureClusterExistsAsync(this.Logger, this.ECSClient, ecsCluster);
-
-                if (!ecsCluster.Contains(":"))
-                {
-                    var arnPrefix = taskDefinitionArn.Substring(0, taskDefinitionArn.LastIndexOf(":task"));
-                    ecsCluster = arnPrefix + ":cluster/" + ecsCluster;
-                }
-
-                var ruleName = this.GetStringValueOrDefault(this.DeployScheduledTaskProperties.ScheduleTaskRule, ECSDefinedCommandOptions.ARGUMENT_SCHEDULED_RULE_NAME, true);
-                var targetName = this.GetStringValueOrDefault(this.DeployScheduledTaskProperties.ScheduleTaskRuleTarget, ECSDefinedCommandOptions.ARGUMENT_SCHEDULED_RULE_TARGET, false);
-                if (string.IsNullOrEmpty(targetName))
-                    targetName = ruleName;
-
-                var scheduleExpression = this.GetStringValueOrDefault(this.DeployScheduledTaskProperties.ScheduleExpression, ECSDefinedCommandOptions.ARGUMENT_SCHEDULE_EXPRESSION, true);
-                var cweRole = this.GetStringValueOrDefault(this.DeployScheduledTaskProperties.CloudWatchEventIAMRole, ECSDefinedCommandOptions.ARGUMENT_CLOUDWATCHEVENT_ROLE, true);
-                var desiredCount = this.GetIntValueOrDefault(this.DeployScheduledTaskProperties.DesiredCount, ECSDefinedCommandOptions.ARGUMENT_ECS_DESIRED_COUNT, false);
-                if (!desiredCount.HasValue)
-                    desiredCount = 1;
-
-                string ruleArn = null;
-                try
-                {
-                    ruleArn = (await this.CWEClient.PutRuleAsync(new PutRuleRequest
-                    {
-                        Name = ruleName,
-                        ScheduleExpression = scheduleExpression,
-                        State = RuleState.ENABLED
-                    })).RuleArn;
-
-                    this.Logger?.WriteLine($"Put CloudWatch Event rule {ruleName} with expression {scheduleExpression}");
-                }
-                catch(Exception e)
-                {
-                    throw new DockerToolsException("Error creating CloudWatch Event rule: " + e.Message, DockerToolsException.ECSErrorCode.PutRuleFail);
-                }
-
-                try
-                {
-                    await this.CWEClient.PutTargetsAsync(new PutTargetsRequest
-                    {
-                        Rule = ruleName,
-                        Targets = new List<Target>
+                        new Target
                         {
-                            new Target
+                            Arn = ecsCluster,
+                            RoleArn = cweRole,
+                            Id = targetName,
+                            EcsParameters = new EcsParameters
                             {
-                                Arn = ecsCluster,
-                                RoleArn = cweRole,
-                                Id = targetName,
-                                EcsParameters = new EcsParameters
-                                {
-                                    TaskCount = desiredCount.Value,
-                                    TaskDefinitionArn = taskDefinitionArn
-                                }
+                                TaskCount = desiredCount.Value,
+                                TaskDefinitionArn = taskDefinitionArn
                             }
                         }
-                    });
-                    this.Logger?.WriteLine($"Put CloudWatch Event target {targetName}");
-                }
-                catch (Exception e)
-                {
-                    throw new DockerToolsException("Error creating CloudWatch Event target: " + e.Message, DockerToolsException.ECSErrorCode.PutTargetFail);
-                }
-
-            }
-            catch (ToolsException e)
-            {
-                this.Logger?.WriteLine(e.Message);
-                this.LastToolsException = e;
-                return false;
+                    }
+                });
+                this.Logger?.WriteLine($"Put CloudWatch Event target {targetName}");
             }
             catch (Exception e)
             {
-                this.Logger?.WriteLine($"Unknown error deploying the scheduled task: {e.Message}");
-                this.Logger?.WriteLine(e.StackTrace);
-                return false;
+                throw new DockerToolsException("Error creating CloudWatch Event target: " + e.Message, DockerToolsException.ECSErrorCode.PutTargetFail);
             }
+
             return true;
         }
 

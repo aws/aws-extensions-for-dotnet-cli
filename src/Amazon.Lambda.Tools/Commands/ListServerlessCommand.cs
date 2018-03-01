@@ -43,62 +43,47 @@ namespace Amazon.Lambda.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
-            try
+            const int TIMESTAMP_WIDTH = 20;
+            const int STACK_NAME_WIDTH = 30;
+            const int STACK_STATUS_WIDTH = 20;
+
+            this.Logger.WriteLine("Name".PadRight(STACK_NAME_WIDTH) + " " + 
+                "Status".PadRight(STACK_STATUS_WIDTH) + " " +
+                "Created".PadRight(TIMESTAMP_WIDTH) + " " +
+                "Last Modifed".PadRight(TIMESTAMP_WIDTH)
+                );
+            this.Logger.WriteLine($"{new string('-', STACK_NAME_WIDTH)} {new string('-', STACK_STATUS_WIDTH)} {new string('-', TIMESTAMP_WIDTH)} {new string('-', TIMESTAMP_WIDTH)}");
+
+            var request = new DescribeStacksRequest();
+            DescribeStacksResponse response = null;
+            do
             {
-                const int TIMESTAMP_WIDTH = 20;
-                const int STACK_NAME_WIDTH = 30;
-                const int STACK_STATUS_WIDTH = 20;
+                if (response != null)
+                    request.NextToken = response.NextToken;
 
-                this.Logger.WriteLine("Name".PadRight(STACK_NAME_WIDTH) + " " + 
-                    "Status".PadRight(STACK_STATUS_WIDTH) + " " +
-                    "Created".PadRight(TIMESTAMP_WIDTH) + " " +
-                    "Last Modifed".PadRight(TIMESTAMP_WIDTH)
-                    );
-                this.Logger.WriteLine($"{new string('-', STACK_NAME_WIDTH)} {new string('-', STACK_STATUS_WIDTH)} {new string('-', TIMESTAMP_WIDTH)} {new string('-', TIMESTAMP_WIDTH)}");
-
-                var request = new DescribeStacksRequest();
-                DescribeStacksResponse response = null;
-                do
+                try
                 {
-                    if (response != null)
-                        request.NextToken = response.NextToken;
+                    response = await this.CloudFormationClient.DescribeStacksAsync(request);
+                }
+                catch (Exception e)
+                {
+                    throw new LambdaToolsException("Error listing AWS Serverless applications: " + e.Message, LambdaToolsException.LambdaErrorCode.CloudFormationDescribeStack, e);
+                }
 
-                    try
+                foreach (var stack in response.Stacks)
+                {
+                    if (stack.Tags.Any(x => string.Equals(x.Key, LambdaConstants.SERVERLESS_TAG_NAME)))
                     {
-                        response = await this.CloudFormationClient.DescribeStacksAsync(request);
+                        this.Logger.WriteLine(
+                            stack.StackName.PadRight(STACK_NAME_WIDTH) + " " + 
+                            stack.StackStatus.ToString().PadRight(STACK_STATUS_WIDTH) + " " + 
+                            stack.CreationTime.ToString("g").PadRight(STACK_STATUS_WIDTH) + " " +
+                            stack.LastUpdatedTime.ToString("g").PadRight(TIMESTAMP_WIDTH)
+                            );
                     }
-                    catch (Exception e)
-                    {
-                        throw new LambdaToolsException("Error listing AWS Serverless applications: " + e.Message, LambdaToolsException.LambdaErrorCode.CloudFormationDescribeStack, e);
-                    }
+                }
 
-                    foreach (var stack in response.Stacks)
-                    {
-                        if (stack.Tags.Any(x => string.Equals(x.Key, LambdaConstants.SERVERLESS_TAG_NAME)))
-                        {
-                            this.Logger.WriteLine(
-                                stack.StackName.PadRight(STACK_NAME_WIDTH) + " " + 
-                                stack.StackStatus.ToString().PadRight(STACK_STATUS_WIDTH) + " " + 
-                                stack.CreationTime.ToString("g").PadRight(STACK_STATUS_WIDTH) + " " +
-                                stack.LastUpdatedTime.ToString("g").PadRight(TIMESTAMP_WIDTH)
-                                );
-                        }
-                    }
-
-                } while (!string.IsNullOrEmpty(response.NextToken));
-            }
-            catch (ToolsException e)
-            {
-                this.Logger.WriteLine(e.Message);
-                this.LastToolsException = e;
-                return false;
-            }
-            catch (Exception e)
-            {
-                this.Logger.WriteLine($"Unknown error listing CloudFormation stacks: {e.Message}");
-                this.Logger.WriteLine(e.StackTrace);
-                return false;
-            }
+            } while (!string.IsNullOrEmpty(response.NextToken));
 
             return true;
         }

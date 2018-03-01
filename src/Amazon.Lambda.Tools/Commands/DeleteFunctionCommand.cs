@@ -56,37 +56,23 @@ namespace Amazon.Lambda.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
+
+            var deleteRequest = new DeleteFunctionRequest
+            {
+                FunctionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true)
+            };
+
+
             try
             {
-                var deleteRequest = new DeleteFunctionRequest
-                {
-                    FunctionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true)
-                };
-
-
-                try
-                {
-                    await this.LambdaClient.DeleteFunctionAsync(deleteRequest);
-                }
-                catch(Exception e)
-                {
-                    throw new LambdaToolsException("Error deleting Lambda function: " + e.Message, LambdaToolsException.LambdaErrorCode.LambdaDeleteFunction, e);
-                }
-
-                this.Logger.WriteLine($"Lambda function {deleteRequest.FunctionName} deleted");
+                await this.LambdaClient.DeleteFunctionAsync(deleteRequest);
             }
-            catch (ToolsException e)
+            catch(Exception e)
             {
-                this.Logger.WriteLine(e.Message);
-                this.LastToolsException = e;
-                return false;
+                throw new LambdaToolsException("Error deleting Lambda function: " + e.Message, LambdaToolsException.LambdaErrorCode.LambdaDeleteFunction, e);
             }
-            catch (Exception e)
-            {
-                this.Logger.WriteLine($"Unknown error deleting Lambda function: {e.Message}");
-                this.Logger.WriteLine(e.StackTrace);
-                return false;
-            }
+
+            this.Logger?.WriteLine($"Lambda function {deleteRequest.FunctionName} deleted");
 
             return true;
         }

@@ -124,38 +124,23 @@ namespace Amazon.Lambda.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
-            try
+            var currentConfiguration = await GetFunctionConfigurationAsync();
+            if(currentConfiguration == null)
             {
-                var currentConfiguration = await GetFunctionConfigurationAsync();
-                if(currentConfiguration == null)
-                {
-                    this.Logger.WriteLine($"Could not find existing Lambda function {this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true)}");
-                    return false;
-                }
-                await UpdateConfigAsync(currentConfiguration);
-
-                await ApplyTags(currentConfiguration.FunctionArn);
-
-                var publish = this.GetBoolValueOrDefault(this.Publish, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_PUBLISH, false).GetValueOrDefault();
-                if (publish)
-                {
-                    await PublishFunctionAsync(currentConfiguration.FunctionName);
-                }
-
-                return true;
-            }
-            catch(ToolsException e)
-            {
-                this.Logger.WriteLine(e.Message);
-                this.LastToolsException = e;
+                this.Logger.WriteLine($"Could not find existing Lambda function {this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true)}");
                 return false;
             }
-            catch(Exception e)
+            await UpdateConfigAsync(currentConfiguration);
+
+            await ApplyTags(currentConfiguration.FunctionArn);
+
+            var publish = this.GetBoolValueOrDefault(this.Publish, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_PUBLISH, false).GetValueOrDefault();
+            if (publish)
             {
-                this.Logger.WriteLine($"Unknown error updating configuration for Lambda deployment: {e.Message}");
-                this.Logger.WriteLine(e.StackTrace);
-                return false;
+                await PublishFunctionAsync(currentConfiguration.FunctionName);
             }
+
+            return true;
         }
 
         protected async Task PublishFunctionAsync(string functionName)

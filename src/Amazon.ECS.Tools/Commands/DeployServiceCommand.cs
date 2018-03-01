@@ -92,70 +92,58 @@ namespace Amazon.ECS.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
-            try
+
+            var skipPush = this.GetBoolValueOrDefault(this.DeployServiceProperties.SkipImagePush, ECSDefinedCommandOptions.ARGUMENT_SKIP_IMAGE_PUSH, false).GetValueOrDefault();
+            var ecsContainer = this.GetStringValueOrDefault(this.TaskDefinitionProperties.ContainerName, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_NAME, true);
+            var ecsTaskDefinition = this.GetStringValueOrDefault(this.TaskDefinitionProperties.TaskDefinitionName, ECSDefinedCommandOptions.ARGUMENT_TD_NAME, true);
+
+
+            this.PushDockerImageProperties.DockerImageTag = this.GetStringValueOrDefault(this.PushDockerImageProperties.DockerImageTag, ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG, true).ToLower();
+
+            if (!this.PushDockerImageProperties.DockerImageTag.Contains(":"))
+                this.PushDockerImageProperties.DockerImageTag += ":latest";
+
+            if(skipPush)
             {
-                var skipPush = this.GetBoolValueOrDefault(this.DeployServiceProperties.SkipImagePush, ECSDefinedCommandOptions.ARGUMENT_SKIP_IMAGE_PUSH, false).GetValueOrDefault();
-                var ecsContainer = this.GetStringValueOrDefault(this.TaskDefinitionProperties.ContainerName, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_NAME, true);
-                var ecsTaskDefinition = this.GetStringValueOrDefault(this.TaskDefinitionProperties.TaskDefinitionName, ECSDefinedCommandOptions.ARGUMENT_TD_NAME, true);
-
-
-                this.PushDockerImageProperties.DockerImageTag = this.GetStringValueOrDefault(this.PushDockerImageProperties.DockerImageTag, ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG, true).ToLower();
-
-                if (!this.PushDockerImageProperties.DockerImageTag.Contains(":"))
-                    this.PushDockerImageProperties.DockerImageTag += ":latest";
-
-                if(skipPush)
+                this.PushDockerImageProperties.DockerImageTag = await ECSUtilities.ExpandImageTagIfNecessary(this.Logger, this.ECRClient, this.PushDockerImageProperties.DockerImageTag);
+            }
+            else
+            {
+                var pushCommand = new PushDockerImageCommand(this.Logger, this.WorkingDirectory, this.OriginalCommandLineArguments)
                 {
-                    this.PushDockerImageProperties.DockerImageTag = await ECSUtilities.ExpandImageTagIfNecessary(this.Logger, this.ECRClient, this.PushDockerImageProperties.DockerImageTag);
-                }
-                else
-                {
-                    var pushCommand = new PushDockerImageCommand(this.Logger, this.WorkingDirectory, this.OriginalCommandLineArguments)
-                    {
-                        ConfigFile = this.ConfigFile,
-                        DisableInteractive = this.DisableInteractive,
-                        Credentials = this.Credentials,
-                        ECRClient = this.ECRClient,
-                        Profile = this.Profile,
-                        ProfileLocation = this.ProfileLocation,
-                        ProjectLocation = this.ProjectLocation,
-                        Region = this.Region,
-                        WorkingDirectory = this.WorkingDirectory,
+                    ConfigFile = this.ConfigFile,
+                    DisableInteractive = this.DisableInteractive,
+                    Credentials = this.Credentials,
+                    ECRClient = this.ECRClient,
+                    Profile = this.Profile,
+                    ProfileLocation = this.ProfileLocation,
+                    ProjectLocation = this.ProjectLocation,
+                    Region = this.Region,
+                    WorkingDirectory = this.WorkingDirectory,
 
-                        PushDockerImageProperties = this.PushDockerImageProperties,
-                    };
-                    var success = await pushCommand.ExecuteAsync();
+                    PushDockerImageProperties = this.PushDockerImageProperties,
+                };
+                var success = await pushCommand.ExecuteAsync();
 
-                    if (!success)
-                        return false;
+                if (!success)
+                    return false;
 
-                    this.PushDockerImageProperties.DockerImageTag = pushCommand.PushedImageUri;
-                }
-
-
-                var taskDefinitionArn = await ECSUtilities.CreateOrUpdateTaskDefinition(this.Logger, this.ECSClient, 
-                    this, this.TaskDefinitionProperties, this.PushDockerImageProperties.DockerImageTag, IsFargateLaunch(this.ClusterProperties.LaunchType));
-
-                var ecsCluster = this.GetStringValueOrDefault(this.ClusterProperties.ECSCluster, ECSDefinedCommandOptions.ARGUMENT_ECS_CLUSTER, true);
-                await ECSUtilities.EnsureClusterExistsAsync(this.Logger, this.ECSClient, ecsCluster);
-
-                var ecsService = this.GetStringValueOrDefault(this.DeployServiceProperties.ECSService, ECSDefinedCommandOptions.ARGUMENT_ECS_SERVICE, true);
-
-                await CreateOrUpdateService(ecsCluster, ecsService, taskDefinitionArn, ecsContainer);
-                this.Logger?.WriteLine($"Service {ecsService} on ECS cluster {ecsCluster} has been updated. The Cluster will now deploy the new service version.");
+                this.PushDockerImageProperties.DockerImageTag = pushCommand.PushedImageUri;
             }
-            catch (DockerToolsException e)
-            {
-                this.Logger?.WriteLine(e.Message);
-                this.LastToolsException = e;
-                return false;
-            }
-            catch (Exception e)
-            {
-                this.Logger?.WriteLine($"Unknown error executing deploy-application to an ECS service: {e.Message}");
-                this.Logger?.WriteLine(e.StackTrace);
-                return false;
-            }
+
+
+            var taskDefinitionArn = await ECSUtilities.CreateOrUpdateTaskDefinition(this.Logger, this.ECSClient, 
+                this, this.TaskDefinitionProperties, this.PushDockerImageProperties.DockerImageTag, IsFargateLaunch(this.ClusterProperties.LaunchType));
+
+            var ecsCluster = this.GetStringValueOrDefault(this.ClusterProperties.ECSCluster, ECSDefinedCommandOptions.ARGUMENT_ECS_CLUSTER, true);
+            await ECSUtilities.EnsureClusterExistsAsync(this.Logger, this.ECSClient, ecsCluster);
+
+            var ecsService = this.GetStringValueOrDefault(this.DeployServiceProperties.ECSService, ECSDefinedCommandOptions.ARGUMENT_ECS_SERVICE, true);
+
+            await CreateOrUpdateService(ecsCluster, ecsService, taskDefinitionArn, ecsContainer);
+            this.Logger?.WriteLine($"Service {ecsService} on ECS cluster {ecsCluster} has been updated. The Cluster will now deploy the new service version.");
+
+        
             return true;
         }
 

@@ -96,67 +96,50 @@ namespace Amazon.Lambda.Tools.Commands
         {
             // Disable interactive since this command is intended to be run as part of a pipeline.
             DisableInteractive = true;
+            
+            string projectLocation = this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false);
+            string s3Bucket = this.GetStringValueOrDefault(this.S3Bucket, LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET, true);
+            string s3Prefix = this.GetStringValueOrDefault(this.S3Prefix, LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX, false);
+            string templatePath = this.GetStringValueOrDefault(this.CloudFormationTemplate, LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_TEMPLATE, true);
+            string outputTemplatePath = this.GetStringValueOrDefault(this.CloudFormationOutputTemplate, LambdaDefinedCommandOptions.ARGUMENT_OUTPUT_CLOUDFORMATION_TEMPLATE, true);
 
-            try
+            if (!Path.IsPathRooted(templatePath))
             {
-
-                string projectLocation = this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false);
-                string s3Bucket = this.GetStringValueOrDefault(this.S3Bucket, LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET, true);
-                string s3Prefix = this.GetStringValueOrDefault(this.S3Prefix, LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX, false);
-                string templatePath = this.GetStringValueOrDefault(this.CloudFormationTemplate, LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_TEMPLATE, true);
-                string outputTemplatePath = this.GetStringValueOrDefault(this.CloudFormationOutputTemplate, LambdaDefinedCommandOptions.ARGUMENT_OUTPUT_CLOUDFORMATION_TEMPLATE, true);
-    
-                if (!Path.IsPathRooted(templatePath))
-                {
-                    templatePath = Path.Combine(Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation), templatePath);
-                }
-    
-                if (!File.Exists(templatePath))
-                    throw new LambdaToolsException($"Template file {templatePath} cannot be found.", LambdaToolsException.LambdaErrorCode.ServerlessTemplateNotFound);
-    
-                await Utilities.ValidateBucketRegionAsync(this.S3Client, s3Bucket);
-    
-                string zipArchivePath = null;
-                var configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, true);
-                var targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
-                var msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
-                var disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
-                LambdaPackager.CreateApplicationBundle(this.DefaultConfig, this.Logger, this.WorkingDirectory, projectLocation, configuration, targetFramework, msbuildParameters, disableVersionCheck, out _, ref zipArchivePath);
-                if (string.IsNullOrEmpty(zipArchivePath))
-                    return false;
-    
-                string s3KeyApplicationBundle;
-                using (var stream = new MemoryStream(File.ReadAllBytes(zipArchivePath)))
-                {
-                    s3KeyApplicationBundle = await Utilities.UploadToS3Async(this.Logger, this.S3Client, s3Bucket, s3Prefix, Path.GetFileName(zipArchivePath), stream);
-                }
-    
-                this.Logger.WriteLine($"Updating CloudFormation template to point to application bundle: s3://{s3Bucket}/{s3KeyApplicationBundle}");
-                var templateBody = File.ReadAllText(templatePath);
-    
-                // Process any template substitutions
-                templateBody = LambdaUtilities.ProcessTemplateSubstitions(this.Logger, templateBody, this.GetKeyValuePairOrDefault(this.TemplateSubstitutions, LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_TEMPLATE_SUBSTITUTIONS, false), Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation));
-    
-                var transformedBody = LambdaUtilities.UpdateCodeLocationInTemplate(templateBody, s3Bucket, s3KeyApplicationBundle);
-    
-                this.Logger.WriteLine($"Writing updated template: {outputTemplatePath}");
-                File.WriteAllText(outputTemplatePath, transformedBody);
-    
-                return true;            
+                templatePath = Path.Combine(Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation), templatePath);
             }
-            catch (ToolsException e)
-            {
-                this.Logger.WriteLine(e.Message);
-                this.LastToolsException = e;
+
+            if (!File.Exists(templatePath))
+                throw new LambdaToolsException($"Template file {templatePath} cannot be found.", LambdaToolsException.LambdaErrorCode.ServerlessTemplateNotFound);
+
+            await Utilities.ValidateBucketRegionAsync(this.S3Client, s3Bucket);
+
+            string zipArchivePath = null;
+            var configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, true);
+            var targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
+            var msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
+            var disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
+            LambdaPackager.CreateApplicationBundle(this.DefaultConfig, this.Logger, this.WorkingDirectory, projectLocation, configuration, targetFramework, msbuildParameters, disableVersionCheck, out _, ref zipArchivePath);
+            if (string.IsNullOrEmpty(zipArchivePath))
                 return false;
-            }
-            catch (Exception e)
+
+            string s3KeyApplicationBundle;
+            using (var stream = new MemoryStream(File.ReadAllBytes(zipArchivePath)))
             {
-                this.Logger.WriteLine($"Unknown error executing Lambda packaging: {e.Message}");
-                this.Logger.WriteLine(e.StackTrace);
-                return false;
+                s3KeyApplicationBundle = await Utilities.UploadToS3Async(this.Logger, this.S3Client, s3Bucket, s3Prefix, Path.GetFileName(zipArchivePath), stream);
             }
 
+            this.Logger.WriteLine($"Updating CloudFormation template to point to application bundle: s3://{s3Bucket}/{s3KeyApplicationBundle}");
+            var templateBody = File.ReadAllText(templatePath);
+
+            // Process any template substitutions
+            templateBody = LambdaUtilities.ProcessTemplateSubstitions(this.Logger, templateBody, this.GetKeyValuePairOrDefault(this.TemplateSubstitutions, LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_TEMPLATE_SUBSTITUTIONS, false), Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation));
+
+            var transformedBody = LambdaUtilities.UpdateCodeLocationInTemplate(templateBody, s3Bucket, s3KeyApplicationBundle);
+
+            this.Logger.WriteLine($"Writing updated template: {outputTemplatePath}");
+            File.WriteAllText(outputTemplatePath, transformedBody);
+
+            return true;            
         }
         
         protected override void SaveConfigFile(JsonData data)

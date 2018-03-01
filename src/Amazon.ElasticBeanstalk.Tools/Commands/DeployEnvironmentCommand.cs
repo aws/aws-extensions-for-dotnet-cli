@@ -77,157 +77,143 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
-            try
+            var projectLocation = Utilities.DetermineProjectLocation(this.WorkingDirectory,
+                this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false));
+
+            string configuration = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false) ?? "Release";
+            string targetFramework = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false); 
+
+            if(string.IsNullOrEmpty(targetFramework))
             {
-                var projectLocation = Utilities.DetermineProjectLocation(this.WorkingDirectory,
-                    this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false));
-
-                string configuration = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false) ?? "Release";
-                string targetFramework = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false); 
-
-                if(string.IsNullOrEmpty(targetFramework))
+                targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation);
+                if (string.IsNullOrEmpty(targetFramework))
                 {
-                    targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation);
-                    if (string.IsNullOrEmpty(targetFramework))
-                    {
-                        targetFramework = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
-                    }
+                    targetFramework = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
                 }
+            }
 
-                string application = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Application, EBDefinedCommandOptions.ARGUMENT_EB_APPLICATION, true);
-                string environment = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Environment, EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT, true);
-                string versionLabel = DateTime.Now.Ticks.ToString();
+            string application = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Application, EBDefinedCommandOptions.ARGUMENT_EB_APPLICATION, true);
+            string environment = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Environment, EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT, true);
+            string versionLabel = DateTime.Now.Ticks.ToString();
 
-                bool doesApplicationExist = await DoesApplicationExist(application);
-                bool doesEnvironmentExist = doesApplicationExist ? await DoesEnvironmentExist(application, environment) : false;
+            bool doesApplicationExist = await DoesApplicationExist(application);
+            bool doesEnvironmentExist = doesApplicationExist ? await DoesEnvironmentExist(application, environment) : false;
 
-                if(!doesApplicationExist)
-                {
-                    try
-                    {
-                        this.Logger?.WriteLine("Creating new Elastic Beanstalk Application");
-                        await this.EBClient.CreateApplicationAsync(new CreateApplicationRequest
-                        {
-                            ApplicationName = application
-                        });
-                    }
-                    catch(Exception e)
-                    {
-                        throw new ElasticBeanstalkExceptions("Error creating Elastic Beanstalk application: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedCreateApplication);
-                    }
-                }
-
-
-
-                var dotnetCli = new DotNetCLIWrapper(this.Logger, projectLocation);
-
-                var publishLocation = Utilities.DeterminePublishLocation(null,  projectLocation, configuration, targetFramework);
-                this.Logger?.WriteLine("Determine publish location: " + publishLocation);
-
-
-                this.Logger?.WriteLine("Executing publish command");
-                if (dotnetCli.Publish(projectLocation, publishLocation, targetFramework, configuration) != 0)
-                {
-                    throw new ElasticBeanstalkExceptions("Error executing \"dotnet publish\"", ElasticBeanstalkExceptions.CommonErrorCode.DotnetPublishFailed);
-                }
-
-                SetupAWSDeploymentManifest(publishLocation);
-
-                var zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, new DirectoryInfo(projectLocation).Name + "-" + DateTime.Now.Ticks + ".zip");
-
-                this.Logger?.WriteLine("Zipping up publish folder");
-                Utilities.ZipDirectory(this.Logger, publishLocation, zipArchivePath);
-                this.Logger?.WriteLine("Zip archive created: " + zipArchivePath);
-
-                S3Location s3Loc;
+            if(!doesApplicationExist)
+            {
                 try
                 {
-                    s3Loc = await this.UploadDeploymentPackageAsync(application, versionLabel, zipArchivePath).ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    throw new ElasticBeanstalkExceptions("Error uploading application bundle to S3: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedToUploadBundle);
-                }
-
-                try
-                {
-                    this.Logger?.WriteLine("Creating new application version: " + versionLabel);
-                    await this.EBClient.CreateApplicationVersionAsync(new CreateApplicationVersionRequest
+                    this.Logger?.WriteLine("Creating new Elastic Beanstalk Application");
+                    await this.EBClient.CreateApplicationAsync(new CreateApplicationRequest
                     {
-                        ApplicationName = application,
-                        VersionLabel = versionLabel,
-                        SourceBundle = s3Loc
-                    }).ConfigureAwait(false);
+                        ApplicationName = application
+                    });
                 }
                 catch(Exception e)
                 {
-                    throw new ElasticBeanstalkExceptions("Error creating Elastic Beanstalk application version: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedCreateApplicationVersion);
-                }
-
-                this.Logger?.WriteLine("Getting latest environment event date before update");
-                var startingEventDate = await GetLatestEventDateAsync(application, environment);
-
-                string environmentArn;
-                if(doesEnvironmentExist)
-                {
-                    environmentArn = await UpdateEnvironment(application, environment, versionLabel);
-                }
-                else
-                {
-                    environmentArn = await CreateEnvironment(application, environment, versionLabel);
-                }
-
-                bool? waitForUpdate = this.GetBoolValueOrDefault(this.DeployEnvironmentOptions.WaitForUpdate, EBDefinedCommandOptions.ARGUMENT_WAIT_FOR_UPDATE, false);
-                if(!waitForUpdate.HasValue || waitForUpdate.Value)
-                {
-                    this.Logger?.WriteLine("Waiting for environment update to complete");
-                    var success = await this.WaitForDeploymentCompletionAsync(application, environment, startingEventDate);
-
-                    if (success)
-                        this.Logger?.WriteLine("Update Complete");
-                    else
-                        throw new ElasticBeanstalkExceptions("Environment update failed", ElasticBeanstalkExceptions.EBCode.FailedEnvironmentUpdate);
-
-                }
-                else
-                {
-                    this.Logger?.WriteLine("Environment update initiated");
-                }
-
-                if (doesEnvironmentExist)
-                {
-                    var tags = ConvertToTagsCollection();
-                    if (tags != null && tags.Count > 0)
-                    {
-                        var updateTagsRequest = new UpdateTagsForResourceRequest
-                        {
-                            ResourceArn = environmentArn,
-                            TagsToAdd = tags
-                        };
-                        this.Logger?.WriteLine("Updating Tags on environment");
-                        try
-                        {
-                            await this.EBClient.UpdateTagsForResourceAsync(updateTagsRequest);
-                        }
-                        catch(Exception e)
-                        {
-                            throw new ElasticBeanstalkExceptions("Error updating tags for environment: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedToUpdateTags);
-                        }
-                    }
+                    throw new ElasticBeanstalkExceptions("Error creating Elastic Beanstalk application: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedCreateApplication);
                 }
             }
-            catch (ToolsException e)
+
+
+
+            var dotnetCli = new DotNetCLIWrapper(this.Logger, projectLocation);
+
+            var publishLocation = Utilities.DeterminePublishLocation(null,  projectLocation, configuration, targetFramework);
+            this.Logger?.WriteLine("Determine publish location: " + publishLocation);
+
+
+            this.Logger?.WriteLine("Executing publish command");
+            if (dotnetCli.Publish(projectLocation, publishLocation, targetFramework, configuration) != 0)
             {
-                this.Logger?.WriteLine(e.Message);
-                this.LastToolsException = e;
-                return false;
+                throw new ElasticBeanstalkExceptions("Error executing \"dotnet publish\"", ElasticBeanstalkExceptions.CommonErrorCode.DotnetPublishFailed);
+            }
+
+            SetupAWSDeploymentManifest(publishLocation);
+
+            var zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, new DirectoryInfo(projectLocation).Name + "-" + DateTime.Now.Ticks + ".zip");
+
+            this.Logger?.WriteLine("Zipping up publish folder");
+            Utilities.ZipDirectory(this.Logger, publishLocation, zipArchivePath);
+            this.Logger?.WriteLine("Zip archive created: " + zipArchivePath);
+
+            S3Location s3Loc;
+            try
+            {
+                s3Loc = await this.UploadDeploymentPackageAsync(application, versionLabel, zipArchivePath).ConfigureAwait(false);
             }
             catch (Exception e)
             {
-                this.Logger?.WriteLine($"Unknown error deploying application to Elastic Beanstalk: {e.Message}");
-                this.Logger?.WriteLine(e.StackTrace);
-                return false;
+                throw new ElasticBeanstalkExceptions("Error uploading application bundle to S3: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedToUploadBundle);
             }
+
+            try
+            {
+                this.Logger?.WriteLine("Creating new application version: " + versionLabel);
+                await this.EBClient.CreateApplicationVersionAsync(new CreateApplicationVersionRequest
+                {
+                    ApplicationName = application,
+                    VersionLabel = versionLabel,
+                    SourceBundle = s3Loc
+                }).ConfigureAwait(false);
+            }
+            catch(Exception e)
+            {
+                throw new ElasticBeanstalkExceptions("Error creating Elastic Beanstalk application version: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedCreateApplicationVersion);
+            }
+
+            this.Logger?.WriteLine("Getting latest environment event date before update");
+            var startingEventDate = await GetLatestEventDateAsync(application, environment);
+
+            string environmentArn;
+            if(doesEnvironmentExist)
+            {
+                environmentArn = await UpdateEnvironment(application, environment, versionLabel);
+            }
+            else
+            {
+                environmentArn = await CreateEnvironment(application, environment, versionLabel);
+            }
+
+            bool? waitForUpdate = this.GetBoolValueOrDefault(this.DeployEnvironmentOptions.WaitForUpdate, EBDefinedCommandOptions.ARGUMENT_WAIT_FOR_UPDATE, false);
+            if(!waitForUpdate.HasValue || waitForUpdate.Value)
+            {
+                this.Logger?.WriteLine("Waiting for environment update to complete");
+                var success = await this.WaitForDeploymentCompletionAsync(application, environment, startingEventDate);
+
+                if (success)
+                    this.Logger?.WriteLine("Update Complete");
+                else
+                    throw new ElasticBeanstalkExceptions("Environment update failed", ElasticBeanstalkExceptions.EBCode.FailedEnvironmentUpdate);
+
+            }
+            else
+            {
+                this.Logger?.WriteLine("Environment update initiated");
+            }
+
+            if (doesEnvironmentExist)
+            {
+                var tags = ConvertToTagsCollection();
+                if (tags != null && tags.Count > 0)
+                {
+                    var updateTagsRequest = new UpdateTagsForResourceRequest
+                    {
+                        ResourceArn = environmentArn,
+                        TagsToAdd = tags
+                    };
+                    this.Logger?.WriteLine("Updating Tags on environment");
+                    try
+                    {
+                        await this.EBClient.UpdateTagsForResourceAsync(updateTagsRequest);
+                    }
+                    catch(Exception e)
+                    {
+                        throw new ElasticBeanstalkExceptions("Error updating tags for environment: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedToUpdateTags);
+                    }
+                }
+            }
+
             return true;
         }
 

@@ -52,37 +52,23 @@ namespace Amazon.Lambda.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
+            var deleteRequest = new DeleteStackRequest
+            {
+                StackName = this.GetStringValueOrDefault(this.StackName, LambdaDefinedCommandOptions.ARGUMENT_STACK_NAME, true)
+            };
+
+
             try
             {
-                var deleteRequest = new DeleteStackRequest
-                {
-                    StackName = this.GetStringValueOrDefault(this.StackName, LambdaDefinedCommandOptions.ARGUMENT_STACK_NAME, true)
-                };
-
-
-                try
-                {
-                    await this.CloudFormationClient.DeleteStackAsync(deleteRequest);
-                }
-                catch (Exception e)
-                {
-                    throw new LambdaToolsException("Error deleting CloudFormation stack: " + e.Message, LambdaToolsException.LambdaErrorCode.CloudFormationDeleteStack, e);
-                }
-
-                this.Logger.WriteLine($"CloudFormation stack {deleteRequest.StackName} deleted");
-            }
-            catch (ToolsException e)
-            {
-                this.Logger.WriteLine(e.Message);
-                this.LastToolsException = e;
-                return false;
+                await this.CloudFormationClient.DeleteStackAsync(deleteRequest);
             }
             catch (Exception e)
             {
-                this.Logger.WriteLine($"Unknown error deleting CloudFormation stack: {e.Message}");
-                this.Logger.WriteLine(e.StackTrace);
-                return false;
+                throw new LambdaToolsException("Error deleting CloudFormation stack: " + e.Message, LambdaToolsException.LambdaErrorCode.CloudFormationDeleteStack, e);
             }
+
+            this.Logger.WriteLine($"CloudFormation stack {deleteRequest.StackName} deleted");
+
 
             return true;
         }

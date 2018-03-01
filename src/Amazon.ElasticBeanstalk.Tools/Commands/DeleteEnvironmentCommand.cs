@@ -59,37 +59,24 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
+
+            string environment = this.GetStringValueOrDefault(this.DeleteEnvironmentProperties.Environment, EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT, true);
+            if (!this.ConfirmDeletion("Elastic Beanstalk environment " + environment))
+                return true;
+
             try
             {
-                string environment = this.GetStringValueOrDefault(this.DeleteEnvironmentProperties.Environment, EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT, true);
-                if (!this.ConfirmDeletion("Elastic Beanstalk environment " + environment))
-                    return true;
+                await this.EBClient.TerminateEnvironmentAsync(new TerminateEnvironmentRequest
+                {
+                    EnvironmentName = environment
+                });
+                this.Logger?.WriteLine("Environment {0} deleted", environment);
+            }
+            catch(Exception e)
+            {
+                throw new ElasticBeanstalkExceptions(string.Format("Error deleting environment {0}: {1}", environment, e.Message), ElasticBeanstalkExceptions.EBCode.FailedToDeleteEnvironment);
+            }
 
-                try
-                {
-                    await this.EBClient.TerminateEnvironmentAsync(new TerminateEnvironmentRequest
-                    {
-                        EnvironmentName = environment
-                    });
-                    this.Logger?.WriteLine("Environment {0} deleted", environment);
-                }
-                catch(Exception e)
-                {
-                    throw new ElasticBeanstalkExceptions(string.Format("Error deleting environment {0}: {1}", environment, e.Message), ElasticBeanstalkExceptions.EBCode.FailedToDeleteEnvironment);
-                }
-            }
-            catch (ToolsException e)
-            {
-                this.Logger?.WriteLine(e.Message);
-                this.LastToolsException = e;
-                return false;
-            }
-            catch (Exception e)
-            {
-                this.Logger?.WriteLine($"Unknown error deleting Elastic Beanstalk environment: {e.Message}");
-                this.Logger?.WriteLine(e.StackTrace);
-                return false;
-            }
             return true;
         }
 
