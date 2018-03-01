@@ -12,6 +12,9 @@
     <PackageReference Include="AWSSDK.SecurityToken" Version="3.3.3.3" />
     <PackageReference Include="System.Xml.XPath.XDocument" Version="4.0.1" />
   </ItemGroup>
+  <PropertyGroup Condition="'$(TargetFramework)'=='netcoreapp1.0'">
+    <RuntimeFrameworkVersion Condition="">1.0.0</RuntimeFrameworkVersion>
+  </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' Or '$(TargetFramework)' == 'netcoreapp2.0' ">
     <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
   </PropertyGroup>
