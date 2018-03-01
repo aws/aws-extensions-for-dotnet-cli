@@ -21,15 +21,10 @@ namespace Amazon.Lambda.Tools.Commands
 
         public static readonly IList<CommandOption> GetConfigCommandOptions = BuildLineOptions(new List<CommandOption>
         {
-            LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME,
-            CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION,
-
-            CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE
+            LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME
         });
 
         public string FunctionName { get; set; }
-        
-        public bool? PersistConfigFile { get; set; }
 
         public GetFunctionConfigCommand(IToolLogger logger, string workingDirectory, string[] args)
             : base(logger, workingDirectory, GetConfigCommandOptions, args)
@@ -52,11 +47,9 @@ namespace Amazon.Lambda.Tools.Commands
             Tuple<CommandOption, CommandOptionValue> tuple;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME.Switch)) != null)
                 this.FunctionName = tuple.Item2.StringValue;
-            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE.Switch)) != null)
-                this.PersistConfigFile = tuple.Item2.BoolValue;
         }
 
-        public override async Task<bool> ExecuteAsync()
+        protected override async Task<bool> PerformActionAsync()
         {
             try
             {
@@ -114,13 +107,8 @@ namespace Amazon.Lambda.Tools.Commands
                     this.Logger.WriteLine("   Security Groups: ".PadRight(22) + string.Join(",", response.VpcConfig?.SecurityGroupIds));
                     this.Logger.WriteLine("   Subnets: ".PadRight(22) + string.Join(",", response.VpcConfig?.SubnetIds));
                 }
-                
-                if (this.GetBoolValueOrDefault(this.PersistConfigFile, CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE, false).GetValueOrDefault())
-                {
-                    this.SaveConfigFile();
-                }
             }
-            catch (LambdaToolsException e)
+            catch (ToolsException e)
             {
                 this.Logger.WriteLine(e.Message);
                 this.LastToolsException = e;

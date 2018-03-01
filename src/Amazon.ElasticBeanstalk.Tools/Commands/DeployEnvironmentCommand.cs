@@ -40,9 +40,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             EBDefinedCommandOptions.ARGUMENT_INSTANCE_PROFILE,
             EBDefinedCommandOptions.ARGUMENT_SERVICE_ROLE,
 
-            EBDefinedCommandOptions.ARGUMENT_WAIT_FOR_UPDATE,
-
-            CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE,
+            EBDefinedCommandOptions.ARGUMENT_WAIT_FOR_UPDATE
         });
 
         DeployEnvironmentProperties _deployAppProperties;
@@ -60,8 +58,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             set { this._deployAppProperties = value; }
         }
 
-        public bool? PersistConfigFile { get; set; }
-
         public DeployEnvironmentCommand(IToolLogger logger, string workingDirectory, string[] args)
             : base(logger, workingDirectory, CommandOptions, args)
         {
@@ -76,14 +72,10 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             base.ParseCommandArguments(values);
 
             this.DeployEnvironmentOptions.ParseCommandArguments(values);
-
-            Tuple<CommandOption, CommandOptionValue> tuple;
-            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE.Switch)) != null)
-                this.PersistConfigFile = tuple.Item2.BoolValue;
         }
 
 
-        public override async Task<bool> ExecuteAsync()
+        protected override async Task<bool> PerformActionAsync()
         {
             try
             {
@@ -222,11 +214,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                             throw new ElasticBeanstalkExceptions("Error updating tags for environment: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedToUpdateTags);
                         }
                     }
-                }
-
-                if (this.GetBoolValueOrDefault(this.PersistConfigFile, CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE, false).GetValueOrDefault())
-                {
-                    this.SaveConfigFile();
                 }
             }
             catch (ToolsException e)

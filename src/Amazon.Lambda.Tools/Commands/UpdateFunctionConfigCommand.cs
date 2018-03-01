@@ -122,7 +122,7 @@ namespace Amazon.Lambda.Tools.Commands
         }
 
 
-        public override async Task<bool> ExecuteAsync()
+        protected override async Task<bool> PerformActionAsync()
         {
             try
             {
@@ -144,7 +144,7 @@ namespace Amazon.Lambda.Tools.Commands
 
                 return true;
             }
-            catch(LambdaToolsException e)
+            catch(ToolsException e)
             {
                 this.Logger.WriteLine(e.Message);
                 this.LastToolsException = e;

@@ -35,9 +35,7 @@ namespace Amazon.ECS.Tools.Commands
             ECSDefinedCommandOptions.ARGUMENT_SCHEDULE_EXPRESSION,
             ECSDefinedCommandOptions.ARGUMENT_CLOUDWATCHEVENT_ROLE,
 
-            ECSDefinedCommandOptions.ARGUMENT_ECS_DESIRED_COUNT,
-
-            CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE,
+            ECSDefinedCommandOptions.ARGUMENT_ECS_DESIRED_COUNT
         },
         TaskDefinitionProperties.CommandOptions);
 
@@ -57,8 +55,6 @@ namespace Amazon.ECS.Tools.Commands
             set { this._deployScheduledTaskProperties = value; }
         }
 
-        public bool? PersistConfigFile { get; set; }
-
         public DeployScheduledTaskCommand(IToolLogger logger, string workingDirectory, string[] args)
             : base(logger, workingDirectory, CommandOptions, args)
         {
@@ -76,13 +72,9 @@ namespace Amazon.ECS.Tools.Commands
             this.TaskDefinitionProperties.ParseCommandArguments(values);
             this.ClusterProperties.ParseCommandArguments(values);
             this.DeployScheduledTaskProperties.ParseCommandArguments(values);
-
-            Tuple<CommandOption, CommandOptionValue> tuple;
-            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE.Switch)) != null)
-                this.PersistConfigFile = tuple.Item2.BoolValue;
         }
 
-        public override async Task<bool> ExecuteAsync()
+        protected override async Task<bool> PerformActionAsync()
         {
             try
             {
@@ -191,10 +183,6 @@ namespace Amazon.ECS.Tools.Commands
                     throw new DockerToolsException("Error creating CloudWatch Event target: " + e.Message, DockerToolsException.ECSErrorCode.PutTargetFail);
                 }
 
-                if (this.GetBoolValueOrDefault(this.PersistConfigFile, CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE, false).GetValueOrDefault())
-                {
-                    this.SaveConfigFile();
-                }
             }
             catch (ToolsException e)
             {

@@ -19,9 +19,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION,
 
             EBDefinedCommandOptions.ARGUMENT_EB_APPLICATION,
-            EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT,
-
-            CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE,
+            EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT
         });
 
         DeleteEnvironmentProperties _deleteEnvironmentProperties;
@@ -38,8 +36,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             }
             set { this._deleteEnvironmentProperties = value; }
         }
-
-        public bool? PersistConfigFile { get; set; }
 
         public DeleteEnvironmentCommand(IToolLogger logger, string workingDirectory, string[] args)
             : base(logger, workingDirectory, CommandOptions, args)
@@ -61,7 +57,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 this.PersistConfigFile = tuple.Item2.BoolValue;
         }
 
-        public override async Task<bool> ExecuteAsync()
+        protected override async Task<bool> PerformActionAsync()
         {
             try
             {
@@ -80,11 +76,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 catch(Exception e)
                 {
                     throw new ElasticBeanstalkExceptions(string.Format("Error deleting environment {0}: {1}", environment, e.Message), ElasticBeanstalkExceptions.EBCode.FailedToDeleteEnvironment);
-                }
-
-                if (this.GetBoolValueOrDefault(this.PersistConfigFile, CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE, false).GetValueOrDefault())
-                {
-                    this.SaveConfigFile();
                 }
             }
             catch (ToolsException e)

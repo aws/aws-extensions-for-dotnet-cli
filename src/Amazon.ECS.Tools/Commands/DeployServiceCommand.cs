@@ -43,9 +43,7 @@ namespace Amazon.ECS.Tools.Commands
 
             ECSDefinedCommandOptions.ARGUMENT_ELB_SERVICE_ROLE,
             ECSDefinedCommandOptions.ARGUMENT_ELB_TARGET_GROUP_ARN,
-            ECSDefinedCommandOptions.ARGUMENT_ELB_CONTAINER_PORT,
-
-            CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE,
+            ECSDefinedCommandOptions.ARGUMENT_ELB_CONTAINER_PORT
         },
         TaskDefinitionProperties.CommandOptions);
 
@@ -71,8 +69,6 @@ namespace Amazon.ECS.Tools.Commands
 
         public bool OverrideIgnoreTargetGroup { get; set; }
 
-        public bool? PersistConfigFile { get; set; }
-
         public DeployServiceCommand(IToolLogger logger, string workingDirectory, string[] args)
             : base(logger, workingDirectory, CommandOptions, args)
         {
@@ -91,13 +87,10 @@ namespace Amazon.ECS.Tools.Commands
             this.ClusterProperties.ParseCommandArguments(values);
             this.DeployServiceProperties.ParseCommandArguments(values);
 
-            Tuple<CommandOption, CommandOptionValue> tuple;
-            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE.Switch)) != null)
-                this.PersistConfigFile = tuple.Item2.BoolValue;
 
         }
 
-        public override async Task<bool> ExecuteAsync()
+        protected override async Task<bool> PerformActionAsync()
         {
             try
             {
@@ -150,11 +143,6 @@ namespace Amazon.ECS.Tools.Commands
 
                 await CreateOrUpdateService(ecsCluster, ecsService, taskDefinitionArn, ecsContainer);
                 this.Logger?.WriteLine($"Service {ecsService} on ECS cluster {ecsCluster} has been updated. The Cluster will now deploy the new service version.");
-
-                if (this.GetBoolValueOrDefault(this.PersistConfigFile, CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE, false).GetValueOrDefault())
-                {
-                    this.SaveConfigFile();
-                }
             }
             catch (DockerToolsException e)
             {

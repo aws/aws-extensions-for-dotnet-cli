@@ -21,14 +21,9 @@ namespace Amazon.Lambda.Tools.Commands
 
 
         public static readonly IList<CommandOption> DeleteCommandOptions = BuildLineOptions(new List<CommandOption>
-        {
-            CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION,
-            CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE,
-            
+        {            
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME
         });
-
-        public bool? PersistConfigFile { get; set; }
 
         public string FunctionName { get; set; }
 
@@ -56,12 +51,10 @@ namespace Amazon.Lambda.Tools.Commands
 
             Tuple<CommandOption, CommandOptionValue> tuple;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME.Switch)) != null)
-                this.FunctionName = tuple.Item2.StringValue;
-            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE.Switch)) != null)
-                this.PersistConfigFile = tuple.Item2.BoolValue;            
+                this.FunctionName = tuple.Item2.StringValue;         
         }
 
-        public override async Task<bool> ExecuteAsync()
+        protected override async Task<bool> PerformActionAsync()
         {
             try
             {
@@ -81,13 +74,8 @@ namespace Amazon.Lambda.Tools.Commands
                 }
 
                 this.Logger.WriteLine($"Lambda function {deleteRequest.FunctionName} deleted");
-                
-                if (this.GetBoolValueOrDefault(this.PersistConfigFile, CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE, false).GetValueOrDefault())
-                {
-                    this.SaveConfigFile();
-                }
             }
-            catch (LambdaToolsException e)
+            catch (ToolsException e)
             {
                 this.Logger.WriteLine(e.Message);
                 this.LastToolsException = e;

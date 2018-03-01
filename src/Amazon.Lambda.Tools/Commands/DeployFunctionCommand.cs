@@ -49,7 +49,6 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_APPLY_DEFAULTS_FOR_UPDATE,
             LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET,
             LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX,
-            CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE,
             LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK
         });
 
@@ -60,8 +59,6 @@ namespace Amazon.Lambda.Tools.Commands
 
         public string S3Bucket { get; set; }
         public string S3Prefix { get; set; }
-
-        public bool? PersistConfigFile { get; set; }
 
         public bool? DisableVersionCheck { get; set; }
 
@@ -100,8 +97,6 @@ namespace Amazon.Lambda.Tools.Commands
                 this.S3Bucket = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX.Switch)) != null)
                 this.S3Prefix = tuple.Item2.StringValue;
-            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE.Switch)) != null)
-                this.PersistConfigFile = tuple.Item2.BoolValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK.Switch)) != null)
                 this.DisableVersionCheck = tuple.Item2.BoolValue;
 
@@ -119,7 +114,7 @@ namespace Amazon.Lambda.Tools.Commands
 
 
 
-        public override async Task<bool> ExecuteAsync()
+        protected override async Task<bool> PerformActionAsync()
         {
             try
             {
@@ -282,15 +277,9 @@ namespace Amazon.Lambda.Tools.Commands
                     }
                 }
 
-
-                if(this.GetBoolValueOrDefault(this.PersistConfigFile, CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE, false).GetValueOrDefault())
-                {
-                    this.SaveConfigFile();
-                }
-
                 return true;
             }
-            catch (LambdaToolsException e)
+            catch (ToolsException e)
             {
                 this.Logger.WriteLine(e.Message);
                 this.LastToolsException = e;

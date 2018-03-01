@@ -24,12 +24,7 @@ namespace Amazon.Lambda.Tools.Commands
 
         public static readonly IList<CommandOption> ListCommandOptions = BuildLineOptions(new List<CommandOption>
         {
-            CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION,
-
-            CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE
         });
-        
-        public bool? PersistConfigFile { get; set; }
 
       
         public ListServerlessCommand(IToolLogger logger, string workingDirectory, string[] args)
@@ -43,14 +38,10 @@ namespace Amazon.Lambda.Tools.Commands
         /// <param name="values"></param>
         protected override void ParseCommandArguments(CommandOptions values)
         {
-            base.ParseCommandArguments(values);
-            
-            Tuple<CommandOption, CommandOptionValue> tuple;
-            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE.Switch)) != null)
-                this.PersistConfigFile = tuple.Item2.BoolValue;      
+            base.ParseCommandArguments(values);   
         }
 
-        public override async Task<bool> ExecuteAsync()
+        protected override async Task<bool> PerformActionAsync()
         {
             try
             {
@@ -95,13 +86,8 @@ namespace Amazon.Lambda.Tools.Commands
                     }
 
                 } while (!string.IsNullOrEmpty(response.NextToken));
-                
-                if (this.GetBoolValueOrDefault(this.PersistConfigFile, CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE, false).GetValueOrDefault())
-                {
-                    this.SaveConfigFile();
-                }
             }
-            catch (LambdaToolsException e)
+            catch (ToolsException e)
             {
                 this.Logger.WriteLine(e.Message);
                 this.LastToolsException = e;

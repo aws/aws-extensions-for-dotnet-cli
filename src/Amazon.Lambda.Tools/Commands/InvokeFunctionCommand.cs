@@ -23,10 +23,7 @@ namespace Amazon.Lambda.Tools.Commands
         public static readonly IList<CommandOption> InvokeCommandOptions = BuildLineOptions(new List<CommandOption>
         {
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME,
-            LambdaDefinedCommandOptions.ARGUMENT_PAYLOAD,
-            CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION,
-
-            CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE
+            LambdaDefinedCommandOptions.ARGUMENT_PAYLOAD
         });
 
         public string FunctionName { get; set; }
@@ -36,8 +33,6 @@ namespace Amazon.Lambda.Tools.Commands
         /// the value of Payload is sent as the input to the function.
         /// </summary>
         public string Payload { get; set; }
-        
-        public bool? PersistConfigFile { get; set; }
 
         public InvokeFunctionCommand(IToolLogger logger, string workingDirectory, string[] args)
             : base(logger, workingDirectory, InvokeCommandOptions, args)
@@ -63,11 +58,9 @@ namespace Amazon.Lambda.Tools.Commands
                 this.FunctionName = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_PAYLOAD.Switch)) != null)
                 this.Payload = tuple.Item2.StringValue;
-            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE.Switch)) != null)
-                this.PersistConfigFile = tuple.Item2.BoolValue;
         }
 
-        public override async Task<bool> ExecuteAsync()
+        protected override async Task<bool> PerformActionAsync()
         {
             try
             {
@@ -113,14 +106,9 @@ namespace Amazon.Lambda.Tools.Commands
                 this.Logger.WriteLine("Log Tail:");
                 var log = System.Text.UTF8Encoding.UTF8.GetString(Convert.FromBase64String(response.LogResult));
                 this.Logger.WriteLine(log);
-                
-                if (this.GetBoolValueOrDefault(this.PersistConfigFile, CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE, false).GetValueOrDefault())
-                {
-                    this.SaveConfigFile();
-                }
 
             }
-            catch (LambdaToolsException e)
+            catch (ToolsException e)
             {
                 this.Logger.WriteLine(e.Message);
                 this.LastToolsException = e;

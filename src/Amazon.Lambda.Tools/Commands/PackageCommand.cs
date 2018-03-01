@@ -15,14 +15,11 @@ namespace Amazon.Lambda.Tools.Commands
 
         public static readonly IList<CommandOption> PackageCommandOptions = new List<CommandOption>
         {
-            CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION,
             CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION,
             CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK,
             CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS,
             LambdaDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE,
-            LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK,
-
-            CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE
+            LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK
         };
 
         public string Configuration { get; set; }
@@ -32,8 +29,6 @@ namespace Amazon.Lambda.Tools.Commands
         public string MSBuildParameters { get; set; }
 
         public bool? DisableVersionCheck { get; set; }
-        
-        public bool? PersistConfigFile { get; set; }
 
 
         /// <summary>
@@ -82,7 +77,7 @@ namespace Amazon.Lambda.Tools.Commands
             }
         }
 
-        public override Task<bool> ExecuteAsync()
+        protected override Task<bool> PerformActionAsync()
         {
             // Disable interactive since this command is intended to be run as part of a pipeline.
             this.DisableInteractive = true;
@@ -109,14 +104,10 @@ namespace Amazon.Lambda.Tools.Commands
 
 
                     this.Logger.WriteLine("Lambda project successfully packaged: " + zipArchivePath);
-                    
-                    if (this.GetBoolValueOrDefault(this.PersistConfigFile, CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE, false).GetValueOrDefault())
-                    {
-                        this.SaveConfigFile();
-                    }
+
                     return true;
                 }
-                catch (LambdaToolsException e)
+                catch (ToolsException e)
                 {
                     this.Logger.WriteLine(e.Message);
                     this.LastToolsException = e;

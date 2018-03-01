@@ -36,7 +36,39 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             ParseCommandArguments(values);
         }
 
-        public abstract Task<bool> ExecuteAsync();
+        public async Task<bool> ExecuteAsync()
+        {
+            try
+            {
+                var success = await PerformActionAsync();
+                if (!success) 
+                    return false;
+            
+            
+                if (this.GetBoolValueOrDefault(this.PersistConfigFile,
+                    CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE, false).GetValueOrDefault())
+                {
+                    this.SaveConfigFile();
+                }
+            }
+            catch (ToolsException e)
+            {
+                this.Logger?.WriteLine(e.Message);
+                this.LastToolsException = e;
+                return false;
+            }
+            catch (Exception e)
+            {
+                this.Logger?.WriteLine($"Unknown error executing docker push to Amazon Elastic Container Registry: {e.Message}");
+                this.Logger?.WriteLine(e.StackTrace);
+                return false;
+            }
+ 
+
+            return true;
+        }
+
+        protected abstract Task<bool> PerformActionAsync();
 
         protected abstract string ToolName
         {
@@ -53,7 +85,8 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             CommonDefinedCommandOptions.ARGUMENT_AWS_PROFILE,
             CommonDefinedCommandOptions.ARGUMENT_AWS_PROFILE_LOCATION,
             CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION,
-            CommonDefinedCommandOptions.ARGUMENT_CONFIG_FILE
+            CommonDefinedCommandOptions.ARGUMENT_CONFIG_FILE,
+            CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE
         };
 
         /// <summary>
@@ -93,6 +126,8 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
                 this.ProjectLocation = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_CONFIG_FILE.Switch)) != null)
                 this.ConfigFile = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE.Switch)) != null)
+                this.PersistConfigFile = tuple.Item2.BoolValue;
 
             if (string.IsNullOrEmpty(this.ConfigFile))
                 this.ConfigFile = new TDefaultConfig().DefaultConfigFileName;
@@ -124,6 +159,8 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
         public AWSCredentials Credentials { get; set; }
         public string ProjectLocation { get; set; }
         public string ConfigFile { get; set; }
+        public bool? PersistConfigFile { get; set; }
+
 
         /// <summary>
         /// Disable all Console.Read operations to make sure the command is never blocked waiting for input. This is 

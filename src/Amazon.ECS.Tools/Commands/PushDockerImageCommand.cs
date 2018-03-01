@@ -22,9 +22,7 @@ namespace Amazon.ECS.Tools.Commands
             CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION,
             CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION,
             CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK,
-            ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG,
-
-            CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE,
+            ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG
         });
 
 
@@ -42,8 +40,6 @@ namespace Amazon.ECS.Tools.Commands
             }
             set { this._pushProperties = value; }
         }
-
-        public bool? PersistConfigFile { get; set; }
 
 
         public string PushedImageUri { get; private set; }
@@ -63,14 +59,10 @@ namespace Amazon.ECS.Tools.Commands
             base.ParseCommandArguments(values);
 
             this.PushDockerImageProperties.ParseCommandArguments(values);
-
-            Tuple<CommandOption, CommandOptionValue> tuple;
-            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE.Switch)) != null)
-                this.PersistConfigFile = tuple.Item2.BoolValue;
         }
 
 
-        public override async Task<bool> ExecuteAsync()
+        protected override async Task<bool> PerformActionAsync()
         {
             try
             {
@@ -124,12 +116,6 @@ namespace Amazon.ECS.Tools.Commands
 
                 this.PushedImageUri = targetTag;
                 this.Logger?.WriteLine($"Image {this.PushedImageUri} Push Complete. ");
-
-                if (this.GetBoolValueOrDefault(this.PersistConfigFile, CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE, false).GetValueOrDefault())
-                {
-                    this.SaveConfigFile();
-                }
-
             }
             catch (DockerToolsException e)
             {

@@ -46,7 +46,6 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_STACK_NAME,
             LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_DISABLE_CAPABILITIES,
             LambdaDefinedCommandOptions.ARGUMENT_STACK_WAIT,
-            CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE,
             LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK
         });
 
@@ -64,8 +63,6 @@ namespace Amazon.Lambda.Tools.Commands
         public string CloudFormationRole { get; set; }
         public Dictionary<string, string> TemplateParameters { get; set; }
         public Dictionary<string, string> TemplateSubstitutions { get; set; }
-
-        public bool? PersistConfigFile { get; set; }
 
         public bool? DisableVersionCheck { get; set; }
 
@@ -104,8 +101,6 @@ namespace Amazon.Lambda.Tools.Commands
                 this.TemplateParameters = tuple.Item2.KeyValuePairs;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_TEMPLATE_SUBSTITUTIONS.Switch)) != null)
                 this.TemplateSubstitutions = tuple.Item2.KeyValuePairs;
-            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE.Switch)) != null)
-                this.PersistConfigFile = tuple.Item2.BoolValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_ROLE.Switch)) != null)
                 this.CloudFormationRole = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK.Switch)) != null)
@@ -129,7 +124,7 @@ namespace Amazon.Lambda.Tools.Commands
         {
         }
 
-        public override async Task<bool> ExecuteAsync()
+        protected override async Task<bool> PerformActionAsync()
         {
             try
             {
@@ -359,14 +354,9 @@ namespace Amazon.Lambda.Tools.Commands
                     }
                 }
 
-                if (this.GetBoolValueOrDefault(this.PersistConfigFile, CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE, false).GetValueOrDefault())
-                {
-                    this.SaveConfigFile();
-                }
-
                 return true;
             }
-            catch (LambdaToolsException e)
+            catch (ToolsException e)
             {
                 this.Logger.WriteLine(e.Message);
                 this.LastToolsException = e;
