@@ -25,6 +25,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
             EBDefinedCommandOptions.ARGUMENT_EB_APPLICATION,
             EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT,
+            EBDefinedCommandOptions.ARGUMENT_EB_VERSION_LABEL,
             EBDefinedCommandOptions.ARGUMENT_EB_TAGS,
             EBDefinedCommandOptions.ARGUMENT_APP_PATH,
             EBDefinedCommandOptions.ARGUMENT_IIS_WEBSITE,
@@ -104,7 +105,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
                 string application = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Application, EBDefinedCommandOptions.ARGUMENT_EB_APPLICATION, true);
                 string environment = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Environment, EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT, true);
-                string versionLabel = DateTime.Now.Ticks.ToString();
+                string versionLabel = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.VersionLabel, EBDefinedCommandOptions.ARGUMENT_EB_VERSION_LABEL, false) ?? DateTime.Now.Ticks.ToString();
 
                 bool doesApplicationExist = await DoesApplicationExist(application);
                 bool doesEnvironmentExist = doesApplicationExist ? await DoesEnvironmentExist(application, environment) : false;
