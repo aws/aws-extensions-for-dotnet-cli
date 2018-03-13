@@ -29,6 +29,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
         public string HealthCheckUrl { get; set; }
         public string InstanceProfile { get; set; }
         public string ServiceRole { get; set; }
+        public string VersionLabel { get; set; }
 
 
         internal void ParseCommandArguments(CommandOptions values)
@@ -48,6 +49,8 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 this.IISWebSite = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_WAIT_FOR_UPDATE.Switch)) != null)
                 this.WaitForUpdate = tuple.Item2.BoolValue;
+            if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_EB_VERSION_LABEL.Switch)) != null)
+                this.VersionLabel = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_EB_TAGS.Switch)) != null)
                 this.Tags = tuple.Item2.KeyValuePairs;
             if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_EB_ADDITIONAL_OPTIONS.Switch)) != null)
