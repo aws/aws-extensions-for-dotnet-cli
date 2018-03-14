@@ -9,8 +9,10 @@
     <PackageTags>AWS;Amazon;Beanstalk</PackageTags>
     <PackageType>DotnetCliTool</PackageType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.1.1</Version>
+    <Version>1.1.2</Version>
     <AssemblyName>dotnet-eb</AssemblyName>
+    <Authors>Amazon Web Services</Authors>
+    <Copyright>Copyright 2009-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
     <Product>AWS Elastic Beanstalk Tools for .NET CLI</Product>
     <Description>Amazon.ElasticBeanstalk.Tools adds commands to the dotnet cli to deploy ASP.NET Core applications to AWS Elastic Beanstalk. For example to deploy an ASP.NET Core application from the command execute "dotnet eb deploy-environment" on the command line.</Description>
   </PropertyGroup>
