@@ -94,6 +94,17 @@ namespace Amazon.Common.DotNetCli.Tools
   ]
 }
 ".Trim();
+      
+      
 
+
+      
+      public static readonly Dictionary<string, string> COMMON_KNOWN_MANAGED_POLICY_DESCRIPTIONS = new Dictionary<string, string>
+      {
+        {"PowerUserAccess","Provides full access to AWS services and resources, but does not allow management of users and groups."},
+        {"AmazonS3FullAccess","Provides full access to all buckets via the AWS Management Console."},
+        {"AmazonDynamoDBFullAccess","Provides full access to Amazon DynamoDB via the AWS Management Console."},
+        {"CloudWatchLogsFullAccess","Provides full access to CloudWatch Logs"}
+      };
     }
 }

@@ -479,5 +479,48 @@ namespace Amazon.Common.DotNetCli.Tools
 
             return handler;
         }
+        
+        internal static int WaitForPromptResponseByIndex(int min, int max)
+        {
+            int chosenIndex = -1;
+            while (chosenIndex == -1)
+            {
+                var indexInput = Console.ReadLine()?.Trim();
+                int parsedIndex;
+                if (int.TryParse(indexInput, out parsedIndex) && parsedIndex >= min && parsedIndex <= max)
+                {
+                    chosenIndex = parsedIndex;
+                }
+                else
+                {
+                    Console.Out.WriteLine($"Invalid selection, must be a number between {min} and {max}");
+                }
+            }
+
+            return chosenIndex;
+        }
+        
+        
+        static readonly string GENERIC_ASSUME_ROLE_POLICY =
+            @"
+{
+  ""Version"": ""2012-10-17"",
+  ""Statement"": [
+    {
+      ""Sid"": """",
+      ""Effect"": ""Allow"",
+      ""Principal"": {
+        ""Service"": ""{ASSUME_ROLE_PRINCIPAL}""
+      },
+      ""Action"": ""sts:AssumeRole""
+    }
+  ]
+}
+".Trim();
+
+        public static string GetAssumeRolePolicy(string assumeRolePrincipal)
+        {
+            return GENERIC_ASSUME_ROLE_POLICY.Replace("{ASSUME_ROLE_PRINCIPAL}", assumeRolePrincipal);
+        }
     }
 }

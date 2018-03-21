@@ -220,7 +220,7 @@ namespace Amazon.Common.DotNetCli.Tools
             return roleArn;
         }
 
-        public static async Task<IList<ManagedPolicy>> FindManagedPoliciesAsync(IAmazonIdentityManagementService iamClient, int maxPolicies)
+        public static async Task<IList<ManagedPolicy>> FindManagedPoliciesAsync(IAmazonIdentityManagementService iamClient, PromptRoleInfo promptInfo, int maxPolicies)
         {
             ListPoliciesRequest request = new ListPoliciesRequest
             {
@@ -236,8 +236,13 @@ namespace Amazon.Common.DotNetCli.Tools
 
                 foreach (var policy in response.Policies)
                 {
-                    if (policy.IsAttachable && KNOWN_MANAGED_POLICY_DESCRIPTIONS.ContainsKey(policy.PolicyName))
+                    if (policy.IsAttachable &&
+                        (promptInfo.KnownManagedPolicyDescription.ContainsKey(policy.PolicyName) ||
+                         (promptInfo.AWSManagedPolicyNamePrefix != null && policy.PolicyName.StartsWith(promptInfo.AWSManagedPolicyNamePrefix)))
+                    )
+                    {
                         policies.Add(policy);
+                    }
 
                     if (policies.Count == maxPolicies)
                         return policies;
@@ -353,27 +358,120 @@ namespace Amazon.Common.DotNetCli.Tools
         }
 
 
-        static readonly Dictionary<string, string> KNOWN_MANAGED_POLICY_DESCRIPTIONS = new Dictionary<string, string>
+        
+        public static string PromptForRole(IAmazonIdentityManagementService iamClient, PromptRoleInfo promptInfo)
         {
-            {"PowerUserAccess","Provides full access to AWS services and resources, but does not allow management of users and groups."},
-            {"AmazonS3FullAccess","Provides full access to all buckets via the AWS Management Console."},
-            {"AmazonDynamoDBFullAccess","Provides full access to Amazon DynamoDB via the AWS Management Console."},
-            {"CloudWatchLogsFullAccess","Provides full access to CloudWatch Logs"}
-        };
+            var existingRoles = FindExistingRoles(iamClient, promptInfo.AssumeRolePrincipal, DEFAULT_ITEM_MAX);
+            if (existingRoles.Count == 0)
+            {
+                return PromptToCreateRole(iamClient, promptInfo);
+            }
 
+            var roleArn = SelectFromExisting(iamClient, promptInfo, existingRoles);
+            return roleArn;
+        }
+
+        private static string SelectFromExisting(IAmazonIdentityManagementService iamClient, PromptRoleInfo promptInfo, IList<Role> existingRoles)
+        {
+            Console.Out.WriteLine("Select IAM Role that to provide AWS credentials to your code:");
+            for (int i = 0; i < existingRoles.Count; i++)
+            {
+                Console.Out.WriteLine($"   {(i + 1).ToString().PadLeft(2)}) {existingRoles[i].RoleName}");
+            }
+
+            Console.Out.WriteLine($"   {(existingRoles.Count + 1).ToString().PadLeft(2)}) *** Create new IAM Role ***");
+            Console.Out.Flush();
+
+            int chosenIndex = Utilities.WaitForPromptResponseByIndex(1, existingRoles.Count + 1);
+
+            if (chosenIndex - 1 < existingRoles.Count)
+            {
+                return existingRoles[chosenIndex - 1].Arn;
+            }
+            else
+            {
+                return PromptToCreateRole(iamClient, promptInfo);
+            }
+        }
+        
+        private static string PromptToCreateRole(IAmazonIdentityManagementService iamClient, PromptRoleInfo promptInfo)
+        {
+            Console.Out.WriteLine($"Enter name of the new IAM Role:");
+            var roleName = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(roleName))
+                return null;
+
+            roleName = roleName.Trim();
+
+            Console.Out.WriteLine("Select IAM Policy to attach to the new role and grant permissions");
+
+            var managedPolices = FindManagedPoliciesAsync(iamClient, promptInfo, DEFAULT_ITEM_MAX).Result;
+            for (int i = 0; i < managedPolices.Count; i++)
+            {
+                var line = $"   {(i + 1).ToString().PadLeft(2)}) {managedPolices[i].PolicyName}";
+
+                var description = AttemptToGetPolicyDescription(managedPolices[i].Arn, promptInfo.KnownManagedPolicyDescription);
+                if (!string.IsNullOrEmpty(description))
+                {
+                    if ((line.Length + description.Length) > MAX_LINE_LENGTH_FOR_MANAGED_ROLE)
+                        description = description.Substring(0, MAX_LINE_LENGTH_FOR_MANAGED_ROLE - line.Length) + " ...";
+                    line += $" ({description})";
+                }
+
+                Console.Out.WriteLine(line);
+            }
+
+            Console.Out.WriteLine($"   {(managedPolices.Count + 1).ToString().PadLeft(2)}) *** No policy, add permissions later ***");
+            Console.Out.Flush();
+
+            int chosenIndex = Utilities.WaitForPromptResponseByIndex(1, managedPolices.Count + 1);
+
+            string managedPolicyArn = null;
+            if (chosenIndex < managedPolices.Count)
+            {
+                var selectedPolicy = managedPolices[chosenIndex - 1];                
+                managedPolicyArn = selectedPolicy.Arn;
+            }
+
+            var roleArn = CreateRole(iamClient, roleName, Utilities.GetAssumeRolePolicy(promptInfo.AssumeRolePrincipal), managedPolicyArn);
+
+            return roleArn;
+
+        }
+        
         /// <summary>
-        /// Because description does not come back in the list policy operation cache known policy descriptions to 
+        /// Because description does not come back in the list policy operation cache known lambda policy descriptions to 
         /// help users understand which role to pick.
         /// </summary>
         /// <param name="policyArn"></param>
+        /// <param name="knownManagedPolicyDescription"></param>
         /// <returns></returns>
-        public static string AttemptToGetPolicyDescription(string policyArn)
+        private static string AttemptToGetPolicyDescription(string policyArn, Dictionary<string, string> knownManagedPolicyDescription)
         {
             string content;
-            if (!KNOWN_MANAGED_POLICY_DESCRIPTIONS.TryGetValue(policyArn, out content))
+            if (!knownManagedPolicyDescription.TryGetValue(policyArn, out content))
                 return null;
 
             return content;
+        }
+
+        public class PromptRoleInfo
+        {
+            /// <summary>
+            /// The principal searched for in existing roles when displaying available roles to user to select.
+            /// </summary>
+            public string AssumeRolePrincipal { get; set; }
+            
+            /// <summary>
+            /// If prompting to create a role based on a managed policy display any aws provided
+            /// managed policies that start with this name.
+            /// </summary>
+            public string AWSManagedPolicyNamePrefix { get; set; }
+            
+            /// <summary>
+            /// A list of known AWS managed policies to show along with their description.
+            /// </summary>
+            public Dictionary<string, string> KnownManagedPolicyDescription { get; set; }
         }
     }
 }

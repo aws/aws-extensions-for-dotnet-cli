@@ -275,6 +275,36 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             return null;
         }
 
+        public string GetRoleValueOrDefault(string propertyValue, CommandOption option, string assumeRolePrincipal, string awsManagedPolicyPrefix, Dictionary<string, string> knownManagedPolicyDescription, bool required)
+        {
+            if (!string.IsNullOrEmpty(propertyValue))
+            {
+                return RoleHelper.ExpandRoleName(this.IAMClient, propertyValue);
+            }
+            else if (!string.IsNullOrEmpty(DefaultConfig[option.Switch] as string))
+            {
+                var configDefault = DefaultConfig[option.Switch] as string;
+                return RoleHelper.ExpandRoleName(this.IAMClient, configDefault);
+            }
+            else if (_cachedRequestedValues.ContainsKey(option))
+            {
+                var cachedValue = _cachedRequestedValues[option];
+                return cachedValue;
+            }
+            else if (required && !this.DisableInteractive)
+            {
+                var promptInfo = new RoleHelper.PromptRoleInfo
+                {
+                    AssumeRolePrincipal = assumeRolePrincipal,
+                    AWSManagedPolicyNamePrefix = awsManagedPolicyPrefix,
+                    KnownManagedPolicyDescription = knownManagedPolicyDescription
+                };
+                return RoleHelper.PromptForRole(this.IAMClient, promptInfo);
+            }
+
+            return null;
+        }
+
         /// <summary>
         /// Complex parameters are formatted as a JSON string. This method parses the string into the JsonData object
         /// </summary>
@@ -499,7 +529,11 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
                 }
                 else
                 {
-                    var managedPolices = RoleHelper.FindManagedPoliciesAsync(this.IAMClient, 20).Result;
+                    var promptInfo = new RoleHelper.PromptRoleInfo
+                    {
+                        KnownManagedPolicyDescription = Constants.COMMON_KNOWN_MANAGED_POLICY_DESCRIPTIONS
+                    };
+                    var managedPolices = RoleHelper.FindManagedPoliciesAsync(this.IAMClient, promptInfo, 20).Result;
                     var profileSelection = new List<string>();
                     foreach (var profile in managedPolices)
                         profileSelection.Add(profile.PolicyName);
