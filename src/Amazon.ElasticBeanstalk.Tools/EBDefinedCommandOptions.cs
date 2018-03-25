@@ -89,6 +89,14 @@ namespace Amazon.ElasticBeanstalk.Tools
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = "IAM role to allow Beanstalk to make calls to AWS services."
             };
+        public static readonly CommandOption ARGUMENT_EB_VERSION_LABEL =
+            new CommandOption
+            {
+                Name = "Version Label",
+                Switch = "--version-label",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "Version label that will be assigned to the uploaded version of code. The default is current tick count."
+            };
         public static readonly CommandOption ARGUMENT_EB_TAGS =
             new CommandOption
             {

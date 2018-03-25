@@ -9,11 +9,11 @@
     <PackageTags>AWS;Amazon;Docker;ECS</PackageTags>
     <PackageType>DotnetCliTool</PackageType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.1.2</Version>
+    <Version>1.1.4</Version>
     <AssemblyName>dotnet-ecs</AssemblyName>
     <Company>Amazon.com, Inc</Company>
     <Authors>Amazon Web Services</Authors>
-    <Copyright>Copyright 2009-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
+    <Copyright>Copyright 2009-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
     <Product>Amazon ECS Tools for .NET CLI</Product>
     <Description>Amazon.ECS.Tools adds commands to the dotnet cli to deploy .NET Core applications to Amazon Elastic Container Service. For example to deploy an ASP.NET Core application from the command execute "dotnet ecs deploy-service" on the command line.</Description>
   </PropertyGroup>

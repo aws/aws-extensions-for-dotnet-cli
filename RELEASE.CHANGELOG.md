@@ -1,3 +1,17 @@
+### Release 2018-03-13
+
+* **Amazon.ECS.Tools (1.1.3)**
+  * Fixed issue detecting docker build working directory for latest VS 2017 created Dockerfile.
+  * Fixed issue not detected when a cluster should be created because of inactive cluster with the same name. 
+* **Amazon.ElasticBeanstalk.Tools (1.1.2)**
+  * Pull request [#8](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/8). Add **--version-label** switch to set a version label when deploying. Thanks to [kalexii](https://github.com/kalexii).
+
+### Release 2018-02-25
+
+* **Amazon.ECS.Tools (1.1.2)**
+    * Fixed issue with docker tag incorrectly being written out to the aws-beanstalk-tools-defaults.json.
+    * Fixed error handling when searching for the solution file for the project being deployed.
+
 ### Release 2018-02-14
 
 * **Amazon.ECS.Tools (1.1.1)**
