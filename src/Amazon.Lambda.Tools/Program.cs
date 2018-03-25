@@ -10,7 +10,7 @@ namespace Amazon.Lambda.Tools
     {
         static void Main(string[] args)
         {
-            var application = new Application("eb", "Amazon Elastic Beanstalk Tools for .NET Core applications", "https://github.com/aws/aws-extensions-for-dotnet-cli",
+            var application = new Application("lambda", "Amazon Lambda Tools for .NET Core applications", "https://github.com/aws/aws-extensions-for-dotnet-cli, https://github.com/aws/aws-lambda-dotnet",
                 new List<ICommandInfo>()
                 {
                     new GroupHeaderInfo("Commands to deploy and manage AWS Lambda functions:"),
