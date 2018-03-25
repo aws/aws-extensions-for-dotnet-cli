@@ -613,7 +613,7 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
 
 
         // Cache all prompted values so the user is never prompted for the same CommandOption later.
-        Dictionary<CommandOption, string> _cachedRequestedValues = new Dictionary<CommandOption, string>();
+        protected Dictionary<CommandOption, string> _cachedRequestedValues = new Dictionary<CommandOption, string>();
         protected string PromptForValue(CommandOption option)
         {
             if (_cachedRequestedValues.ContainsKey(option))

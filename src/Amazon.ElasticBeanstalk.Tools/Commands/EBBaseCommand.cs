@@ -54,7 +54,13 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             {
                 var solutionStacks = FindSolutionStacksAsync().Result;
                 int chosenOption = PromptForValue(option, solutionStacks);
-                return solutionStacks[chosenOption];
+
+                var solutionStack = solutionStacks[chosenOption];
+                if(!string.IsNullOrEmpty(solutionStack))
+                {
+                    _cachedRequestedValues[option] = solutionStack;    
+                }
+                return solutionStack;
             }
 
             if (required)
