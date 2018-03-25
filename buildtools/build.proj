@@ -31,6 +31,8 @@
         WorkingDirectory="..\test\Amazon.Common.DotNetCli.Tools.Test"/>
     <Exec Command="$(Command)"
         WorkingDirectory="..\test\Amazon.ECS.Tools.Test"/>
+    <Exec Command="$(Command)"
+        WorkingDirectory="..\test\Amazon.Lambda.Tools.Test"/>
   </Target>
 
   <Target Name="build-nuget-packages" DependsOnTargets="init">
@@ -46,5 +48,7 @@
         WorkingDirectory="..\src\Amazon.ECS.Tools"/>
     <Exec Command="$(Command)"
         WorkingDirectory="..\src\Amazon.ElasticBeanstalk.Tools"/>
+    <Exec Command="$(Command)"
+        WorkingDirectory="..\src\Amazon.Lambda.Tools"/>
   </Target>
 </Project>
