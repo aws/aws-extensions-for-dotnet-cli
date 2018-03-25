@@ -243,7 +243,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 CNAMEPrefix = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.CNamePrefix, EBDefinedCommandOptions.ARGUMENT_CNAME_PREFIX, false)
             };
 
-            var environmentType = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.EnvironmentType, EBDefinedCommandOptions.ARGUMENT_ENVIRONMENT_TYPE, false);
+            var environmentType = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.EnvironmentType, EBDefinedCommandOptions.ARGUMENT_ENVIRONMENT_TYPE, false) ?? "LoadBalanced";
             if(!string.IsNullOrEmpty(environmentType))
             {
                 createRequest.OptionSettings.Add(new ConfigurationOptionSetting()
@@ -255,6 +255,11 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             }
 
             var healthCheckURl = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.HealthCheckUrl, EBDefinedCommandOptions.ARGUMENT_HEALTH_CHECK_URL, false);
+            if(string.IsNullOrEmpty(healthCheckURl) && string.Equals(environmentType, "LoadBalanced", StringComparison.OrdinalIgnoreCase))
+            {
+                healthCheckURl = "/";
+            }
+
             if (!string.IsNullOrEmpty(healthCheckURl))
             {
                 createRequest.OptionSettings.Add(new ConfigurationOptionSetting()
@@ -290,6 +295,12 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             var instanceProfile = this.GetInstanceProfileOrDefault(this.DeployEnvironmentOptions.InstanceProfile, EBDefinedCommandOptions.ARGUMENT_INSTANCE_PROFILE, true, string.Format("eb_{0}_{1}", application, environment));
             if (!string.IsNullOrEmpty(instanceProfile))
             {
+                int pos = instanceProfile.LastIndexOf('/');
+                if (pos != -1)
+                {
+                    instanceProfile = instanceProfile.Substring(pos + 1);
+                }
+
                 createRequest.OptionSettings.Add(new ConfigurationOptionSetting()
                 {
                     Namespace = "aws:autoscaling:launchconfiguration",
@@ -299,9 +310,15 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             }
 
             var serviceRole = this.GetServiceRoleOrCreateIt(this.DeployEnvironmentOptions.ServiceRole, EBDefinedCommandOptions.ARGUMENT_SERVICE_ROLE, 
-                "aws-elasticbeanstalk-ec2-role", Constants.EC2_ASSUME_ROLE_POLICY, null, "AWSElasticBeanstalkWebTier", "AWSElasticBeanstalkMulticontainerDocker", "AWSElasticBeanstalkWorkerTier");
+                "aws-elasticbeanstalk-service-role", Constants.EC2_ASSUME_ROLE_POLICY, null, "AWSElasticBeanstalkWebTier", "AWSElasticBeanstalkMulticontainerDocker", "AWSElasticBeanstalkWorkerTier");
             if (!string.IsNullOrEmpty(serviceRole))
             {
+                int pos = serviceRole.LastIndexOf('/');
+                if(pos != -1)
+                {
+                    serviceRole = serviceRole.Substring(pos + 1);
+                }
+
                 createRequest.OptionSettings.Add(new ConfigurationOptionSetting()
                 {
                     Namespace = "aws:elasticbeanstalk:environment",
