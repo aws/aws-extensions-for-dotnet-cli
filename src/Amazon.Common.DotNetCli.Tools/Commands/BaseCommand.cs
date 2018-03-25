@@ -299,7 +299,14 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
                     AWSManagedPolicyNamePrefix = awsManagedPolicyPrefix,
                     KnownManagedPolicyDescription = knownManagedPolicyDescription
                 };
-                return RoleHelper.PromptForRole(this.IAMClient, promptInfo);
+
+                var role = RoleHelper.PromptForRole(this.IAMClient, promptInfo);
+                if(!string.IsNullOrEmpty(role))
+                {
+                    _cachedRequestedValues[option] = role;
+                }
+
+                return role;
             }
 
             return null;
