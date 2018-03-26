@@ -1,3 +1,13 @@
+### Release 2018-03-26
+* **Amazon.Lambda.Tools (2.1.2)**
+  * Moved here from the [AWS Lambda for .NET Core](https://github.com/aws/aws-lambda-dotnet) repository
+* **Amazon.ElasticBeanstalk.Tools (1.1.3)**
+  * Fixed issue with setting the IAM service role for new Beanstalk environments
+  * Fixed issue with Beanstalk Solution Stack not being persisted in defaults file.
+  * All commands can now persist the settings used with the **-pcfg true** flag.
+* **Amazon.ECS.Tools (1.1.4)**
+  * All commands can now persist the settings used with the **-pcfg true** flag.
+
 ### Release 2018-03-13
 
 * **Amazon.ECS.Tools (1.1.3)**
