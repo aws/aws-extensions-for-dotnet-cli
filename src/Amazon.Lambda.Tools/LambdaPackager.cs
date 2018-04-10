@@ -41,9 +41,11 @@ namespace Amazon.Lambda.Tools
             out string publishLocation, ref string zipArchivePath)
         {
             string lambdaRuntimePackageStoreManifestContent = null;
+            var computedProjectLocation = Utilities.DetermineProjectLocation(workingDirectory, projectLocation);
+
             if (!disableVersionCheck)
             {
-                LambdaUtilities.ValidateMicrosoftAspNetCoreAllReference(logger, Utilities.DetermineProjectLocation(workingDirectory, projectLocation), out lambdaRuntimePackageStoreManifestContent);
+                LambdaUtilities.ValidateMicrosoftAspNetCoreAllReference(logger, computedProjectLocation, out lambdaRuntimePackageStoreManifestContent);
             }
 
             var cli = new LambdaDotNetCLIWrapper(logger, workingDirectory);
@@ -81,7 +83,7 @@ namespace Amazon.Lambda.Tools
             }
 
             if (zipArchivePath == null)
-                zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, new DirectoryInfo(workingDirectory).Name + ".zip");
+                zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, new DirectoryInfo(computedProjectLocation).Name + ".zip");
 
             zipArchivePath = Path.GetFullPath(zipArchivePath);
             logger?.WriteLine($"Zipping publish folder {publishLocation} to {zipArchivePath}");
