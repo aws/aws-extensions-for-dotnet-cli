@@ -308,6 +308,9 @@ namespace Amazon.Lambda.Tools
             }
 
             var resources = root["Resources"];
+            if(resources == null)
+                throw new LambdaToolsException("CloudFormation template does not define any AWS resources", LambdaToolsException.LambdaErrorCode.ServerlessTemplateMissingResourceSection);
+            
 
             foreach (var field in resources.PropertyNames)
             {
