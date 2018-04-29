@@ -6,7 +6,8 @@
   "Parameters" : {
 	"StubParameter" : {
 	    "Type" : "String",
-        "Default" : "Foo"
+        "Default" : "Foo",
+        "NoEcho" : "true"
 	}
   },
 

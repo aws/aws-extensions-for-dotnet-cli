@@ -253,7 +253,20 @@ namespace Amazon.Lambda.Tools.Commands
                         this.Logger.WriteLine("Template Parameters Applied:");
                         foreach (var parameter in setParameters)
                         {
-                            this.Logger.WriteLine($"\t{parameter.ParameterKey}: {parameter.ParameterValue}");
+                            Tuple<string, bool> dp = null;
+                            if (definedParameters != null)
+                            {
+                                dp = definedParameters.FirstOrDefault(x => string.Equals(x.Item1, parameter.ParameterKey));
+                            }
+
+                            if (dp != null && dp.Item2)
+                            {
+                                this.Logger.WriteLine($"\t{parameter.ParameterKey}: ****");
+                            }
+                            else
+                            {
+                                this.Logger.WriteLine($"\t{parameter.ParameterKey}: {parameter.ParameterValue}");
+                            }
                         }
                     }
                 }
@@ -360,7 +373,7 @@ namespace Amazon.Lambda.Tools.Commands
         /// </summary>
         /// <param name="templateBody"></param>
         /// <returns></returns>
-        private HashSet<string> GetTemplateDefinedParameters(string templateBody)
+        private List<Tuple<string, bool>> GetTemplateDefinedParameters(string templateBody)
         {
             try
             {
@@ -370,16 +383,23 @@ namespace Amazon.Lambda.Tools.Commands
                 
                 var parameters = root["Parameters"] as JObject;
 
-                var set = new HashSet<string>();
+                var parms = new List<Tuple<string, bool>>();
                 if (parameters == null) 
-                    return set;
+                    return parms;
                 
                 foreach (var property in parameters.Properties())
                 {
-                    set.Add(property.Name);
+                    var noEcho = false;
+                    var prop = parameters[property.Name] as JObject;
+                    if(prop != null && prop["NoEcho"] != null)
+                    {
+                        noEcho = Boolean.Parse(prop["NoEcho"].ToString());
+                    }
+
+                    parms.Add(new Tuple<string, bool>(property.Name, noEcho));
                 }
 
-                return set;
+                return parms;
             }
             catch
             {
@@ -576,7 +596,7 @@ namespace Amazon.Lambda.Tools.Commands
         }
 
 
-        private List<Parameter> GetTemplateParameters(Stack stack, HashSet<string> definedParameters)
+        private List<Parameter> GetTemplateParameters(Stack stack, List<Tuple<string, bool>> definedParameters)
         {
             var parameters = new List<Parameter>();
 
@@ -585,7 +605,13 @@ namespace Amazon.Lambda.Tools.Commands
             {
                 foreach (var kvp in map)
                 {
-                    if (definedParameters != null && !definedParameters.Contains(kvp.Key))
+                    Tuple<string, bool> dp = null;
+                    if(definedParameters != null)
+                    {
+                        dp = definedParameters.FirstOrDefault(x => string.Equals(x.Item1, kvp.Key));
+                    }
+
+                    if (dp == null)
                     {
                         this.Logger.WriteLine($"Skipping passed in template parameter {kvp.Key} because the template does not define that parameter");
                     }

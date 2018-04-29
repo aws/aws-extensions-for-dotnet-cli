@@ -179,11 +179,11 @@ namespace Amazon.Lambda.Tools.Test
             try
             {
 
-
+                var logger = new TestToolLogger();
                 var assembly = this.GetType().GetTypeInfo().Assembly;
 
                 var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TemplateSubstitutionTestProjects/StateMachineDefinitionStringTest");
-                var command = new DeployServerlessCommand(new TestToolLogger(), fullPath, new string[0]);
+                var command = new DeployServerlessCommand(logger, fullPath, new string[0]);
                 command.DisableInteractive = true;
                 command.Configuration = "Release";
                 command.TargetFramework = "netcoreapp1.0";
@@ -191,7 +191,7 @@ namespace Amazon.Lambda.Tools.Test
                 command.S3Bucket = bucketName;
                 command.WaitForStackToComplete = true;
 
-                command.TemplateParameters = new Dictionary<string, string> { { "NonExisting", "Parameter" } };
+                command.TemplateParameters = new Dictionary<string, string> { { "NonExisting", "Parameter" }, { "StubParameter", "SecretFoo" } };
 
                 var created = await command.ExecuteAsync();
                 try
@@ -204,6 +204,9 @@ namespace Amazon.Lambda.Tools.Test
                     });
 
                     Assert.Equal(StackStatus.CREATE_COMPLETE, describeResponse.Stacks[0].StackStatus);
+
+                    Assert.DoesNotContain("SecretFoo", logger.Buffer.ToString());
+                    Assert.Contains("****", logger.Buffer.ToString());
                 }
                 finally
                 {
@@ -244,10 +247,11 @@ namespace Amazon.Lambda.Tools.Test
         [Fact]
         public async Task TestServerlessPackage()
         {
+            var logger = new TestToolLogger();
             var assembly = this.GetType().GetTypeInfo().Assembly;
 
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestServerlessWebApp");
-            var command = new PackageCICommand(new ConsoleToolLogger(), fullPath, new string[0]);
+            var command = new PackageCICommand(logger, fullPath, new string[0]);
             command.Region = "us-west-2";
             command.Configuration = "Release";
             command.TargetFramework = "netcoreapp2.0";
