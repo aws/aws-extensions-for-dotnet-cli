@@ -20,14 +20,14 @@
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.CloudWatchEvents" Version="3.3.3.3" />
-    <PackageReference Include="AWSSDK.CloudWatchLogs" Version="3.3.4.3" />
-    <PackageReference Include="AWSSDK.Core" Version="3.3.21.6" />
-    <PackageReference Include="AWSSDK.EC2" Version="3.3.42" />
-    <PackageReference Include="AWSSDK.ECR" Version="3.3.3.2" />
-    <PackageReference Include="AWSSDK.ECS" Version="3.3.10" />
-    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.5.3" />
-    <PackageReference Include="AWSSDK.S3" Version="3.3.16.2" />
-    <PackageReference Include="AWSSDK.SecurityToken" Version="3.3.3.3" />
+    <PackageReference Include="AWSSDK.CloudWatchLogs" Version="3.3.4.8" />
+    <PackageReference Include="AWSSDK.Core" Version="3.3.22.2" />
+    <PackageReference Include="AWSSDK.EC2" Version="3.3.48.2" />
+    <PackageReference Include="AWSSDK.ECR" Version="3.3.3.8" />
+    <PackageReference Include="AWSSDK.ECS" Version="3.3.13.3" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.6.3" />
+    <PackageReference Include="AWSSDK.S3" Version="3.3.18.2" />
+    <PackageReference Include="AWSSDK.SecurityToken" Version="3.3.4.3" />
   </ItemGroup>
 
   <ItemGroup>

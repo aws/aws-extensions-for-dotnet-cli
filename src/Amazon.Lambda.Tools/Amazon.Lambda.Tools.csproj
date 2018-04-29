@@ -32,14 +32,14 @@
     <EmbeddedResource Include="Resources\netcore.runtime.hierarchy.json" Exclude="bin\**;obj\**;**\*.xproj;packages\**;@(EmbeddedResource)" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="AWSSDK.SecurityToken" Version="3.3.3.3" />
+    <PackageReference Include="AWSSDK.SecurityToken" Version="3.3.4.3" />
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
     <PackageReference Include="System.IO.Compression.ZipFile" Version="4.0.1" />
     <PackageReference Include="System.Runtime.Loader" Version="4.0.0" />
-    <PackageReference Include="AWSSDK.CloudFormation" Version="3.3.9" />
-    <PackageReference Include="AWSSDK.Lambda" Version="3.3.10" />
-    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.5.3" />
-    <PackageReference Include="AWSSDK.S3" Version="3.3.16.2" />
+    <PackageReference Include="AWSSDK.CloudFormation" Version="3.3.10.2" />
+    <PackageReference Include="AWSSDK.Lambda" Version="3.3.13.2" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.6.3" />
+    <PackageReference Include="AWSSDK.S3" Version="3.3.18.2" />
     <PackageReference Include="YamlDotNet.Signed" Version="4.2.1" />
   </ItemGroup>
   <PropertyGroup>
