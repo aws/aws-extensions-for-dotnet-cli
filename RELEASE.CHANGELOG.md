@@ -1,3 +1,8 @@
+### Release 2018-04-30
+* **Amazon.Lambda.Tools (2.1.2)**
+    * If a CloudFormation parameter's NoEcho property is to true then output **** when displaying the template parameters set for the deployment.
+    * Stop persisting **--stack-wait** switch when saving config file because it will always be set to false when called from Visual Studio.
+
 ### Release 2018-03-26
 * **Amazon.Lambda.Tools (2.1.2)**
   * Moved here from the [AWS Lambda for .NET Core](https://github.com/aws/aws-lambda-dotnet) repository
