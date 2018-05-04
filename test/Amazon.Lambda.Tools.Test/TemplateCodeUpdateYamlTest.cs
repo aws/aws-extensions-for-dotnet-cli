@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using YamlDotNet.Serialization;
 
 using Xunit;
@@ -48,6 +49,43 @@ Resources:
         S3Key: PlaceHolderKey
 ";
 
+        
+        static readonly string API_WITH_SWAGGER =
+@"AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: An AWS Serverless Application.
+Resources: 
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      DefinitionBody: 
+        swagger: '2.0'
+        info:
+          version: '2018-04-18T18:37:10Z'
+          title: 'manual-deploy'
+        host: 'prepend.execute-api.region.amazonaws.com'
+        basePath: '/prod'
+        schemes:
+        - 'https'
+        paths:
+          /ride:
+            post:
+              produces:
+              - 'application/json'
+              responses:
+                '200':
+                  description: '200 response'
+                  schema:
+                    $ref: '#/definitions/Empty'
+                  headers:
+                    Content-Type:
+                      type: 'string'    
+        definitions:
+          Empty:
+            type: 'object'
+            title: 'Empty Schema'";
+            
         const string S3_BUCKET = "myBucket";
         const string S3_OBJECT = "myObject";
         static readonly string S3_URL = $"s3://{S3_BUCKET}/{S3_OBJECT}";
@@ -79,6 +117,27 @@ Resources:
 
             Assert.Equal(S3_BUCKET, code["S3Bucket"]);
             Assert.Equal(S3_OBJECT, code["S3Key"]);
+        }
+
+        [Fact]
+        public void ReplaceCodeLocationPreservesSwagger()
+        {
+            var updateTemplateBody = LambdaUtilities.UpdateCodeLocationInTemplate(API_WITH_SWAGGER, S3_BUCKET, S3_OBJECT);
+            
+            Assert.Contains("'200':", updateTemplateBody);
+        }
+
+        [Fact]
+        public void DeployServerlessWithSwaggerWithTemplateSubstitution()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../test/Amazon.Lambda.Tools.Test/TestFiles/testtemplate.yaml");
+
+            var template = File.ReadAllText(fullPath);
+
+            //Does not throw an error when parsing template
+            var updateTemplateBody = LambdaUtilities.UpdateCodeLocationInYamlTemplate(template, S3_BUCKET, S3_OBJECT);
         }
     }
 }

@@ -1,0 +1,126 @@
+AWSTemplateFormatVersion : 2010-09-09
+Transform : AWS::Serverless-2016-10-31
+Description : An AWS Serverless Application.
+Resources : 
+  RestApi : 
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      DefinitionBody: 
+        swagger: 2.0
+        info: 
+          version: 2018-04-18T18:37:10Z
+          title: manual-deploy
+        host: prepend.execute-api.region.amazonaws.com
+        basePath: /prod
+        schemes: 
+          - https
+        paths: 
+          /ride: 
+            post: 
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              responses: 
+                "200": 
+                  description: 200 response
+                  headers: 
+                    Content-Type: "type: string"
+                  schema: 
+                    $ref: "#/definitions/Empty"
+                "201": 
+                  description: 201 response
+                  headers: 
+                    Content-Type: "type: string"
+                  schema: 
+                    $ref: "#/definitions/Empty"
+              security: [ WilderRydes: []]
+              x-amazon-apigateway-integration: 
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Post.Arn}/invocations"
+                responses: 
+                  default: 
+                    statusCode: 200
+                    responseTemplates: 
+                      application/json: "#set ($root=$input.path('$'))  \"stage\": \"$root.name\" \"user-id\": \"$root.key\""
+                passthroughBehavior: when_no_match
+                httpMethod: POST
+                responseTemplates: 
+                  application/json: "#set ($root=$input.path('$'))  \"stage\": \"$root.name\" \"user-id\": \"$root.key\""
+                contentHandling: CONVERT_TO_TEXT
+                type: aws_proxy
+            options: 
+              consumes: 
+                - application/json
+              produces:
+                - application/json
+              responses: 
+                "200": 
+                  description: 200 response
+                  schema: 
+                    $ref: "#/definitions/Empty"
+                  headers: 
+                    Access-Control-Allow-Origin: 
+                      type: string
+                    Access-Control-Allow-Methods: 
+                      type: string
+                    Access-Control-Allow-Headers: 
+                      type: string
+              x-amazon-apigateway-integration: 
+                responses: 
+                  default: 
+                    statusCode: 200
+                    responseParameters: 
+                      method.response.header.Access-Control-Allow-Methods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                requestTemplates: 
+                  application/json: '"statusCode": "200"'
+                passthroughBehavior: when_no_match
+                type: mock
+        securityDefinitions: 
+          WilderRydes: 
+            type: apiKey
+            name: Authorization
+            in: header
+            x-amazon-apigateway-authtype: cognito_user_pools
+            x-amazon-apigateway-authorizer: 
+              type: cognito_user_pools
+              providerARNs:
+                - "arn:aws:cognito-idp:region:123456789012:userpool/region_Letters"
+        definitions: 
+          Empty: 
+            type: object
+            title: Empty Schema
+  Post : 
+    Type: AWS::Serverless::Function
+    Properties: 
+      Handler: WildRydes::Function.Functions::Post
+      Runtime: dotnetcore2.0
+      CodeUri: 
+      MemorySize: 256
+      Timeout: 30
+      Role: null
+      Policies: [ AWSLambdaBasicExecutionRole, AmazonDynamoDBFullAccess ]
+      Events: 
+        PostResource: 
+          Type: Api
+          Properties: 
+            RestApiId: !Ref RestApi
+            Path: /ride
+            Method: POST
+  RidesTable: 
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      AttributeDefinitions: 
+        - 
+          AttributeName: RideId
+          AttributeType: S
+      KeySchema:
+        -
+          AttributeName: RideId
+          KeyType: HASH
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TableName: Rides
