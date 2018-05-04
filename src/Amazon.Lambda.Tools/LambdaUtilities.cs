@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
+using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
 
 using Newtonsoft.Json;
@@ -344,51 +345,55 @@ namespace Amazon.Lambda.Tools
         public static string UpdateCodeLocationInYamlTemplate(string templateBody, string s3Bucket, string s3Key)
         {
             var s3Url = $"s3://{s3Bucket}/{s3Key}";
-            var deserialize = new YamlDotNet.Serialization.Deserializer();
 
-            var root = deserialize.Deserialize(new StringReader(templateBody)) as Dictionary<object, object>;
+            // Setup the input
+			var input = new StringReader(templateBody);
+
+			// Load the stream
+			var yaml = new YamlStream();
+			yaml.Load(input);
+
+			// Examine the stream
+			var root = (YamlMappingNode)yaml.Documents[0].RootNode;
+            
             if (root == null)
                 return templateBody;
 
-            if (!root.ContainsKey("Resources"))
+            var resourcesKey = new YamlScalarNode("Resources");
+
+            if (!root.Children.ContainsKey(resourcesKey))
                 return templateBody;
+            
+            var resources = (YamlMappingNode) root.Children[resourcesKey];
 
-            var resources = root["Resources"] as IDictionary<object, object>;
+			foreach (var resource in resources.Children)
+			{
+                var resourceBody = (YamlMappingNode) resource.Value;
+				var type = (YamlScalarNode) resourceBody.Children[new YamlScalarNode("Type")];
+				var properties = (YamlMappingNode) resourceBody.Children[new YamlScalarNode("Properties")];
 
+                if (properties == null) continue;
+                if (type == null) continue;
 
-            foreach(var kvp in resources)
-            {
-                var resource = kvp.Value as IDictionary<object, object>;
-                if (resource == null)
-                    continue;
-
-                if (!resource.ContainsKey("Properties"))
-                    continue;
-                var properties = resource["Properties"] as IDictionary<object, object>;
-
-
-                if (!resource.ContainsKey("Type"))
-                    continue;
-
-                var type = resource["Type"]?.ToString();
-                if (string.Equals(type, "AWS::Serverless::Function", StringComparison.Ordinal))
+				if (string.Equals(type?.Value, "AWS::Serverless::Function", StringComparison.Ordinal))
                 {
-                    properties["CodeUri"] = s3Url;
+                    properties.Children.Remove(new YamlScalarNode("CodeUri"));
+                    properties.Add("CodeUri", s3Url);                   
                 }
-
-                if (string.Equals(type, "AWS::Lambda::Function", StringComparison.Ordinal))
+                else if (string.Equals(type?.Value, "AWS::Lambda::Function", StringComparison.Ordinal))
                 {
-                    var code = new Dictionary<object, object>();
-                    code["S3Bucket"] = s3Bucket;
-                    code["S3Key"] = s3Key;
-                    properties["Code"] = code;
+                    properties.Children.Remove(new YamlScalarNode("Code"));
+                    var code = new YamlMappingNode();
+                    code.Add("S3Bucket", s3Bucket);
+                    code.Add("S3Key", s3Key);
+
+                    properties.Add("Code", code);
                 }
-            }
+			}
+            var myText = new StringWriter();
+            yaml.Save(myText);
 
-            var serializer = new Serializer();
-            var updatedTemplateBody = serializer.Serialize(root);
-
-            return updatedTemplateBody;
+            return myText.ToString();
         }
 
 
