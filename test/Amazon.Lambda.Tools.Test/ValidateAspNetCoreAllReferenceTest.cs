@@ -44,5 +44,19 @@ namespace Amazon.Lambda.Tools.Test
 
             Assert.DoesNotContain("error", logger.Buffer.ToLower());
         }
+
+        [Theory]
+        [InlineData(@"ManifestTestFiles/ProjectFilesAspNetCoreAllValidation/csharp")]
+        [InlineData(@"ManifestTestFiles/ProjectFilesAspNetCoreAllValidation/fsharp")]
+        [InlineData(@"ManifestTestFiles/ProjectFilesAspNetCoreAllValidation/vb")]
+        public void FindProjFiles(string projectDirectory)
+        {
+            var logger = new TestToolLogger();
+            string manifest;
+
+            LambdaUtilities.ValidateMicrosoftAspNetCoreAllReference(logger, projectDirectory, out manifest);
+
+            Assert.DoesNotContain("error", logger.Buffer.ToLower());
+        }
     }
 }

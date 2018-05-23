@@ -50,4 +50,15 @@
     <ProjectReference Include="..\..\testapps\TestFunction\TestFunction.csproj" />
     <ProjectReference Include="..\Amazon.Tools.TestHelpers\Amazon.Tools.TestHelpers.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="ManifestTestFiles\ProjectFilesAspNetCoreAllValidation\csharp\test.csproj">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="ManifestTestFiles\ProjectFilesAspNetCoreAllValidation\fsharp\test.fsproj">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="ManifestTestFiles\ProjectFilesAspNetCoreAllValidation\vb\test.vbproj">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

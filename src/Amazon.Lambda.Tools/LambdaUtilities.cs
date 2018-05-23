@@ -46,7 +46,7 @@ namespace Amazon.Lambda.Tools
         }
 
 
-        public static void ValidateMicrosoftAspNetCoreAllReference(IToolLogger logger, string csprofPath, out string manifestContent)
+        public static void ValidateMicrosoftAspNetCoreAllReference(IToolLogger logger, string profPath, out string manifestContent)
         {
             if(!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(LambdaConstants.ENV_DOTNET_LAMBDA_CLI_LOCAL_MANIFEST_OVERRIDE)))
             {
@@ -71,23 +71,26 @@ namespace Amazon.Lambda.Tools
                 return;
             }
 
-            if (Directory.Exists(csprofPath))
+            HashSet<string> validProjectExtensions = new HashSet<string> { ".csproj", ".fsproj", ".vbproj" };
+
+            if (Directory.Exists(profPath))
             {
-                var projectFiles = Directory.GetFiles(csprofPath, "*.csproj", SearchOption.TopDirectoryOnly);
-                if(projectFiles.Length != 1)
+                var projectFiles = Directory.GetFiles(profPath, "*.??proj", SearchOption.TopDirectoryOnly)
+                    .Where(x => validProjectExtensions.Contains(Path.GetExtension(x))).ToArray();
+                if (projectFiles.Length != 1)
                 {
-                    logger?.WriteLine("Unable to determine csproj project file when validating version of Microsoft.AspNetCore.All");
+                    logger?.WriteLine("Unable to determine project file when validating version of Microsoft.AspNetCore.All");
                     return;
                 }
-                csprofPath = projectFiles[0];
+                profPath = projectFiles[0];
             }
 
-            // If the file is not a csproj file then skip validation. This could happen
+            // If the file is not a valid proj file then skip validation. This could happen
             // if the project is an F# project or an older style project.json.
-            if (!string.Equals(Path.GetExtension(csprofPath), ".csproj"))
+            if (!validProjectExtensions.Contains(Path.GetExtension(profPath)))
                 return;
 
-            var projectContent = File.ReadAllText(csprofPath);
+            var projectContent = File.ReadAllText(profPath);
 
             
             ValidateMicrosoftAspNetCoreAllReferenceWithManifest(logger, manifestContent, projectContent);
@@ -99,18 +102,18 @@ namespace Amazon.Lambda.Tools
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="manifestContent"></param>
-        /// <param name="csprojContent"></param>
-        public static void ValidateMicrosoftAspNetCoreAllReferenceWithManifest(IToolLogger logger, string manifestContent, string csprojContent)
+        /// <param name="projContent"></param>
+        public static void ValidateMicrosoftAspNetCoreAllReferenceWithManifest(IToolLogger logger, string manifestContent, string projContent)
         {
             const string ASPNET_CORE_ALL = "Microsoft.AspNetCore.All";
             try
             {
-                XDocument csprojXmlDoc = XDocument.Parse(csprojContent);
+                XDocument projXmlDoc = XDocument.Parse(projContent);
 
                 Func<string> searchForAspNetCoreAllVersion = () =>
                 {
                     // Not using XPath because to avoid adding an addition dependency for a simple one time use.
-                    foreach (var group in csprojXmlDoc.Root.Elements("ItemGroup"))
+                    foreach (var group in projXmlDoc.Root.Elements("ItemGroup"))
                     {
                         foreach (XElement packageReference in group.Elements("PackageReference"))
                         {
