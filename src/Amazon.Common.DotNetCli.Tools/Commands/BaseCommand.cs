@@ -188,7 +188,7 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
                     var chain = new CredentialProfileStoreChain(this.ProfileLocation);
                     if (!chain.TryGetAWSCredentials(profile, out credentials))
                     {
-                        throw new ToolsException($"Credentials for profile {profile} cannot be found", ToolsException.CommonErrorCode.ProfileNotFound);
+                        credentials = FallbackCredentialsFactory.GetCredentials();
                     }
                 }
                 else
