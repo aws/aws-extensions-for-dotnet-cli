@@ -25,6 +25,15 @@ namespace Amazon.Common.DotNetCli.Tools.Options
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = "Target framework to compile, for example netcoreapp1.0.",
             };
+        public static readonly CommandOption ARGUMENT_PUBLISH_OPTIONS =
+            new CommandOption
+            {
+                Name = "Publish Options",
+                ShortSwitch = "-po",
+                Switch = "--publish-options",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "Additional options passed to the \"dotnet publish\" command.",
+            };
         public static readonly CommandOption ARGUMENT_DISABLE_INTERACTIVE =
             new CommandOption
             {

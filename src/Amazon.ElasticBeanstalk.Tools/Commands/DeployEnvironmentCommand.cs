@@ -22,6 +22,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION,
             CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION,
             CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK,
+            CommonDefinedCommandOptions.ARGUMENT_PUBLISH_OPTIONS,
 
             EBDefinedCommandOptions.ARGUMENT_EB_APPLICATION,
             EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT,
@@ -82,9 +83,10 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false));
 
             string configuration = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false) ?? "Release";
-            string targetFramework = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false); 
+            string targetFramework = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
+            string publishOptions = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.PublishOptions, CommonDefinedCommandOptions.ARGUMENT_PUBLISH_OPTIONS, false);
 
-            if(string.IsNullOrEmpty(targetFramework))
+            if (string.IsNullOrEmpty(targetFramework))
             {
                 targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation);
                 if (string.IsNullOrEmpty(targetFramework))
@@ -125,7 +127,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
 
             this.Logger?.WriteLine("Executing publish command");
-            if (dotnetCli.Publish(projectLocation, publishLocation, targetFramework, configuration) != 0)
+            if (dotnetCli.Publish(projectLocation, publishLocation, targetFramework, configuration, publishOptions) != 0)
             {
                 throw new ElasticBeanstalkExceptions("Error executing \"dotnet publish\"", ElasticBeanstalkExceptions.CommonErrorCode.DotnetPublishFailed);
             }

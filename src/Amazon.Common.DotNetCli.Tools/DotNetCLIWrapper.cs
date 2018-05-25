@@ -26,7 +26,7 @@ namespace Amazon.Common.DotNetCli.Tools
         /// <param name="outputLocation"></param>
         /// <param name="targetFramework"></param>
         /// <param name="configuration"></param>
-        public int Publish(string projectLocation, string outputLocation, string targetFramework, string configuration)
+        public int Publish(string projectLocation, string outputLocation, string targetFramework, string configuration, string additionalPublishOptions)
         {
             if (Directory.Exists(outputLocation))
             {
@@ -67,6 +67,11 @@ namespace Amazon.Common.DotNetCli.Tools
             if (!string.IsNullOrEmpty(targetFramework))
             {
                 arguments.Append($" --framework \"{targetFramework}\"");
+            }
+
+            if (!string.IsNullOrEmpty(additionalPublishOptions))
+            {
+                arguments.Append($" {additionalPublishOptions}");
             }
 
 

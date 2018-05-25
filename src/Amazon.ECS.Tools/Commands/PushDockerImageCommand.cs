@@ -22,6 +22,7 @@ namespace Amazon.ECS.Tools.Commands
             CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION,
             CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION,
             CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK,
+            CommonDefinedCommandOptions.ARGUMENT_PUBLISH_OPTIONS,
             ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG
         });
 
@@ -67,6 +68,7 @@ namespace Amazon.ECS.Tools.Commands
 
             var configuration = this.GetStringValueOrDefault(this.PushDockerImageProperties.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false) ?? "Release";
             var targetFramework = this.GetStringValueOrDefault(this.PushDockerImageProperties.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
+            string publishOptions = this.GetStringValueOrDefault(this.PushDockerImageProperties.PublishOptions, CommonDefinedCommandOptions.ARGUMENT_PUBLISH_OPTIONS, false);
             this.PushDockerImageProperties.DockerImageTag = this.GetStringValueOrDefault(this.PushDockerImageProperties.DockerImageTag, ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG, true).ToLower();
 
             if (!this.PushDockerImageProperties.DockerImageTag.Contains(":"))
@@ -80,7 +82,7 @@ namespace Amazon.ECS.Tools.Commands
             {
                 var dotnetCli = new DotNetCLIWrapper(this.Logger, projectLocation);
                 this.Logger?.WriteLine("Executing publish command");
-                if (dotnetCli.Publish(projectLocation, dockerDetails.ExpectedPublishLocation, targetFramework, configuration) != 0)
+                if (dotnetCli.Publish(projectLocation, dockerDetails.ExpectedPublishLocation, targetFramework, configuration, publishOptions) != 0)
                 {
                     throw new DockerToolsException("Error executing \"dotnet publish\"", DockerToolsException.CommonErrorCode.DotnetPublishFailed);
                 }
