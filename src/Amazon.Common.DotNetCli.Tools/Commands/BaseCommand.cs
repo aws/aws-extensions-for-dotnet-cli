@@ -522,9 +522,9 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             }
             else if (required && !this.DisableInteractive)
             {
-                var existingProfles = RoleHelper.FindExistingInstanceProfilesAsync(this.IAMClient, 20).Result;
+                var existingProfiles = RoleHelper.FindExistingInstanceProfilesAsync(this.IAMClient, 20).Result;
                 var selections = new List<string>();
-                foreach (var profile in existingProfles)
+                foreach (var profile in existingProfiles)
                     selections.Add(profile.InstanceProfileName);
 
                 selections.Add("*** Create new Instance Profile ***");
@@ -532,7 +532,9 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
 
                 if(chosenIndex < selections.Count - 1)
                 {
-                    return existingProfles[chosenIndex].Arn;
+                    var arn = existingProfiles[chosenIndex].Arn;
+                    _cachedRequestedValues[option] = arn;
+                    return arn;
                 }
                 else
                 {
@@ -565,7 +567,9 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
                         RoleName = uniqueRoleName
                     }).Wait();
 
-                    return response.InstanceProfile.Arn;
+                    var arn = response.InstanceProfile.Arn;
+                    _cachedRequestedValues[option] = arn;
+                    return arn;
                 }
             }
 
