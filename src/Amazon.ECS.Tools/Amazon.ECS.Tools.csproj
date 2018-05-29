@@ -9,7 +9,7 @@
     <PackageTags>AWS;Amazon;Docker;ECS</PackageTags>
     <PackageType>DotnetCliTool</PackageType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.1.4</Version>
+    <Version>1.1.5</Version>
     <AssemblyName>dotnet-ecs</AssemblyName>
     <Company>Amazon.com, Inc</Company>
     <Authors>Amazon Web Services</Authors>

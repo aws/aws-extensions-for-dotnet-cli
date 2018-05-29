@@ -9,7 +9,7 @@
     <PackageTags>AWS;Amazon;Beanstalk</PackageTags>
     <PackageType>DotnetCliTool</PackageType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.1.3</Version>
+    <Version>1.1.4</Version>
     <AssemblyName>dotnet-eb</AssemblyName>
     <Authors>Amazon Web Services</Authors>
     <Copyright>Copyright 2009-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
