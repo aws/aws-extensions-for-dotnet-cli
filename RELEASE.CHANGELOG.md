@@ -1,3 +1,22 @@
+### Relesae 2018-05-29
+* **Amazon.Lambda.Tools (2.1.4)**
+    * Change AWS credential lookup logic to continue searching if the profile specified cannot be found. This allows 
+easier switching between development environment and CI/CD environments.
+    * Pull request [#11](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/11). Fixed issue with `deploy-serverless` breaking Swagger definitions in yaml.
+    *  Fixed issue when validating version of Microsoft.AspNetCore.All for F# project files.
+    *  Switch to warning when validating S3 bucket in same region as target deployment region if the region can not be determined. This is commonly due to lack of 
+S3 permission to get the region for a bucket.
+
+* **Amazon.ECS.Tools (1.1.5)**
+    * Change AWS credential lookup logic to continue searching if the profile specified cannot be found. This allows 
+easier switching between development environment and CI/CD environments.
+    * Add `--publish-options` switch to allow passing additional parameters to the `dotnet publish` command.
+* **Amazon.ElasticBeanstalk.Tools (1.1.4)**
+    * Change AWS credential lookup logic to continue searching if the profile specified cannot be found. This allows 
+easier switching between development environment and CI/CD environments.
+    * Add `--publish-options` switch to allow passing additional parameters to the `dotnet publish` command.
+    * Fixed issue with instance profile not being persisted when the flat to save configuration is set.
+
 ### Release 2018-04-30
 * **Amazon.Lambda.Tools (2.1.2)**
     * If a CloudFormation parameter's NoEcho property is to true then output **** when displaying the template parameters set for the deployment.
