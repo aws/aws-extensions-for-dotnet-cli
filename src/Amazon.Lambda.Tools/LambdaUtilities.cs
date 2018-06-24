@@ -45,32 +45,37 @@ namespace Amazon.Lambda.Tools
             }
         }
 
-
-        public static void ValidateMicrosoftAspNetCoreAllReference(IToolLogger logger, string profPath, out string manifestContent)
+        public static string LoadPackageStoreManifest(IToolLogger logger, string targetFramework)
         {
-            if(!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(LambdaConstants.ENV_DOTNET_LAMBDA_CLI_LOCAL_MANIFEST_OVERRIDE)))
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(LambdaConstants.ENV_DOTNET_LAMBDA_CLI_LOCAL_MANIFEST_OVERRIDE)))
             {
                 var filePath = Environment.GetEnvironmentVariable(LambdaConstants.ENV_DOTNET_LAMBDA_CLI_LOCAL_MANIFEST_OVERRIDE);
-                if(File.Exists(filePath))
+                if (File.Exists(filePath))
                 {
                     logger?.WriteLine($"Using local manifest override: {filePath}");
-                    manifestContent = File.ReadAllText(filePath);
+                    return File.ReadAllText(filePath);
                 }
                 else
                 {
                     logger?.WriteLine("Using local manifest override");
-                    manifestContent = null;
+                    return null;
                 }
             }
-            else
-            {
-                manifestContent = ToolkitConfigFileFetcher.Instance.GetFileContentAsync(logger, "LambdaPackageStoreManifest.xml").Result;
-            }
-            if (string.IsNullOrEmpty(manifestContent))
-            {
-                return;
-            }
 
+            string manifestFilename = null;
+            if (string.Equals("netcoreapp2.0", targetFramework, StringComparison.OrdinalIgnoreCase))
+                manifestFilename = "LambdaPackageStoreManifest.xml";
+            else if (string.Equals("netcoreapp2.0", targetFramework, StringComparison.OrdinalIgnoreCase))
+                manifestFilename = "LambdaPackageStoreManifest-v2.1.xml";
+
+            if (manifestFilename == null)
+                return null;
+
+            return ToolkitConfigFileFetcher.Instance.GetFileContentAsync(logger, manifestFilename).Result;
+        }
+
+        public static void ValidateMicrosoftAspNetCoreAllReferenceFromProjectPath(IToolLogger logger, string targetFramework, string manifestContent, string profPath)
+        {
             HashSet<string> validProjectExtensions = new HashSet<string> { ".csproj", ".fsproj", ".vbproj" };
 
             if (Directory.Exists(profPath))
@@ -93,7 +98,7 @@ namespace Amazon.Lambda.Tools
             var projectContent = File.ReadAllText(profPath);
 
             
-            ValidateMicrosoftAspNetCoreAllReferenceWithManifest(logger, manifestContent, projectContent);
+            ValidateMicrosoftAspNetCoreAllReferenceFromProjectContent(logger, targetFramework, manifestContent, projectContent);
         }
 
         /// <summary>
@@ -103,7 +108,7 @@ namespace Amazon.Lambda.Tools
         /// <param name="logger"></param>
         /// <param name="manifestContent"></param>
         /// <param name="projContent"></param>
-        public static void ValidateMicrosoftAspNetCoreAllReferenceWithManifest(IToolLogger logger, string manifestContent, string projContent)
+        public static void ValidateMicrosoftAspNetCoreAllReferenceFromProjectContent(IToolLogger logger, string targetFramework, string manifestContent, string projContent)
         {
             const string ASPNET_CORE_ALL = "Microsoft.AspNetCore.All";
             try
@@ -160,9 +165,21 @@ namespace Amazon.Lambda.Tools
                     }
                 }
 
-                throw new LambdaToolsException($"Project is referencing version {projectAspNetCoreVersion} of {ASPNET_CORE_ALL} which is newer " +
-                    $"than {latestLambdaDeployedVersion}, the latest version available in the Lambda Runtime environment. Please update your project to " +
-                    $"use version {latestLambdaDeployedVersion} and then redeploy your Lambda function.", LambdaToolsException.LambdaErrorCode.AspNetCoreAllValidation);
+                if (string.Equals("netcoreapp2.0", targetFramework, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new LambdaToolsException($"Project is referencing version {projectAspNetCoreVersion} of {ASPNET_CORE_ALL} which is newer " +
+                        $"than {latestLambdaDeployedVersion}, the latest version available in the Lambda Runtime environment. Please update your project to " +
+                        $"use version {latestLambdaDeployedVersion} and then redeploy your Lambda function.", 
+                        LambdaToolsException.LambdaErrorCode.AspNetCoreAllValidation);
+                }
+                else
+                {
+                    throw new LambdaToolsException($"Project is referencing {ASPNET_CORE_ALL} with a specific version ({projectAspNetCoreVersion}). " +
+                       "For .NET Core 2.1 a version number must not be set due to changes in how .NET Core 2.1 distributes the ASP.NET Core dependencies. " +
+                       "To fix this issue open up your project file in a text editor and remove the \"Version\" attribute for the PackageReference that " +
+                       $"includes {ASPNET_CORE_ALL}.", 
+                        LambdaToolsException.LambdaErrorCode.AspNetCoreAllValidation);
+                }
             }
             catch (LambdaToolsException)
             {

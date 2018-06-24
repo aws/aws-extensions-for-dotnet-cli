@@ -43,9 +43,11 @@ namespace Amazon.Lambda.Tools
             string lambdaRuntimePackageStoreManifestContent = null;
             var computedProjectLocation = Utilities.DetermineProjectLocation(workingDirectory, projectLocation);
 
+            var packageStoreManifest = LambdaUtilities.LoadPackageStoreManifest(logger, targetFramework);
+
             if (!disableVersionCheck)
             {
-                LambdaUtilities.ValidateMicrosoftAspNetCoreAllReference(logger, computedProjectLocation, out lambdaRuntimePackageStoreManifestContent);
+                LambdaUtilities.ValidateMicrosoftAspNetCoreAllReferenceFromProjectPath(logger, targetFramework, packageStoreManifest, computedProjectLocation);
             }
 
             var cli = new LambdaDotNetCLIWrapper(logger, workingDirectory);
