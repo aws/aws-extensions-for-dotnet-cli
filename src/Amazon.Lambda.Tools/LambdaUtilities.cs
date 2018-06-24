@@ -97,7 +97,7 @@ namespace Amazon.Lambda.Tools
 
             var projectContent = File.ReadAllText(profPath);
 
-            
+
             ValidateMicrosoftAspNetCoreAllReferenceFromProjectContent(logger, targetFramework, manifestContent, projectContent);
         }
 
@@ -142,34 +142,37 @@ namespace Amazon.Lambda.Tools
                 }
 
 
-                var manifestXmlDoc = XDocument.Parse(manifestContent);
-
-                string latestLambdaDeployedVersion = null;
-                foreach (var element in manifestXmlDoc.Root.Elements("Package"))
-                {
-                    var name = element.Attribute("Id")?.Value;
-                    if (string.Equals(name, ASPNET_CORE_ALL, StringComparison.Ordinal))
-                    {
-                        var version = element.Attribute("Version")?.Value;
-                        if (string.Equals(projectAspNetCoreVersion, version, StringComparison.Ordinal))
-                        {
-                            // Version specifed in project file is available in Lambda Runtime
-                            return;
-                        }
-
-                        // Record latest supported version to provide meaningful error message.
-                        if (latestLambdaDeployedVersion == null || Version.Parse(latestLambdaDeployedVersion) < Version.Parse(version))
-                        {
-                            latestLambdaDeployedVersion = version;
-                        }
-                    }
-                }
-
                 if (string.Equals("netcoreapp2.0", targetFramework, StringComparison.OrdinalIgnoreCase))
                 {
+                    if (string.IsNullOrEmpty(manifestContent))
+                        return;
+
+                    var manifestXmlDoc = XDocument.Parse(manifestContent);
+
+                    string latestLambdaDeployedVersion = null;
+                    foreach (var element in manifestXmlDoc.Root.Elements("Package"))
+                    {
+                        var name = element.Attribute("Id")?.Value;
+                        if (string.Equals(name, ASPNET_CORE_ALL, StringComparison.Ordinal))
+                        {
+                            var version = element.Attribute("Version")?.Value;
+                            if (string.Equals(projectAspNetCoreVersion, version, StringComparison.Ordinal))
+                            {
+                                // Version specifed in project file is available in Lambda Runtime
+                                return;
+                            }
+
+                            // Record latest supported version to provide meaningful error message.
+                            if (latestLambdaDeployedVersion == null || Version.Parse(latestLambdaDeployedVersion) < Version.Parse(version))
+                            {
+                                latestLambdaDeployedVersion = version;
+                            }
+                        }
+                    }
+
                     throw new LambdaToolsException($"Project is referencing version {projectAspNetCoreVersion} of {ASPNET_CORE_ALL} which is newer " +
                         $"than {latestLambdaDeployedVersion}, the latest version available in the Lambda Runtime environment. Please update your project to " +
-                        $"use version {latestLambdaDeployedVersion} and then redeploy your Lambda function.", 
+                        $"use version {latestLambdaDeployedVersion} and then redeploy your Lambda function.",
                         LambdaToolsException.LambdaErrorCode.AspNetCoreAllValidation);
                 }
                 else
@@ -177,7 +180,7 @@ namespace Amazon.Lambda.Tools
                     throw new LambdaToolsException($"Project is referencing {ASPNET_CORE_ALL} with a specific version ({projectAspNetCoreVersion}). " +
                        "For .NET Core 2.1 a version number must not be set due to changes in how .NET Core 2.1 distributes the ASP.NET Core dependencies. " +
                        "To fix this issue open up your project file in a text editor and remove the \"Version\" attribute for the PackageReference that " +
-                       $"includes {ASPNET_CORE_ALL}.", 
+                       $"includes {ASPNET_CORE_ALL}.",
                         LambdaToolsException.LambdaErrorCode.AspNetCoreAllValidation);
                 }
             }
@@ -185,7 +188,7 @@ namespace Amazon.Lambda.Tools
             {
                 throw;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 logger?.WriteLine($"Unknown error validating version of {ASPNET_CORE_ALL}: {e.Message}");
             }
@@ -200,7 +203,7 @@ namespace Amazon.Lambda.Tools
             logger?.WriteLine($"Processing {substitutions.Count} substitutions.");
             var root = JsonConvert.DeserializeObject(templateBody) as JObject;
 
-            foreach(var kvp in substitutions)
+            foreach (var kvp in substitutions)
             {
                 logger?.WriteLine($"Processing substitution: {kvp.Key}");
                 var token = root.SelectToken(kvp.Key);
@@ -223,14 +226,14 @@ namespace Amazon.Lambda.Tools
 
                 try
                 {
-                    switch(token.Type)
+                    switch (token.Type)
                     {
                         case JTokenType.String:
                             ((JValue)token).Value = replacementValue;
                             break;
                         case JTokenType.Boolean:
                             bool b;
-                            if(bool.TryParse(replacementValue, out b))
+                            if (bool.TryParse(replacementValue, out b))
                             {
                                 ((JValue)token).Value = b;
                             }
@@ -238,7 +241,7 @@ namespace Amazon.Lambda.Tools
                             {
                                 throw new LambdaToolsException($"Failed to convert {replacementValue} to a bool", LambdaToolsException.LambdaErrorCode.ServerlessTemplateSubstitutionError);
                             }
-                            
+
                             break;
                         case JTokenType.Integer:
                             int i;
@@ -271,7 +274,7 @@ namespace Amazon.Lambda.Tools
                             {
                                 subData = JsonConvert.DeserializeObject(replacementValue) as JToken;
                             }
-                            catch(Exception e)
+                            catch (Exception e)
                             {
                                 throw new LambdaToolsException($"Failed to parse substitue JSON data: {e.Message}", LambdaToolsException.LambdaErrorCode.ServerlessTemplateSubstitutionError);
                             }
@@ -280,11 +283,11 @@ namespace Amazon.Lambda.Tools
                         default:
                             throw new LambdaToolsException($"Unable to determine how to convert substitute value into the template. " +
                                                             "Make sure to have a default value in the template which is used to determine the type. " +
-                                                            "For example \"\" for string fields or {} for JSON objects.", 
+                                                            "For example \"\" for string fields or {} for JSON objects.",
                                                             LambdaToolsException.LambdaErrorCode.ServerlessTemplateSubstitutionError);
                     }
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     throw new LambdaToolsException($"Error setting property {kvp.Key} with value {kvp.Value}: {e.Message}", LambdaToolsException.LambdaErrorCode.ServerlessTemplateSubstitutionError);
                 }
@@ -329,9 +332,9 @@ namespace Amazon.Lambda.Tools
             }
 
             var resources = root["Resources"];
-            if(resources == null)
+            if (resources == null)
                 throw new LambdaToolsException("CloudFormation template does not define any AWS resources", LambdaToolsException.LambdaErrorCode.ServerlessTemplateMissingResourceSection);
-            
+
 
             foreach (var field in resources.PropertyNames)
             {
@@ -367,15 +370,15 @@ namespace Amazon.Lambda.Tools
             var s3Url = $"s3://{s3Bucket}/{s3Key}";
 
             // Setup the input
-			var input = new StringReader(templateBody);
+            var input = new StringReader(templateBody);
 
-			// Load the stream
-			var yaml = new YamlStream();
-			yaml.Load(input);
+            // Load the stream
+            var yaml = new YamlStream();
+            yaml.Load(input);
 
-			// Examine the stream
-			var root = (YamlMappingNode)yaml.Documents[0].RootNode;
-            
+            // Examine the stream
+            var root = (YamlMappingNode)yaml.Documents[0].RootNode;
+
             if (root == null)
                 return templateBody;
 
@@ -383,22 +386,22 @@ namespace Amazon.Lambda.Tools
 
             if (!root.Children.ContainsKey(resourcesKey))
                 return templateBody;
-            
-            var resources = (YamlMappingNode) root.Children[resourcesKey];
 
-			foreach (var resource in resources.Children)
-			{
-                var resourceBody = (YamlMappingNode) resource.Value;
-				var type = (YamlScalarNode) resourceBody.Children[new YamlScalarNode("Type")];
-				var properties = (YamlMappingNode) resourceBody.Children[new YamlScalarNode("Properties")];
+            var resources = (YamlMappingNode)root.Children[resourcesKey];
+
+            foreach (var resource in resources.Children)
+            {
+                var resourceBody = (YamlMappingNode)resource.Value;
+                var type = (YamlScalarNode)resourceBody.Children[new YamlScalarNode("Type")];
+                var properties = (YamlMappingNode)resourceBody.Children[new YamlScalarNode("Properties")];
 
                 if (properties == null) continue;
                 if (type == null) continue;
 
-				if (string.Equals(type?.Value, "AWS::Serverless::Function", StringComparison.Ordinal))
+                if (string.Equals(type?.Value, "AWS::Serverless::Function", StringComparison.Ordinal))
                 {
                     properties.Children.Remove(new YamlScalarNode("CodeUri"));
-                    properties.Add("CodeUri", s3Url);                   
+                    properties.Add("CodeUri", s3Url);
                 }
                 else if (string.Equals(type?.Value, "AWS::Lambda::Function", StringComparison.Ordinal))
                 {
@@ -409,7 +412,7 @@ namespace Amazon.Lambda.Tools
 
                     properties.Add("Code", code);
                 }
-			}
+            }
             var myText = new StringWriter();
             yaml.Save(myText);
 
