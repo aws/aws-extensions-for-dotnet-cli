@@ -25,6 +25,54 @@ namespace Amazon.Common.DotNetCli.Tools
         }
 
         /// <summary>
+        /// Creates a relative path 
+        /// </summary>
+        /// <param name="start"></param>
+        /// <param name="relativeTo"></param>
+        /// <returns></returns>
+        public static string RelativePathTo(string start, string relativeTo)
+        {
+            start = Path.GetFullPath(start).Replace("\\", "/");
+            relativeTo = Path.GetFullPath(relativeTo).Replace("\\", "/");
+
+            string[] startDirs = start.Split('/');
+            string[] relativeToDirs = relativeTo.Split('/');
+
+            int len = startDirs.Length < relativeToDirs.Length ? startDirs.Length : relativeToDirs.Length;
+
+            int lastCommonRoot = -1;
+            int index;
+
+            for (index = 0; index < len && startDirs[index] == relativeToDirs[index]; index++)
+            {
+                lastCommonRoot = index;
+            }
+
+            // The 2 paths don't share a common ancestor. So the closest we can give is the absolute path to the target.
+            if (lastCommonRoot == -1)
+            {
+                return relativeTo;
+            }
+
+            StringBuilder relativePath = new StringBuilder();
+            for (index = lastCommonRoot + 1; index < startDirs.Length; index++)
+            {
+                if (startDirs[index].Length > 0) relativePath.Append("../");
+            }
+
+            for (index = lastCommonRoot + 1; index < relativeToDirs.Length; index++)
+            {
+                relativePath.Append(relativeToDirs[index]);
+                if(index + 1 < relativeToDirs.Length)
+                {
+                    relativePath.Append("/");
+                }
+            }
+
+            return relativePath.ToString();
+        }
+
+        /// <summary>
         /// Determine where the dotnet publish should put its artifacts at.
         /// </summary>
         /// <param name="workingDirectory"></param>

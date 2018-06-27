@@ -22,6 +22,24 @@ namespace Amazon.ECS.Tools
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = "Name and optionally a tag in the 'name:tag' format.",
             };
+        public static readonly CommandOption ARGUMENT_DOCKER_BUILD_WORKING_DIRECTORY =
+            new CommandOption
+            {
+                Name = "Docker Build Working Directory",
+                ShortSwitch = "-dbwd",
+                Switch = "--docker-build-working-dir",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "The directory to execute the \"docker build\" command from.",
+            };
+        public static readonly CommandOption ARGUMENT_DOCKER_BUILD_OPTIONS =
+            new CommandOption
+            {
+                Name = "Docker Build Options",
+                ShortSwitch = "-dbo",
+                Switch = "--docker-build-options",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "Additional options passed to the \"docker build\" command.",
+            };
         public static readonly CommandOption ARGUMENT_SKIP_IMAGE_PUSH =
             new CommandOption
             {

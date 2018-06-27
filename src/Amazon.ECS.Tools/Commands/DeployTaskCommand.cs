@@ -21,6 +21,8 @@ namespace Amazon.ECS.Tools.Commands
             CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK,
 
             ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG,
+            ECSDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_WORKING_DIRECTORY,
+            ECSDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_OPTIONS,
 
             ECSDefinedCommandOptions.ARGUMENT_SKIP_IMAGE_PUSH,
 
