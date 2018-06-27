@@ -10,6 +10,7 @@ namespace Amazon.Common.DotNetCli.Tools.Test
     {
         [Theory]
         [InlineData(@"C:\Code\Solution\Project", @"C:\Code\Solution", "../")]
+        [InlineData(@"c:\code\solution\project", @"C:\Code\Solution", "../")]
         [InlineData(@"C:\Code\Solution\ProjectA", @"C:\Code\Solution\ProjectB\file.csproj", "../ProjectB/file.csproj")]
         [InlineData(@"C:\Code\Solution\Project", @"D:\Code\Solution", "D:/Code/Solution")]
         [InlineData(@"C:\Code\Solution", @"C:\Code\Solution\Project", "Project")]

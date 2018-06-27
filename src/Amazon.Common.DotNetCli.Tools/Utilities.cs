@@ -43,7 +43,7 @@ namespace Amazon.Common.DotNetCli.Tools
             int lastCommonRoot = -1;
             int index;
 
-            for (index = 0; index < len && startDirs[index] == relativeToDirs[index]; index++)
+            for (index = 0; index < len && string.Equals(startDirs[index], relativeToDirs[index], StringComparison.OrdinalIgnoreCase); index++)
             {
                 lastCommonRoot = index;
             }

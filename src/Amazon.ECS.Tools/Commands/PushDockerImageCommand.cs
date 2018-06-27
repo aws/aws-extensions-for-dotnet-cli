@@ -101,7 +101,7 @@ namespace Amazon.ECS.Tools.Commands
             }
             else
             {
-                if (Path.IsPathRooted(dockerBuildWorkingDirectory))
+                if (!Path.IsPathRooted(dockerBuildWorkingDirectory))
                 {
                     dockerBuildWorkingDirectory = Path.GetFullPath(Path.Combine(projectLocation, dockerBuildWorkingDirectory));
                 }
