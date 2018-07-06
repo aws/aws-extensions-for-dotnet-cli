@@ -9,6 +9,7 @@ using Amazon.Lambda.Model;
 using Amazon.Lambda.Tools.Commands;
 
 using Amazon.S3;
+using Amazon.S3.Model;
 using Amazon.S3.Util;
 
 using Amazon.IdentityManagement;
@@ -28,12 +29,20 @@ namespace Amazon.Lambda.Tools.Test
         const string LAMBDATOOL_TEST_ROLE = "lambdatools-test-role2";
         IAmazonIdentityManagementService _iamCient;
         string _roleArn;
+        string _bucket;
+
+        IAmazonS3 _s3Client;
+
         public DeployTest()
         {
             this._iamCient = new AmazonIdentityManagementServiceClient();
+            this._s3Client = new AmazonS3Client(RegionEndpoint.USEast1);
+
+            this._bucket = "dotnet-lambda-tests-" + DateTime.Now.Ticks;
 
             Task.Run(async () => 
             {
+                await _s3Client.PutBucketAsync(this._bucket);
                 try
                 {
                     this._roleArn = (await this._iamCient.GetRoleAsync(new GetRoleRequest { RoleName = LAMBDATOOL_TEST_ROLE })).Role.Arn;
@@ -46,7 +55,6 @@ namespace Amazon.Lambda.Tools.Test
                 }
             }).Wait();
 
-            
         }
 
 
@@ -89,6 +97,35 @@ namespace Amazon.Lambda.Tools.Test
                 if (created)
                 {
                     await command.LambdaClient.DeleteFunctionAsync(command.FunctionName);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task RunYamlServerlessDeployCommand()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/ServerlessWithYamlFunction");
+            var command = new DeployServerlessCommand(new ConsoleToolLogger(), fullPath, new string[] { "--template-parameters", "Environment=whatever" });
+            command.StackName = "ServerlessYamlStackTest-" + DateTime.Now.Ticks;
+            command.S3Bucket = this._bucket;
+            command.WaitForStackToComplete = true;
+            command.DisableInteractive = true;
+            command.ProjectLocation = fullPath;
+
+            var created = await command.ExecuteAsync();
+            try
+            {
+                Assert.True(created);
+            }
+            finally
+            {
+                if (created)
+                {
+                    var deleteCommand = new DeleteServerlessCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+                    deleteCommand.StackName = command.StackName;
+                    await deleteCommand.ExecuteAsync();
                 }
             }
         }
@@ -285,7 +322,10 @@ namespace Amazon.Lambda.Tools.Test
             {
                 if (disposing)
                 {
-                    this._iamCient.Dispose();                    
+                    AmazonS3Util.DeleteS3BucketWithObjectsAsync(this._s3Client, this._bucket).Wait();
+
+                    this._iamCient.Dispose();
+                    this._s3Client.Dispose();
                 }
 
                 disposedValue = true;

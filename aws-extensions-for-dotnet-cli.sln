@@ -29,31 +29,33 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		RELEASE.CHANGELOG.md = RELEASE.CHANGELOG.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amazon.Lambda.Tools", "src\Amazon.Lambda.Tools\Amazon.Lambda.Tools.csproj", "{26CEBD54-FC5B-4437-A009-6643EE849413}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amazon.Lambda.Tools", "src\Amazon.Lambda.Tools\Amazon.Lambda.Tools.csproj", "{26CEBD54-FC5B-4437-A009-6643EE849413}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amazon.Lambda.Tools.Test", "test\Amazon.Lambda.Tools.Test\Amazon.Lambda.Tools.Test.csproj", "{1AABF5E9-B0D2-455D-AF73-C2DB3C5F9A78}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amazon.Lambda.Tools.Test", "test\Amazon.Lambda.Tools.Test\Amazon.Lambda.Tools.Test.csproj", "{1AABF5E9-B0D2-455D-AF73-C2DB3C5F9A78}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestFunction", "testapps\TestFunction\TestFunction.csproj", "{C7142321-EA67-4BEA-9503-1D5BD183CDD2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestFunction", "testapps\TestFunction\TestFunction.csproj", "{C7142321-EA67-4BEA-9503-1D5BD183CDD2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FlattenDependencyTestProjects", "FlattenDependencyTestProjects", "{9F4516D5-D045-4840-BA4D-34EF4684C6CB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NativeDependencyExample", "testapps\FlattenDependencyTestProjects\NativeDependencyExample\NativeDependencyExample.csproj", "{819B395F-AE98-4985-8466-F476E9A7B741}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NativeDependencyExample", "testapps\FlattenDependencyTestProjects\NativeDependencyExample\NativeDependencyExample.csproj", "{819B395F-AE98-4985-8466-F476E9A7B741}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NpgsqlExample", "testapps\FlattenDependencyTestProjects\NpgsqlExample\NpgsqlExample.csproj", "{04DFC105-95BA-46C9-B8C9-010FF2C29546}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NpgsqlExample", "testapps\FlattenDependencyTestProjects\NpgsqlExample\NpgsqlExample.csproj", "{04DFC105-95BA-46C9-B8C9-010FF2C29546}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLServerClientExample", "testapps\FlattenDependencyTestProjects\SQLServerClientExample\SQLServerClientExample.csproj", "{79364EBD-D695-4121-80E9-F1F709C597BE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SQLServerClientExample", "testapps\FlattenDependencyTestProjects\SQLServerClientExample\SQLServerClientExample.csproj", "{79364EBD-D695-4121-80E9-F1F709C597BE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DependencyCheckTestProjects", "DependencyCheckTestProjects", "{BA0346AF-2FAF-4D56-95A3-CE1FD90A947F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Use11ASPNetCoreDependencies", "testapps\DependencyCheckTestProjects\Use11ASPNetCoreDependencies\Use11ASPNetCoreDependencies.csproj", "{0834DB79-A735-4CE1-9BF5-9AA93D5B975D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Use11ASPNetCoreDependencies", "testapps\DependencyCheckTestProjects\Use11ASPNetCoreDependencies\Use11ASPNetCoreDependencies.csproj", "{0834DB79-A735-4CE1-9BF5-9AA93D5B975D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UseNewtonsoft10", "testapps\DependencyCheckTestProjects\UseNewtonsoft10\UseNewtonsoft10.csproj", "{9AB90307-BDAE-49CB-B0E1-311573F60A13}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UseNewtonsoft10", "testapps\DependencyCheckTestProjects\UseNewtonsoft10\UseNewtonsoft10.csproj", "{9AB90307-BDAE-49CB-B0E1-311573F60A13}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TemplateSubstitutionTestProjects", "TemplateSubstitutionTestProjects", "{5BF49662-B74E-4F54-913F-BB4BF6BE5634}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StateMachineDefinitionStringTest", "testapps\TemplateSubstitutionTestProjects\StateMachineDefinitionStringTest\StateMachineDefinitionStringTest.csproj", "{75F71501-0971-4CA4-8686-E61619FD9CF8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StateMachineDefinitionStringTest", "testapps\TemplateSubstitutionTestProjects\StateMachineDefinitionStringTest\StateMachineDefinitionStringTest.csproj", "{75F71501-0971-4CA4-8686-E61619FD9CF8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestServerlessWebApp", "testapps\TestServerlessWebApp\TestServerlessWebApp.csproj", "{0A47A38F-EFB5-4DCF-9CEC-5F6FBC8D5EC6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestServerlessWebApp", "testapps\TestServerlessWebApp\TestServerlessWebApp.csproj", "{0A47A38F-EFB5-4DCF-9CEC-5F6FBC8D5EC6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServerlessWithYamlFunction", "testapps\ServerlessWithYamlFunction\ServerlessWithYamlFunction.csproj", "{BB4BD9D9-D307-4F81-A89E-833DA688629B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -129,6 +131,10 @@ Global
 		{0A47A38F-EFB5-4DCF-9CEC-5F6FBC8D5EC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A47A38F-EFB5-4DCF-9CEC-5F6FBC8D5EC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0A47A38F-EFB5-4DCF-9CEC-5F6FBC8D5EC6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB4BD9D9-D307-4F81-A89E-833DA688629B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB4BD9D9-D307-4F81-A89E-833DA688629B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB4BD9D9-D307-4F81-A89E-833DA688629B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB4BD9D9-D307-4F81-A89E-833DA688629B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -154,6 +160,7 @@ Global
 		{5BF49662-B74E-4F54-913F-BB4BF6BE5634} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 		{75F71501-0971-4CA4-8686-E61619FD9CF8} = {5BF49662-B74E-4F54-913F-BB4BF6BE5634}
 		{0A47A38F-EFB5-4DCF-9CEC-5F6FBC8D5EC6} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
+		{BB4BD9D9-D307-4F81-A89E-833DA688629B} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DBFC70D6-49A2-40A1-AB08-5D9504AB7112}

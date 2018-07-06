@@ -430,5 +430,97 @@ namespace Amazon.Lambda.Tools
 
             return TemplateFormat.Yaml;
         }
+
+        /// <summary>
+        /// If the template is a JSON document get the list of parameters to make sure the passed in parameters are valid for the template.
+        /// </summary>
+        /// <param name="templateBody"></param>
+        /// <returns></returns>
+        internal static List<Tuple<string, bool>> GetTemplateDefinedParameters(string templateBody)
+        {
+            if (templateBody.Trim().StartsWith("{"))
+                return GetJsonTemplateDefinedParameters(templateBody);
+            else
+                return GetYamlTemplateDefinedParameters(templateBody);
+        }
+
+        private static List<Tuple<string, bool>> GetJsonTemplateDefinedParameters(string templateBody)
+        {
+            try
+            {
+                var root = Newtonsoft.Json.JsonConvert.DeserializeObject(templateBody) as JObject;
+                if (root == null)
+                    return null;
+
+                var parameters = root["Parameters"] as JObject;
+
+                var parms = new List<Tuple<string, bool>>();
+                if (parameters == null)
+                    return parms;
+
+                foreach (var property in parameters.Properties())
+                {
+                    var noEcho = false;
+                    var prop = parameters[property.Name] as JObject;
+                    if (prop != null && prop["NoEcho"] != null)
+                    {
+                        noEcho = Boolean.Parse(prop["NoEcho"].ToString());
+                    }
+
+                    parms.Add(new Tuple<string, bool>(property.Name, noEcho));
+                }
+
+                return parms;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static List<Tuple<string, bool>> GetYamlTemplateDefinedParameters(string templateBody)
+        {
+            try
+            {
+                var yaml = new YamlStream();
+                yaml.Load(new StringReader(templateBody));
+
+                // Examine the stream
+                var root = (YamlMappingNode)yaml.Documents[0].RootNode;
+                if (root == null)
+                    return null;
+
+                var parms = new List<Tuple<string, bool>>();
+
+                var parametersKey = new YamlScalarNode("Parameters");
+                if (!root.Children.ContainsKey(parametersKey))
+                    return parms;
+
+                var parameters = (YamlMappingNode)root.Children[parametersKey];
+
+                var noEchoKey = new YamlScalarNode("NoEcho");
+
+                foreach (var parameter in parameters.Children)
+                {
+                    var parameterBody = parameter.Value as YamlMappingNode;
+                    if (parameterBody == null)
+                        continue;
+
+                    var noEcho = false;
+                    if(parameterBody.Children.ContainsKey(noEchoKey))
+                    {
+                        noEcho = bool.Parse(parameterBody.Children[noEchoKey].ToString());
+                    }
+
+                    parms.Add(new Tuple<string, bool>(parameter.Key.ToString(), noEcho));
+                }
+
+                return parms;
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 }

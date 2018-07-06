@@ -243,7 +243,7 @@ namespace Amazon.Lambda.Tools.Commands
             CreateChangeSetResponse changeSetResponse;
             try
             {
-                var definedParameters = GetTemplateDefinedParameters(templateBody);
+                var definedParameters = LambdaUtilities.GetTemplateDefinedParameters(templateBody);
                 var templateParameters = GetTemplateParameters(changeSetType == ChangeSetType.UPDATE ? existingStack : null, definedParameters);
                 if (templateParameters != null && templateParameters.Any())
                 {
@@ -369,44 +369,7 @@ namespace Amazon.Lambda.Tools.Commands
             return true;
         }
 
-        /// <summary>
-        /// If the template is a JSON document get the list of parameters to make sure the passed in parameters are valid for the template.
-        /// </summary>
-        /// <param name="templateBody"></param>
-        /// <returns></returns>
-        private List<Tuple<string, bool>> GetTemplateDefinedParameters(string templateBody)
-        {
-            try
-            {
-                var root = Newtonsoft.Json.JsonConvert.DeserializeObject(templateBody) as JObject;
-                if (root == null)
-                    return null;
-                
-                var parameters = root["Parameters"] as JObject;
 
-                var parms = new List<Tuple<string, bool>>();
-                if (parameters == null) 
-                    return parms;
-                
-                foreach (var property in parameters.Properties())
-                {
-                    var noEcho = false;
-                    var prop = parameters[property.Name] as JObject;
-                    if(prop != null && prop["NoEcho"] != null)
-                    {
-                        noEcho = Boolean.Parse(prop["NoEcho"].ToString());
-                    }
-
-                    parms.Add(new Tuple<string, bool>(property.Name, noEcho));
-                }
-
-                return parms;
-            }
-            catch
-            {
-                return null;
-            }
-        }
 
         private void DisplayOutputs(Stack stack)
         {
