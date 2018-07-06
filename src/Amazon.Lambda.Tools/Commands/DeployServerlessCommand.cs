@@ -590,7 +590,8 @@ namespace Amazon.Lambda.Tools.Commands
             {
                 foreach (var existingParameter in stack.Parameters)
                 {
-                    if (!parameters.Any(x => string.Equals(x.ParameterKey, existingParameter.ParameterKey)))
+                    if ((definedParameters == null || definedParameters.FirstOrDefault(x => string.Equals(x.Item1, existingParameter.ParameterKey)) != null) && 
+                        !parameters.Any(x => string.Equals(x.ParameterKey, existingParameter.ParameterKey)))
                     {
                         parameters.Add(new Parameter { ParameterKey = existingParameter.ParameterKey, UsePreviousValue = true });
                     }

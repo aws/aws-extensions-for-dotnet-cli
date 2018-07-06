@@ -118,6 +118,18 @@ namespace Amazon.Lambda.Tools.Test
             try
             {
                 Assert.True(created);
+
+                // Test if a redeployment happens with different template parameters it works.
+                var renameParameterCommand = new DeployServerlessCommand(new ConsoleToolLogger(), fullPath, new string[] { "--template-parameters", "EnvironmentRename=whatever" });
+                renameParameterCommand.StackName = command.StackName;
+                renameParameterCommand.S3Bucket = this._bucket;
+                renameParameterCommand.WaitForStackToComplete = true;
+                renameParameterCommand.DisableInteractive = true;
+                renameParameterCommand.ProjectLocation = fullPath;
+                renameParameterCommand.CloudFormationTemplate = "rename-params-template.yaml";
+
+                var updated = await renameParameterCommand.ExecuteAsync();
+                Assert.True(updated);
             }
             finally
             {

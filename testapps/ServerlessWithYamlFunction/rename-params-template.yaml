@@ -1,0 +1,33 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: An AWS Serverless Application.
+Parameters:
+  EnvironmentRename:
+    Type: "String"
+  HiddenParamRename:
+    Type: "String"
+    NoEcho: true
+    Default: "Secret"
+Resources:
+  Get:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: ServerlessWithYamlFunction::ServerlessWithYamlFunction.Functions::Get
+      Runtime: dotnetcore2.0
+      CodeUri: ''
+      MemorySize: 512
+      Timeout: 30
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      Events:
+        PutResource:
+          Type: Api
+          Properties:
+            Path: "/"
+            Method: GET
+Outputs:
+  ApiURL:
+    Description: API endpoint URL for Prod environment
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
