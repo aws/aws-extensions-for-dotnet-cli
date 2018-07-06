@@ -29,14 +29,16 @@ namespace Amazon.Lambda.Tools
                 return;
 
             string suffix = lambdaRuntime.Substring(lambdaRuntime.Length - 3);
-            if (!Version.TryParse(suffix, out var runtimeVersion))
+            Version runtimeVersion;
+            if (!Version.TryParse(suffix, out runtimeVersion))
                 return;
 
             if (targetFramework.Length < 3)
                 return;
 
             suffix = targetFramework.Substring(targetFramework.Length - 3);
-            if (!Version.TryParse(suffix, out var frameworkVersion))
+            Version frameworkVersion;
+            if (!Version.TryParse(suffix, out frameworkVersion))
                 return;
 
             if (runtimeVersion < frameworkVersion)

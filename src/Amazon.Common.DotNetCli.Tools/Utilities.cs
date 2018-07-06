@@ -165,9 +165,11 @@ namespace Amazon.Common.DotNetCli.Tools
                 var currentPos = 0;
                 while (currentPos != -1 && currentPos < option.Length)
                 {
-                    GetNextToken(option, '=', ref currentPos, out var name);
+                    string name;
+                    GetNextToken(option, '=', ref currentPos, out name);
 
-                    GetNextToken(option, ';', ref currentPos, out var value);
+                    string value;
+                    GetNextToken(option, ';', ref currentPos, out value);
 
                     if (string.IsNullOrEmpty(name))
                         throw new ToolsException($"Error parsing option ({option}), format should be <key1>=<value1>;<key2>=<value2>", ToolsException.CommonErrorCode.CommandLineParseError);
