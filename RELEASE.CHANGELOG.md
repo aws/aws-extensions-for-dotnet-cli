@@ -1,3 +1,13 @@
+### Release 2018-07-09
+* **Amazon.Lambda.Tools (2.2.0)**
+    * Added support for the .NET Core 2.1 AWS Lambda runtime.
+    * Fixed issue with not correct determining CloudFormation parameters when using YAML.
+    * Fixed issue handling CloudFormation parameter renames.
+* **Amazon.ECS.Tools (1.2.0)**
+    * Improve detection for when the `docker build` command should run from the solution folder.
+    * Added new switch `--docker-build-working-dir` to set the directory where `docker build` should run. This is useful when this tool can't detect whether the build should run from the project or the solution.
+    * Added new switch `--docker-build-options` to pass additional options to the `docker build` command.
+
 ### Relesae 2018-05-29
 * **Amazon.Lambda.Tools (2.1.4)**
     * Change AWS credential lookup logic to continue searching if the profile specified cannot be found. This allows 
