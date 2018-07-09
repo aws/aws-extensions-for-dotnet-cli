@@ -54,11 +54,24 @@ namespace Amazon.Lambda.Tools.Test
         }
 
         [Fact]
-        public void NETCore_2_1_ErrorWithAspNetCoreAllSpecifingVersion()
+        public void NETCore_2_1_AllWithSupportedVersionNumber()
         {
             var logger = new TestToolLogger();
             var manifest = File.ReadAllText(@"ManifestTestFiles/SampleManifest-v2.1.xml");
-            var projectFile = File.ReadAllText(@"ManifestTestFiles/NETCore_2_1_AllWithVersionNumber.xml");
+            var projectFile = File.ReadAllText(@"ManifestTestFiles/NETCore_2_1_AllWithSupportedVersionNumber.xml");
+
+            LambdaUtilities.ValidateMicrosoftAspNetCoreAllReferenceFromProjectContent(logger, "netcoreapp2.1", manifest, projectFile);
+
+            projectFile = projectFile.Replace("Microsoft.AspNetCore.All", "Microsoft.AspNetCore.App");
+            LambdaUtilities.ValidateMicrosoftAspNetCoreAllReferenceFromProjectContent(logger, "netcoreapp2.1", manifest, projectFile);
+        }
+
+        [Fact]
+        public void NETCore_2_1_AllWithTooNewVersionNumber()
+        {
+            var logger = new TestToolLogger();
+            var manifest = File.ReadAllText(@"ManifestTestFiles/SampleManifest-v2.1.xml");
+            var projectFile = File.ReadAllText(@"ManifestTestFiles/NETCore_2_1_AllWithTooNewVersionNumber.xml");
 
 
             try
@@ -68,19 +81,82 @@ namespace Amazon.Lambda.Tools.Test
             }
             catch (LambdaToolsException e)
             {
-                Assert.Contains(".NET Core 2.1", e.Message);
+                Assert.Contains("which is newer than", e.Message);
+            }
+
+
+            projectFile = projectFile.Replace("Microsoft.AspNetCore.All", "Microsoft.AspNetCore.App");
+            try
+            {
+                LambdaUtilities.ValidateMicrosoftAspNetCoreAllReferenceFromProjectContent(logger, "netcoreapp2.1", manifest, projectFile);
+                Assert.True(true, "Missing LambdaToolsException thrown");
+            }
+            catch (LambdaToolsException e)
+            {
+                Assert.Contains("which is newer than", e.Message);
             }
         }
 
         [Fact]
-        public void NETCore_2_1_WithoutAspNetCoreAllSpecifingVersion()
+        public void NETCore_2_1_AllWithNoNewVersionNumber()
         {
             var logger = new TestToolLogger();
             var manifest = File.ReadAllText(@"ManifestTestFiles/SampleManifest-v2.1.xml");
-            var projectFile = File.ReadAllText(@"ManifestTestFiles/NETCore_2_1_AllWithoutVersionNumber.xml");
+            var projectFile = File.ReadAllText(@"ManifestTestFiles/NETCore_2_1_AllWithNoNewVersionNumber.xml");
 
 
-            LambdaUtilities.ValidateMicrosoftAspNetCoreAllReferenceFromProjectContent(logger, "netcoreapp2.1", manifest, projectFile);
+            try
+            {
+                LambdaUtilities.ValidateMicrosoftAspNetCoreAllReferenceFromProjectContent(logger, "netcoreapp2.1", manifest, projectFile);
+                Assert.True(true, "Missing LambdaToolsException thrown");
+            }
+            catch (LambdaToolsException e)
+            {
+                Assert.Contains("without specifying a version", e.Message);
+            }
+
+
+            projectFile = projectFile.Replace("Microsoft.AspNetCore.All", "Microsoft.AspNetCore.App");
+            try
+            {
+                LambdaUtilities.ValidateMicrosoftAspNetCoreAllReferenceFromProjectContent(logger, "netcoreapp2.1", manifest, projectFile);
+                Assert.True(true, "Missing LambdaToolsException thrown");
+            }
+            catch (LambdaToolsException e)
+            {
+                Assert.Contains("without specifying a version", e.Message);
+            }
+        }
+
+        [Fact]
+        public void NETCore_2_1_AllWithPackageStoreVersionNumber()
+        {
+            var logger = new TestToolLogger();
+            var manifest = File.ReadAllText(@"ManifestTestFiles/SampleManifest-v2.1.xml");
+            var projectFile = File.ReadAllText(@"ManifestTestFiles/NETCore_2_1_AllWithPackageStoreVersionNumber.xml");
+
+
+            try
+            {
+                LambdaUtilities.ValidateMicrosoftAspNetCoreAllReferenceFromProjectContent(logger, "netcoreapp2.1", manifest, projectFile);
+                Assert.True(true, "Missing LambdaToolsException thrown");
+            }
+            catch (LambdaToolsException e)
+            {
+                Assert.Contains("The minimum supported version is 2.1.0", e.Message);
+            }
+
+
+            projectFile = projectFile.Replace("Microsoft.AspNetCore.All", "Microsoft.AspNetCore.App");
+            try
+            {
+                LambdaUtilities.ValidateMicrosoftAspNetCoreAllReferenceFromProjectContent(logger, "netcoreapp2.1", manifest, projectFile);
+                Assert.True(true, "Missing LambdaToolsException thrown");
+            }
+            catch (LambdaToolsException e)
+            {
+                Assert.Contains("The minimum supported version is 2.1.0", e.Message);
+            }
         }
 
         [Theory]

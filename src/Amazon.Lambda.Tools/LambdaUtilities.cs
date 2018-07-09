@@ -112,12 +112,14 @@ namespace Amazon.Lambda.Tools
         /// <param name="projContent"></param>
         public static void ValidateMicrosoftAspNetCoreAllReferenceFromProjectContent(IToolLogger logger, string targetFramework, string manifestContent, string projContent)
         {
+            const string NO_VERSION = "NO_VERSION";
             const string ASPNET_CORE_ALL = "Microsoft.AspNetCore.All";
+            const string ASPNET_CORE_APP = "Microsoft.AspNetCore.App";
             try
             {
                 XDocument projXmlDoc = XDocument.Parse(projContent);
 
-                Func<string> searchForAspNetCoreAllVersion = () =>
+                Func<string, string> searchForPackageVersion = (nuGetPackage) =>
                 {
                     // Not using XPath because to avoid adding an addition dependency for a simple one time use.
                     foreach (var group in projXmlDoc.Root.Elements("ItemGroup"))
@@ -125,9 +127,9 @@ namespace Amazon.Lambda.Tools
                         foreach (XElement packageReference in group.Elements("PackageReference"))
                         {
                             var name = packageReference.Attribute("Include")?.Value;
-                            if (string.Equals(name, ASPNET_CORE_ALL, StringComparison.Ordinal))
+                            if (string.Equals(name, nuGetPackage, StringComparison.Ordinal))
                             {
-                                return packageReference.Attribute("Version")?.Value;
+                                return packageReference.Attribute("Version")?.Value ?? NO_VERSION;
                             }
                         }
                     }
@@ -135,19 +137,10 @@ namespace Amazon.Lambda.Tools
                     return null;
                 };
 
-                var projectAspNetCoreVersion = searchForAspNetCoreAllVersion();
-
-                if (string.IsNullOrEmpty(projectAspNetCoreVersion))
-                {
-                    // Project is not using Microsoft.AspNetCore.All so skip validation.
-                    return;
-                }
-
-
-                if (string.Equals("netcoreapp2.0", targetFramework, StringComparison.OrdinalIgnoreCase))
+                Func<string, string, Tuple<bool, string>> searchForSupportedVersion = (nuGetPackage, nuGetPackageVersion) =>
                 {
                     if (string.IsNullOrEmpty(manifestContent))
-                        return;
+                        return new Tuple<bool, string>(true, null);
 
                     var manifestXmlDoc = XDocument.Parse(manifestContent);
 
@@ -155,13 +148,13 @@ namespace Amazon.Lambda.Tools
                     foreach (var element in manifestXmlDoc.Root.Elements("Package"))
                     {
                         var name = element.Attribute("Id")?.Value;
-                        if (string.Equals(name, ASPNET_CORE_ALL, StringComparison.Ordinal))
+                        if (string.Equals(name, nuGetPackage, StringComparison.Ordinal))
                         {
                             var version = element.Attribute("Version")?.Value;
-                            if (string.Equals(projectAspNetCoreVersion, version, StringComparison.Ordinal))
+                            if (string.Equals(nuGetPackageVersion, version, StringComparison.Ordinal))
                             {
                                 // Version specifed in project file is available in Lambda Runtime
-                                return;
+                                return new Tuple<bool, string>(true, null);
                             }
 
                             // Record latest supported version to provide meaningful error message.
@@ -172,17 +165,85 @@ namespace Amazon.Lambda.Tools
                         }
                     }
 
-                    throw new LambdaToolsException($"Project is referencing version {projectAspNetCoreVersion} of {ASPNET_CORE_ALL} which is newer " +
-                        $"than {latestLambdaDeployedVersion}, the latest version available in the Lambda Runtime environment. Please update your project to " +
-                        $"use version {latestLambdaDeployedVersion} and then redeploy your Lambda function.",
+                    return new Tuple<bool, string>(false, latestLambdaDeployedVersion);
+                };
+
+                var projectAspNetCoreAllVersion = searchForPackageVersion(ASPNET_CORE_ALL);
+                var projectAspNetCoreAppVersion = searchForPackageVersion(ASPNET_CORE_APP);
+
+                if (string.IsNullOrEmpty(projectAspNetCoreAllVersion) && string.IsNullOrEmpty(projectAspNetCoreAppVersion))
+                {
+                    // Project is not using Microsoft.AspNetCore.All so skip validation.
+                    return;
+                }
+
+
+                if (string.Equals("netcoreapp2.0", targetFramework, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(projectAspNetCoreAllVersion))
+                {
+                    if (string.IsNullOrEmpty(manifestContent))
+                        return;
+
+                    var results = searchForSupportedVersion(ASPNET_CORE_ALL, projectAspNetCoreAllVersion);
+                    // project specified version is supported.
+                    if(results.Item1)
+                    {
+                        return;
+                    }
+
+                    throw new LambdaToolsException($"Project is referencing version {projectAspNetCoreAllVersion} of {ASPNET_CORE_ALL} which is newer " +
+                        $"than {results.Item2}, the latest version available in the Lambda Runtime environment. Please update your project to " +
+                        $"use version {results.Item2} and then redeploy your Lambda function.",
                         LambdaToolsException.LambdaErrorCode.AspNetCoreAllValidation);
                 }
-                else
+                else if (string.Equals("netcoreapp2.1", targetFramework, StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new LambdaToolsException($"Project is referencing {ASPNET_CORE_ALL} with a specific version ({projectAspNetCoreVersion}). " +
-                       "For .NET Core 2.1 a version number must not be set due to changes in how .NET Core 2.1 distributes the ASP.NET Core dependencies. " +
-                       "To fix this issue open up your project file in a text editor and remove the \"Version\" attribute for the PackageReference that " +
-                       $"includes {ASPNET_CORE_ALL}.",
+                    string packageName, packageVersion;
+                    if(projectAspNetCoreAllVersion != null)
+                    {
+                        packageName = ASPNET_CORE_ALL;
+                        packageVersion = projectAspNetCoreAllVersion;
+                    }
+                    else
+                    {
+                        packageName = ASPNET_CORE_APP;
+                        packageVersion = projectAspNetCoreAppVersion;
+                    }
+
+                    var results = searchForSupportedVersion(packageName, packageVersion);
+
+                    // When .NET Core 2.1 was first released developers were encouraged to not include a version attribute for Microsoft.AspNetCore.All or Microsoft.AspNetCore.App.
+                    // This turns out not to be a good practice for Lambda because it makes the package bundle require the latest version of these packages
+                    // that is installed on the dev/build box regardless of what is supported in Lambda. To avoid deployment failure confusion we will require the version attribute
+                    // be set so we can verify compatiblity.
+                    if (string.Equals(packageVersion, NO_VERSION, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var message = $"Project is referencing {packageName} without specifying a version. A version is required to ensure compatiblity with the supported versions of {packageName} " +
+                            $"in the Lambda compute environment. Edit the PackageReference for {packageName} in your project file to include a Version attribute.";
+
+                        if(!string.IsNullOrEmpty(results.Item2))
+                        {
+                            message += "  The latest version supported in Lambda is {results.Item2}.";
+                        }
+                        throw new LambdaToolsException(message,
+                            LambdaToolsException.LambdaErrorCode.AspNetCoreAllValidation);
+                    }
+
+                    // project specified version is supported.
+                    if (results.Item1)
+                    {
+                        return;
+                    }
+
+
+                    if(packageVersion.StartsWith("2.0", StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new LambdaToolsException($"Project is referencing version {packageVersion} of {packageName}. The minimum supported version is 2.1.0 for the .NET Core 2.1 Lambda runtime.",
+                            LambdaToolsException.LambdaErrorCode.AspNetCoreAllValidation);
+                    }
+
+                    throw new LambdaToolsException($"Project is referencing version {packageVersion} of {packageName} which is newer " +
+                        $"than {results.Item2}, the latest version available in the Lambda Runtime environment. Please update your project to " +
+                        $"use version {results.Item2} and then redeploy your Lambda function.",
                         LambdaToolsException.LambdaErrorCode.AspNetCoreAllValidation);
                 }
             }

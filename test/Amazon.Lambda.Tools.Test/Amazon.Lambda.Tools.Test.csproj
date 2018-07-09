@@ -16,6 +16,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Remove="ManifestTestFiles\CurrentAspNetCoreReference.xml" />
+    <None Remove="ManifestTestFiles\NETCore_2_1_AllWithNoNewVersionNumber.xml" />
+    <None Remove="ManifestTestFiles\NETCore_2_1_AllWithPackageStoreVersionNumber.xml" />
     <None Remove="ManifestTestFiles\NewerAspNetCoreReference.xml" />
     <None Remove="ManifestTestFiles\NotUsingAspNetCore.xml" />
     <None Remove="ManifestTestFiles\SampleManifest.xml" />
@@ -24,10 +26,16 @@
     <Content Include="ManifestTestFiles\CurrentAspNetCoreReference.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="ManifestTestFiles\NETCore_2_1_AllWithVersionNumber.xml">
+    <Content Include="ManifestTestFiles\NETCore_2_1_AllWithPackageStoreVersionNumber.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="ManifestTestFiles\NETCore_2_1_AllWithoutVersionNumber.xml">
+    <Content Include="ManifestTestFiles\NETCore_2_1_AllWithSupportedVersionNumber.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="ManifestTestFiles\NETCore_2_1_AllWithNoNewVersionNumber.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="ManifestTestFiles\NETCore_2_1_AllWithTooNewVersionNumber.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="ManifestTestFiles\NotUsingAspNetCore.xml">
