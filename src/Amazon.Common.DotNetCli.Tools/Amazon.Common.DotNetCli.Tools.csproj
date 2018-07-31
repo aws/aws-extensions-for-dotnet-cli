@@ -1,24 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\buildtools\common.props" />
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp1.0;netcoreapp2.0</TargetFrameworks>
-    <AssemblyVersion>1.1.2.0</AssemblyVersion>
-    <FileVersion>1.1.2.0</FileVersion>
+    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
+    <AssemblyVersion>3.0.0.0</AssemblyVersion>
+    <FileVersion>3.0.0.0</FileVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="AWSSDK.Core" Version="3.3.22.2" />
     <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.6.3" />
     <PackageReference Include="AWSSDK.S3" Version="3.3.18.2" />
     <PackageReference Include="AWSSDK.SecurityToken" Version="3.3.4.3" />
-    <PackageReference Include="System.Xml.XPath.XDocument" Version="4.0.1" />
   </ItemGroup>
-  <PropertyGroup Condition="'$(TargetFramework)'=='netcoreapp1.0'">
-    <RuntimeFrameworkVersion Condition="">1.0.0</RuntimeFrameworkVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' Or '$(TargetFramework)' == 'netcoreapp2.0' ">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1' ">
     <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netcoreapp1.0|AnyCPU'">
-    <NoWarn>1701;1702;1705;</NoWarn>
+  <PropertyGroup>
+    <NoWarn>1701;1702;1705;1591</NoWarn>
   </PropertyGroup>
+
 </Project>

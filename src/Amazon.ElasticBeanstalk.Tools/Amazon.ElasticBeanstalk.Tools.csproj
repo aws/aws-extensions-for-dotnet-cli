@@ -4,12 +4,13 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp1.0;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
     <PackageId>Amazon.ElasticBeanstalk.Tools</PackageId>
     <PackageTags>AWS;Amazon;Beanstalk</PackageTags>
-    <PackageType>DotnetCliTool</PackageType>
+    <PackAsTool>true</PackAsTool>
+	<ToolCommandName>dotnet-eb</ToolCommandName>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.1.4</Version>
+    <Version>3.0.0</Version>
     <AssemblyName>dotnet-eb</AssemblyName>
     <Authors>Amazon Web Services</Authors>
     <Copyright>Copyright 2009-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
@@ -23,11 +24,6 @@
     </ProjectReference>
   </ItemGroup>
 
-  <ItemGroup Label="Package">
-    <None Include=".\bin\$(Configuration)\netcoreapp1.0\Amazon.Common.DotNetCli.Tools.dll" Pack="True" PackagePath="lib\netcoreapp1.0" />
-    <None Include=".\bin\$(Configuration)\netcoreapp2.0\Amazon.Common.DotNetCli.Tools.dll" Pack="True" PackagePath="lib\netcoreapp2.0" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="AWSSDK.ElasticBeanstalk" Version="3.3.8.1" />
     <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.6.3" />
@@ -35,8 +31,11 @@
     <PackageReference Include="AWSSDK.SecurityToken" Version="3.3.4.3" />
   </ItemGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' Or '$(TargetFramework)' == 'netcoreapp2.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
     <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NoWarn>1701;1702;1705;1591</NoWarn>
   </PropertyGroup>
 
 </Project>

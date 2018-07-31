@@ -7,8 +7,6 @@ using System.Threading.Tasks;
 
 using Xunit;
 
-using Amazon.Lambda;
-using Amazon.Lambda.Model;
 
 using Amazon.Lambda.Tools;
 using Amazon.Lambda.Tools.Commands;

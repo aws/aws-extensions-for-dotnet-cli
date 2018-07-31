@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
     <AssemblyName>Amazon.Lambda.Tools.Test</AssemblyName>
     <OutputType>Library</OutputType>
     <PackageId>Amazon.Lambda.Tools.Test</PackageId>
@@ -52,7 +52,9 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="AWSSDK.SQS" Version="3.3.2.3" />
+    <PackageReference Include="AWSSDK.CloudFormation" Version="3.3.11.5" />
+    <PackageReference Include="AWSSDK.Lambda" Version="3.3.15.1" />
+    <PackageReference Include="AWSSDK.SQS" Version="3.3.3.12" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
     <PackageReference Include="System.IO.Compression.ZipFile" Version="4.0.1" />

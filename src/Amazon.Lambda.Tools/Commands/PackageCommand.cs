@@ -79,6 +79,8 @@ namespace Amazon.Lambda.Tools.Commands
 
         protected override Task<bool> PerformActionAsync()
         {
+            EnsureInProjectDirectory();
+
             // Disable interactive since this command is intended to be run as part of a pipeline.
             this.DisableInteractive = true;
 

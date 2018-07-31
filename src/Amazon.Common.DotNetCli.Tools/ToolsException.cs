@@ -17,6 +17,7 @@ namespace Amazon.Common.DotNetCli.Tools
             RegionNotConfigured,
             MissingRequiredParameter,
             PersistConfigError,
+            NoProjectFound,
 
             DotnetPublishFailed,
 

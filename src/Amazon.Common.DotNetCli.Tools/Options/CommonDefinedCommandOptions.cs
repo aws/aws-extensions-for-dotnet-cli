@@ -23,7 +23,7 @@ namespace Amazon.Common.DotNetCli.Tools.Options
                 ShortSwitch = "-f",
                 Switch = "--framework",
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
-                Description = "Target framework to compile, for example netcoreapp1.0.",
+                Description = "Target framework to compile, for example netcoreapp2.1.",
             };
         public static readonly CommandOption ARGUMENT_PUBLISH_OPTIONS =
             new CommandOption

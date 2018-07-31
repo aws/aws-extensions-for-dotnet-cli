@@ -781,5 +781,19 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
 
             return input == 'y';
         }
+
+        protected void EnsureInProjectDirectory()
+        {
+            var projectLocation = Utilities.DetermineProjectLocation(this.WorkingDirectory, this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false));
+
+            if (Directory.GetFiles(projectLocation, "*.csproj", SearchOption.TopDirectoryOnly).Length == 1 ||
+                Directory.GetFiles(projectLocation, "*.fsproj", SearchOption.TopDirectoryOnly).Length == 1 ||
+                Directory.GetFiles(projectLocation, "*.vbproj", SearchOption.TopDirectoryOnly).Length == 1)
+            {
+                return;
+            }
+
+            throw new ToolsException($"No .NET project found in directory {projectLocation} to build.", ToolsException.CommonErrorCode.NoProjectFound);
+        }
     }
 }

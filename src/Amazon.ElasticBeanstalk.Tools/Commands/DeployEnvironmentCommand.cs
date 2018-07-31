@@ -79,6 +79,8 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
+            this.EnsureInProjectDirectory();
+
             var projectLocation = Utilities.DetermineProjectLocation(this.WorkingDirectory,
                 this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false));
 

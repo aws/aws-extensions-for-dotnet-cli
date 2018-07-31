@@ -116,6 +116,8 @@ namespace Amazon.Lambda.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
+            EnsureInProjectDirectory();
+
             string projectLocation = this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false);
             string zipArchivePath = null;
             string package = this.GetStringValueOrDefault(this.Package, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE, false);

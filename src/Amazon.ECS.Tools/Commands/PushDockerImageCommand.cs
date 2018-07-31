@@ -82,6 +82,8 @@ namespace Amazon.ECS.Tools.Commands
 
             if (!dockerDetails.SkipDotnetBuild)
             {
+                this.EnsureInProjectDirectory();
+
                 var dotnetCli = new DotNetCLIWrapper(this.Logger, projectLocation);
                 this.Logger?.WriteLine("Executing publish command");
                 if (dotnetCli.Publish(projectLocation, dockerDetails.ExpectedPublishLocation, targetFramework, configuration, publishOptions) != 0)

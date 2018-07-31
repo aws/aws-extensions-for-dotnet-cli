@@ -4,12 +4,13 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp1.0;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
     <PackageId>Amazon.ECS.Tools</PackageId>
     <PackageTags>AWS;Amazon;Docker;ECS</PackageTags>
-    <PackageType>DotnetCliTool</PackageType>
+    <PackAsTool>true</PackAsTool>
+	<ToolCommandName>dotnet-ecs</ToolCommandName>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.2.0</Version>
+    <Version>3.0.0</Version>
     <AssemblyName>dotnet-ecs</AssemblyName>
     <Company>Amazon.com, Inc</Company>
     <Authors>Amazon Web Services</Authors>
@@ -36,13 +37,11 @@
     </ProjectReference>
   </ItemGroup>
 
-  <ItemGroup Label="Package">
-    <None Include=".\bin\$(Configuration)\netcoreapp1.0\Amazon.Common.DotNetCli.Tools.dll" Pack="True" PackagePath="lib\netcoreapp1.0" />
-    <None Include=".\bin\$(Configuration)\netcoreapp2.0\Amazon.Common.DotNetCli.Tools.dll" Pack="True" PackagePath="lib\netcoreapp2.0" />
-  </ItemGroup>
-
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' Or '$(TargetFramework)' == 'netcoreapp2.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
     <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NoWarn>1701;1702;1705;1591</NoWarn>
   </PropertyGroup>
 
 </Project>
