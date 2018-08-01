@@ -18,6 +18,7 @@ namespace Amazon.Common.DotNetCli.Tools
             MissingRequiredParameter,
             PersistConfigError,
             NoProjectFound,
+            InvalidCredentialConfiguration,
 
             DotnetPublishFailed,
 
