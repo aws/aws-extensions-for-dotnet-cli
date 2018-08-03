@@ -171,7 +171,7 @@ namespace Amazon.Lambda.Tools
                         var psiChmod = new ProcessStartInfo
                         {
                             FileName = chmodPath,
-                            Arguments = "+r " + dllFilename,
+                            Arguments = "+r \"" + dllFilename + "\"",
                             WorkingDirectory = outputLocation,
                             RedirectStandardOutput = true,
                             RedirectStandardError = true,
