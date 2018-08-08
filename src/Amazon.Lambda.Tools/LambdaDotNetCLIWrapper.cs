@@ -98,7 +98,14 @@ namespace Amazon.Lambda.Tools
                 // will not run. So only do this packaging optimization if there are no Razor views.
                 if (Directory.GetFiles(fullProjectLocation, "*.cshtml", SearchOption.AllDirectories).Length == 0)
                 {
-                    arguments.Append(" -r linux-x64 --self-contained false /p:PreserveCompilationContext=false");
+                    arguments.Append(" -r linux-x64 --self-contained false ");
+
+                    if (string.IsNullOrEmpty(msbuildParameters) ||
+                        !msbuildParameters.Contains("PreserveCompilationContext"))
+                    {
+                        _logger?.WriteLine("... Disabling compilation context to reduce package size. If compilation context is needed pass in the \"/p:PreserveCompilationContext=false\" switch.");
+                        arguments.Append(" /p:PreserveCompilationContext=false");
+                    }
                 }
 
                 // If we have a manifest of packages already deploy in target deployment environment then write it to disk and add the 
