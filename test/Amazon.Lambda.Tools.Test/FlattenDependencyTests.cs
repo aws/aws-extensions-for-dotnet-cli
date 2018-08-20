@@ -151,11 +151,11 @@ namespace Amazon.Lambda.Tools.Test
         {
             var packagesFolderPath =
                 RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                    ? Environment.ExpandEnvironmentVariables("%UserProfile%\\.nuget\\packages")
-                    : @"~/.nuget/packages";
+                    ? "%UserProfile%\\.nuget\\packages"
+                    : @"%HOME%/.nuget/packages";
 
             var packageFileName = package + "." + version + ".nupkg";
-            var packagePath = Path.Combine(packagesFolderPath, package, version, packageFileName);
+            var packagePath = Path.Combine(Environment.ExpandEnvironmentVariables(packagesFolderPath), package, version, packageFileName);
 
             if (!File.Exists(packagePath))
             {
