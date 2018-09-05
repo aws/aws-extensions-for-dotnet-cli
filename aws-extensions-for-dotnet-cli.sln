@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2036
+VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A5EA2C7D-846F-4266-8423-EFC4BA0FE4B6}"
 EndProject
@@ -56,6 +56,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestServerlessWebApp", "testapps\TestServerlessWebApp\TestServerlessWebApp.csproj", "{0A47A38F-EFB5-4DCF-9CEC-5F6FBC8D5EC6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServerlessWithYamlFunction", "testapps\ServerlessWithYamlFunction\ServerlessWithYamlFunction.csproj", "{BB4BD9D9-D307-4F81-A89E-833DA688629B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NativeDependencyExample2", "testapps\FlattenDependencyTestProjects\NativeDependencyExample2\NativeDependencyExample2.csproj", "{846348DD-9034-4C36-8342-955B1BAA42C5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -135,6 +137,10 @@ Global
 		{BB4BD9D9-D307-4F81-A89E-833DA688629B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BB4BD9D9-D307-4F81-A89E-833DA688629B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BB4BD9D9-D307-4F81-A89E-833DA688629B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{846348DD-9034-4C36-8342-955B1BAA42C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{846348DD-9034-4C36-8342-955B1BAA42C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{846348DD-9034-4C36-8342-955B1BAA42C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{846348DD-9034-4C36-8342-955B1BAA42C5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -161,6 +167,7 @@ Global
 		{75F71501-0971-4CA4-8686-E61619FD9CF8} = {5BF49662-B74E-4F54-913F-BB4BF6BE5634}
 		{0A47A38F-EFB5-4DCF-9CEC-5F6FBC8D5EC6} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 		{BB4BD9D9-D307-4F81-A89E-833DA688629B} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
+		{846348DD-9034-4C36-8342-955B1BAA42C5} = {9F4516D5-D045-4840-BA4D-34EF4684C6CB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DBFC70D6-49A2-40A1-AB08-5D9504AB7112}

@@ -1,10 +1,12 @@
-﻿using System.IO.Compression;
+﻿using System;
+using System.IO.Compression;
 using System.Reflection;
 using System.Threading.Tasks;
 
 using Xunit;
 using Amazon.Lambda.Tools.Commands;
 using System.IO;
+using System.Runtime.InteropServices;
 using Amazon.Common.DotNetCli.Tools;
 
 namespace Amazon.Lambda.Tools.Test
@@ -111,6 +113,87 @@ namespace Amazon.Lambda.Tools.Test
             {
                 if (File.Exists(command.OutputPackageFileName))
                     File.Delete(command.OutputPackageFileName);
+            }
+        }
+
+        [Fact]
+        public async Task NativeDependency2Example()
+        {
+            var fullPath = GetTestProjectPath("NativeDependencyExample2");
+            var command = new PackageCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+            command.DisableInteractive = true;
+            command.Configuration = "Release";
+            command.TargetFramework = "netcoreapp2.1";
+
+            command.OutputPackageFileName = Path.GetTempFileName() + ".zip";
+
+            var created = await command.ExecuteAsync();
+            try
+            {
+                Assert.True(created);
+
+                using (var archive = ZipFile.OpenRead(command.OutputPackageFileName))
+                {
+                    Assert.True(archive.GetEntry("libgit2-b0d9952.so") != null, "Failed to find libgit2-b0d9952.so");
+                    ValidateNoRuntimeFolder(archive);
+
+                    MakeSureCorrectAssemblyWasPicked(archive, "libgit2sharp.nativebinaries", "1.0.226", "libgit2-b0d9952.so", "runtimes/rhel-x64/native/");
+                }
+            }
+            finally
+            {
+                if (File.Exists(command.OutputPackageFileName))
+                    File.Delete(command.OutputPackageFileName);
+            }
+        }
+        
+        private ZipArchive GetNugetZip(string package, string version)
+        {
+            var packagesFolderPath =
+                RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? "%UserProfile%\\.nuget\\packages"
+                    : @"%HOME%/.nuget/packages";
+
+            var packageFileName = package + "." + version + ".nupkg";
+            var packagePath = Path.Combine(Environment.ExpandEnvironmentVariables(packagesFolderPath), package, version, packageFileName);
+
+            if (!File.Exists(packagePath))
+            {
+                throw new InvalidOperationException($"{nameof(packagePath)} {packagePath} is not found");
+            }
+
+            return ZipFile.OpenRead(packagePath);
+        }
+
+        private void MakeSureCorrectAssemblyWasPicked(ZipArchive archive, string nuGetPackage, string packageVersion, string assembly, string path)
+        {
+            MemoryStream buffer = new MemoryStream();
+            var entry = archive.GetEntry(assembly);
+            using (var stream = entry.Open())
+            {
+                stream.CopyTo(buffer);
+            }
+            var archivedBites = buffer.ToArray();
+
+            buffer = new MemoryStream();
+
+            byte[] expectedBites;
+            using (var nupkgArchive = GetNugetZip(nuGetPackage, packageVersion))
+            {
+                var nupkgEntry = nupkgArchive.GetEntry(path + assembly);
+
+                using (var stream = nupkgEntry.Open())
+                {
+                    stream.CopyTo(buffer);
+                }
+                expectedBites = buffer.ToArray();
+            }
+
+            Assert.True(expectedBites.Length == archivedBites.Length, $"{assembly} has different size then expected");
+
+            for (int i = 0; i < archivedBites.Length; i++)
+            {
+                Assert.True(archivedBites[i] == expectedBites[i], $"{assembly} has different bits then expected");
             }
         }
 

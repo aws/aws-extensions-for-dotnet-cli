@@ -94,11 +94,11 @@ namespace Amazon.Lambda.Tools
             {
                 arguments.Append(" /p:GenerateRuntimeConfigurationFiles=true");
 
-                // If you set the runtime linux-x64 it will trim out the Windows and Mac OS specific dependencies but Razor view precompilation
+                // If you set the runtime to RUNTIME_HIERARCHY_STARTING_POINT it will trim out the Windows and Mac OS specific dependencies but Razor view precompilation
                 // will not run. So only do this packaging optimization if there are no Razor views.
                 if (Directory.GetFiles(fullProjectLocation, "*.cshtml", SearchOption.AllDirectories).Length == 0)
                 {
-                    arguments.Append(" -r linux-x64 --self-contained false ");
+                    arguments.Append($" -r {LambdaConstants.RUNTIME_HIERARCHY_STARTING_POINT} --self-contained false ");
 
                     if (string.IsNullOrEmpty(msbuildParameters) ||
                         !msbuildParameters.Contains("PreserveCompilationContext"))
