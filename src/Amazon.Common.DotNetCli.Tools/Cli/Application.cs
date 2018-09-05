@@ -76,6 +76,11 @@ namespace Amazon.Common.DotNetCli.Tools.CLi
                 Console.Error.WriteLine(e.Message);
                 return -1;
             }
+            catch(TargetInvocationException e) when (e.InnerException is ToolsException)
+            {
+                Console.Error.WriteLine(e.InnerException.Message);
+                return -1;
+            }
             catch (Exception e)
             {
                 Console.Error.WriteLine($"Unknown error: {e.Message}");
