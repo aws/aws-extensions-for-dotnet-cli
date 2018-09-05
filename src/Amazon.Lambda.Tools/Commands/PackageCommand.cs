@@ -18,6 +18,9 @@ namespace Amazon.Lambda.Tools.Commands
             CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION,
             CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK,
             CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS,
+            CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION,
+            CommonDefinedCommandOptions.ARGUMENT_CONFIG_FILE,
+            CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE,
             LambdaDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE,
             LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK
         };

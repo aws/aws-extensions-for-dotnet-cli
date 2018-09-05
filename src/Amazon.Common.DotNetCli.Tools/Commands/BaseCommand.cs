@@ -128,7 +128,13 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION.Switch)) != null)
                 this.ProjectLocation = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_CONFIG_FILE.Switch)) != null)
+            {
                 this.ConfigFile = tuple.Item2.StringValue;
+                if (!File.Exists(this.ConfigFile))
+                {
+                    throw new ToolsException($"Config file {this.ConfigFile} can not be found.", ToolsException.CommonErrorCode.MissingConfigFile);
+                }
+            }
             if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE.Switch)) != null)
                 this.PersistConfigFile = tuple.Item2.BoolValue;
             if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_AWS_ACCESS_KEY_ID.Switch)) != null)
@@ -139,7 +145,9 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
                 this.AWSSessionToken = tuple.Item2.StringValue;
 
             if (string.IsNullOrEmpty(this.ConfigFile))
+            {
                 this.ConfigFile = new TDefaultConfig().DefaultConfigFileName;
+            }
         }
 
 

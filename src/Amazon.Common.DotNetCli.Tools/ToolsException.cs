@@ -16,6 +16,7 @@ namespace Amazon.Common.DotNetCli.Tools
             ProfileNotCreateable,
             RegionNotConfigured,
             MissingRequiredParameter,
+            MissingConfigFile,
             PersistConfigError,
             NoProjectFound,
             InvalidCredentialConfiguration,

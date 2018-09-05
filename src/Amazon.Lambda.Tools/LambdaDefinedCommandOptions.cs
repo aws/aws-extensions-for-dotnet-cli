@@ -257,7 +257,7 @@ namespace Amazon.Lambda.Tools
         public static readonly CommandOption ARGUMENT_OUTPUT_PACKAGE =
             new CommandOption
             {
-                Name = "Payload for function",
+                Name = "The zip file that will be created with compiled and packaged Lambda function.",
                 ShortSwitch = "-o",
                 Switch = "--output-package",
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
