@@ -24,7 +24,7 @@ namespace Amazon.Lambda.Tools.Test
             command.EnvironmentVariables = null;
             command.AppendEnvironmentVariables = new Dictionary<string, string> { { "foo", "bar" } };
 
-            var combinedEnv = command.GetEnvironmentVariables(true, null);
+            var combinedEnv = command.GetEnvironmentVariables(null);
             Assert.Single(combinedEnv);
             Assert.Equal("bar", combinedEnv["foo"]);
         }
@@ -41,7 +41,7 @@ namespace Amazon.Lambda.Tools.Test
             command.EnvironmentVariables = new Dictionary<string, string> { { "service", "s3" } };
             command.AppendEnvironmentVariables = new Dictionary<string, string> { { "foo", "bar" } };
 
-            var combinedEnv = command.GetEnvironmentVariables(true, null);
+            var combinedEnv = command.GetEnvironmentVariables(null);
             Assert.Equal(2, combinedEnv.Count);
             Assert.Equal("bar", combinedEnv["foo"]);
             Assert.Equal("s3", combinedEnv["service"]);
@@ -59,7 +59,7 @@ namespace Amazon.Lambda.Tools.Test
             command.EnvironmentVariables = new Dictionary<string, string> { { "service", "s3" } };
             command.AppendEnvironmentVariables = new Dictionary<string, string> { { "foo", "bar" } };
 
-            var combinedEnv = command.GetEnvironmentVariables(true, new Dictionary<string, string> { { "service", "lambda" } });
+            var combinedEnv = command.GetEnvironmentVariables(new Dictionary<string, string> { { "service", "lambda" } });
             Assert.Equal(2, combinedEnv.Count);
             Assert.Equal("bar", combinedEnv["foo"]);
             Assert.Equal("s3", combinedEnv["service"]);
@@ -77,7 +77,7 @@ namespace Amazon.Lambda.Tools.Test
             command.EnvironmentVariables = null;
             command.AppendEnvironmentVariables = new Dictionary<string, string> { { "foo", "bar" } };
 
-            var combinedEnv = command.GetEnvironmentVariables(true, new Dictionary<string, string> { { "service", "lambda" } });
+            var combinedEnv = command.GetEnvironmentVariables(new Dictionary<string, string> { { "service", "lambda" } });
             Assert.Equal(2, combinedEnv.Count);
             Assert.Equal("bar", combinedEnv["foo"]);
             Assert.Equal("lambda", combinedEnv["service"]);

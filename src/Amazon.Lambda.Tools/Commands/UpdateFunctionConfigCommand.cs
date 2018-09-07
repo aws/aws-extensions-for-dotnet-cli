@@ -43,7 +43,7 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_ENVIRONMENT_VARIABLES,
             LambdaDefinedCommandOptions.ARGUMENT_APPEND_ENVIRONMENT_VARIABLES,
             LambdaDefinedCommandOptions.ARGUMENT_KMS_KEY_ARN, 
-            LambdaDefinedCommandOptions.ARGUMENT_APPLY_DEFAULTS_FOR_UPDATE
+            LambdaDefinedCommandOptions.ARGUMENT_APPLY_DEFAULTS_FOR_UPDATE_OBSOLETE
         });
 
         public string FunctionName { get; set; }
@@ -62,7 +62,6 @@ namespace Amazon.Lambda.Tools.Commands
         public string KMSKeyArn { get; set; }
         public string DeadLetterTargetArn { get; set; }
         public string TracingMode { get; set; }
-        public bool? ApplyDefaultsForUpdate { get; set; }
 
         public UpdateFunctionConfigCommand(IToolLogger logger, string workingDirectory, string[] args)
             : base(logger, workingDirectory, UpdateCommandOptions, args)
@@ -121,8 +120,6 @@ namespace Amazon.Lambda.Tools.Commands
                 this.AppendEnvironmentVariables = tuple.Item2.KeyValuePairs;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_KMS_KEY_ARN.Switch)) != null)
                 this.KMSKeyArn = tuple.Item2.StringValue;
-            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_APPLY_DEFAULTS_FOR_UPDATE.Switch)) != null)
-                this.ApplyDefaultsForUpdate = tuple.Item2.BoolValue;
         }
 
 
@@ -232,27 +229,20 @@ namespace Amazon.Lambda.Tools.Commands
         /// <returns></returns>
         private UpdateFunctionConfigurationRequest CreateConfigurationRequestIfDifferent(GetFunctionConfigurationResponse existingConfiguration)
         {
-            bool applyDefaultsFile = this.GetBoolValueOrDefault(this.ApplyDefaultsForUpdate, LambdaDefinedCommandOptions.ARGUMENT_APPLY_DEFAULTS_FOR_UPDATE, false).GetValueOrDefault();
-
-            if(applyDefaultsFile)
-            {
-                this.Logger.WriteLine("Apply defaults values from defaults file while updating function configuration");
-            }
-
             bool different = false;
             var request = new UpdateFunctionConfigurationRequest
             {
                 FunctionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true)
             };
 
-            var description = applyDefaultsFile ? this.GetStringValueOrDefault(this.Description, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_DESCRIPTION, false) : Description;
+            var description = this.GetStringValueOrDefault(this.Description, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_DESCRIPTION, false);
             if (!string.IsNullOrEmpty(description) && !string.Equals(description, existingConfiguration.Description, StringComparison.Ordinal))
             {
                 request.Description = description;
                 different = true;
             }
 
-            var role = applyDefaultsFile ? this.GetStringValueOrDefault(this.Role, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE, false) : this.Role;
+            var role = this.GetStringValueOrDefault(this.Role, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE, false);
             if (!string.IsNullOrEmpty(role))
             {
                 string fullRole;
@@ -268,35 +258,35 @@ namespace Amazon.Lambda.Tools.Commands
                 }
             }
 
-            var handler = applyDefaultsFile ? this.GetStringValueOrDefault(this.Handler, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER, false) : this.Handler;
+            var handler = this.GetStringValueOrDefault(this.Handler, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER, false);
             if (!string.IsNullOrEmpty(handler) && !string.Equals(handler, existingConfiguration.Handler, StringComparison.Ordinal))
             {
                 request.Handler = handler;
                 different = true;
             }
 
-            var memorySize = applyDefaultsFile ? this.GetIntValueOrDefault(this.MemorySize, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_MEMORY_SIZE, false) : this.MemorySize;
+            var memorySize = this.GetIntValueOrDefault(this.MemorySize, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_MEMORY_SIZE, false);
             if(memorySize.HasValue && memorySize.Value != existingConfiguration.MemorySize)
             {
                 request.MemorySize = memorySize.Value;
                 different = true;
             }
 
-            var runtime = applyDefaultsFile ? this.GetStringValueOrDefault(this.Runtime, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME, false) : this.Runtime?.Value;
+            var runtime = this.GetStringValueOrDefault(this.Runtime, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME, false);
             if (runtime != null && runtime != existingConfiguration.Runtime)
             {
                 request.Runtime = runtime;
                 different = true;
             }
 
-            var timeout = applyDefaultsFile ? this.GetIntValueOrDefault(this.Timeout, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT, false) : this.Timeout;
+            var timeout = this.GetIntValueOrDefault(this.Timeout, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT, false);
             if (timeout.HasValue && timeout.Value != existingConfiguration.Timeout)
             {
                 request.Timeout = timeout.Value;
                 different = true;
             }
 
-            var subnetIds = applyDefaultsFile ? this.GetStringValuesOrDefault(this.SubnetIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SUBNETS, false) : this.SubnetIds;
+            var subnetIds = this.GetStringValuesOrDefault(this.SubnetIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SUBNETS, false);
             if (subnetIds != null)
             {
                 if(request.VpcConfig == null)
@@ -314,7 +304,7 @@ namespace Amazon.Lambda.Tools.Commands
                 }
             }
 
-            var securityGroupIds = applyDefaultsFile ? this.GetStringValuesOrDefault(this.SecurityGroupIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SECURITY_GROUPS, false) : this.SecurityGroupIds;
+            var securityGroupIds = this.GetStringValuesOrDefault(this.SecurityGroupIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SECURITY_GROUPS, false);
             if (securityGroupIds != null)
             {
                 if (request.VpcConfig == null)
@@ -332,7 +322,7 @@ namespace Amazon.Lambda.Tools.Commands
                 }
             }
 
-            var deadLetterTargetArn = applyDefaultsFile ? this.GetStringValueOrDefault(this.DeadLetterTargetArn, LambdaDefinedCommandOptions.ARGUMENT_DEADLETTER_TARGET_ARN, false) : this.DeadLetterTargetArn;
+            var deadLetterTargetArn = this.GetStringValueOrDefault(this.DeadLetterTargetArn, LambdaDefinedCommandOptions.ARGUMENT_DEADLETTER_TARGET_ARN, false);
             if (deadLetterTargetArn != null)
             {
                 if (!string.IsNullOrEmpty(deadLetterTargetArn) && !string.Equals(deadLetterTargetArn, existingConfiguration.DeadLetterConfig?.TargetArn, StringComparison.Ordinal))
@@ -350,10 +340,10 @@ namespace Amazon.Lambda.Tools.Commands
                 }
             }
 
-            var tracingMode = applyDefaultsFile ? this.GetStringValueOrDefault(this.TracingMode, LambdaDefinedCommandOptions.ARGUMENT_TRACING_MODE, false) : this.TracingMode;
+            var tracingMode = this.GetStringValueOrDefault(this.TracingMode, LambdaDefinedCommandOptions.ARGUMENT_TRACING_MODE, false);
             if (tracingMode != null)
             {
-                var eTraceMode = Amazon.Lambda.TracingMode.FindValue(tracingMode);
+                var eTraceMode = !string.Equals(tracingMode, string.Empty) ? Amazon.Lambda.TracingMode.FindValue(tracingMode) : null;
                 if (eTraceMode != existingConfiguration.TracingConfig?.Mode)
                 {
                     request.TracingConfig = new TracingConfig();
@@ -362,14 +352,14 @@ namespace Amazon.Lambda.Tools.Commands
                 }
             }
 
-            var kmsKeyArn = applyDefaultsFile ? this.GetStringValueOrDefault(this.KMSKeyArn, LambdaDefinedCommandOptions.ARGUMENT_KMS_KEY_ARN, false) : this.KMSKeyArn;
+            var kmsKeyArn = this.GetStringValueOrDefault(this.KMSKeyArn, LambdaDefinedCommandOptions.ARGUMENT_KMS_KEY_ARN, false);
             if (!string.IsNullOrEmpty(kmsKeyArn) && !string.Equals(kmsKeyArn, existingConfiguration.KMSKeyArn, StringComparison.Ordinal))
             {
                 request.KMSKeyArn = kmsKeyArn;
                 different = true;
             }
 
-            var environmentVariables = GetEnvironmentVariables(applyDefaultsFile, existingConfiguration?.Environment?.Variables);
+            var environmentVariables = GetEnvironmentVariables(existingConfiguration?.Environment?.Variables);
             if (environmentVariables != null && AreDifferent(environmentVariables, existingConfiguration?.Environment?.Variables))
             {
                 request.Environment = new Model.Environment { Variables = environmentVariables };
@@ -384,9 +374,9 @@ namespace Amazon.Lambda.Tools.Commands
             return request;
         }
 
-        public Dictionary<string, string> GetEnvironmentVariables(bool applyDefaultsFile, Dictionary<string, string> existingEnvironmentVariables)
+        public Dictionary<string, string> GetEnvironmentVariables(Dictionary<string, string> existingEnvironmentVariables)
         {
-            var specifiedEnvironmentVariables = applyDefaultsFile ? this.GetKeyValuePairOrDefault(this.EnvironmentVariables, LambdaDefinedCommandOptions.ARGUMENT_ENVIRONMENT_VARIABLES, false) : this.EnvironmentVariables;
+            var specifiedEnvironmentVariables = this.GetKeyValuePairOrDefault(this.EnvironmentVariables, LambdaDefinedCommandOptions.ARGUMENT_ENVIRONMENT_VARIABLES, false);
             var appendEnvironmentVariables = this.GetKeyValuePairOrDefault(this.AppendEnvironmentVariables, LambdaDefinedCommandOptions.ARGUMENT_APPEND_ENVIRONMENT_VARIABLES, false);
             if (appendEnvironmentVariables == null)
             {

@@ -306,7 +306,7 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
                 throw new ToolsException($"Missing required parameter: {option.Switch}", ToolsException.CommonErrorCode.MissingRequiredParameter);
             }
 
-            return null;
+            return propertyValue;
         }
 
         public string GetRoleValueOrDefault(string propertyValue, CommandOption option, string assumeRolePrincipal, string awsManagedPolicyPrefix, Dictionary<string, string> knownManagedPolicyDescription, bool required)

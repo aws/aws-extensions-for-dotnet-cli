@@ -47,7 +47,7 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_ENVIRONMENT_VARIABLES,
             LambdaDefinedCommandOptions.ARGUMENT_APPEND_ENVIRONMENT_VARIABLES,
             LambdaDefinedCommandOptions.ARGUMENT_KMS_KEY_ARN,
-            LambdaDefinedCommandOptions.ARGUMENT_APPLY_DEFAULTS_FOR_UPDATE,
+            LambdaDefinedCommandOptions.ARGUMENT_APPLY_DEFAULTS_FOR_UPDATE_OBSOLETE,
             LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET,
             LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX,
             LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK
@@ -188,7 +188,7 @@ namespace Amazon.Lambda.Tools.Commands
                         }
                     };
 
-                    var environmentVariables = GetEnvironmentVariables(true, null);
+                    var environmentVariables = GetEnvironmentVariables(null);
 
                     if (environmentVariables != null && environmentVariables.Count > 0)
                     {

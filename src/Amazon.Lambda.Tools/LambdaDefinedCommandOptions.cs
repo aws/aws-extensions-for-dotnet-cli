@@ -283,13 +283,13 @@ namespace Amazon.Lambda.Tools
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = "Path to write updated serverless template with CodeURI fields updated to the location of the packaged build artifacts in S3."
             };
-        public static readonly CommandOption ARGUMENT_APPLY_DEFAULTS_FOR_UPDATE =
+        public static readonly CommandOption ARGUMENT_APPLY_DEFAULTS_FOR_UPDATE_OBSOLETE =
             new CommandOption
             {
                 Name = "Apply Defaults for Update",
                 Switch = "--apply-defaults",
                 ValueType = CommandOption.CommandOptionValueType.BoolValue,
-                Description = "If set to true then values set in the defaults file will be applied when updating an existing function configuration."
+                Description = "Obsolete: as of version 3.0.0.0 defaults are always applied."
             };
 
 
