@@ -45,6 +45,7 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_DEADLETTER_TARGET_ARN,
             LambdaDefinedCommandOptions.ARGUMENT_TRACING_MODE,
             LambdaDefinedCommandOptions.ARGUMENT_ENVIRONMENT_VARIABLES,
+            LambdaDefinedCommandOptions.ARGUMENT_APPEND_ENVIRONMENT_VARIABLES,
             LambdaDefinedCommandOptions.ARGUMENT_KMS_KEY_ARN,
             LambdaDefinedCommandOptions.ARGUMENT_APPLY_DEFAULTS_FOR_UPDATE,
             LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET,
@@ -187,8 +188,9 @@ namespace Amazon.Lambda.Tools.Commands
                         }
                     };
 
-                    var environmentVariables = this.GetKeyValuePairOrDefault(this.EnvironmentVariables, LambdaDefinedCommandOptions.ARGUMENT_ENVIRONMENT_VARIABLES, false);
-                    if(environmentVariables != null && environmentVariables.Count > 0)
+                    var environmentVariables = GetEnvironmentVariables(true, null);
+
+                    if (environmentVariables != null && environmentVariables.Count > 0)
                     {
                         createRequest.Environment = new Model.Environment
                         {

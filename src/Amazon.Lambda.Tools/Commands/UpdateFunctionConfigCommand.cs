@@ -41,6 +41,7 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_DEADLETTER_TARGET_ARN,
             LambdaDefinedCommandOptions.ARGUMENT_TRACING_MODE,
             LambdaDefinedCommandOptions.ARGUMENT_ENVIRONMENT_VARIABLES,
+            LambdaDefinedCommandOptions.ARGUMENT_APPEND_ENVIRONMENT_VARIABLES,
             LambdaDefinedCommandOptions.ARGUMENT_KMS_KEY_ARN, 
             LambdaDefinedCommandOptions.ARGUMENT_APPLY_DEFAULTS_FOR_UPDATE
         });
@@ -56,6 +57,7 @@ namespace Amazon.Lambda.Tools.Commands
         public string[] SecurityGroupIds { get; set; }
         public Runtime Runtime { get; set; }
         public Dictionary<string, string> EnvironmentVariables { get; set; }
+        public Dictionary<string, string> AppendEnvironmentVariables { get; set; }
         public Dictionary<string, string> Tags { get; set; }
         public string KMSKeyArn { get; set; }
         public string DeadLetterTargetArn { get; set; }
@@ -115,6 +117,8 @@ namespace Amazon.Lambda.Tools.Commands
                 this.TracingMode = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_ENVIRONMENT_VARIABLES.Switch)) != null)
                 this.EnvironmentVariables = tuple.Item2.KeyValuePairs;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_APPEND_ENVIRONMENT_VARIABLES.Switch)) != null)
+                this.AppendEnvironmentVariables = tuple.Item2.KeyValuePairs;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_KMS_KEY_ARN.Switch)) != null)
                 this.KMSKeyArn = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_APPLY_DEFAULTS_FOR_UPDATE.Switch)) != null)
@@ -365,8 +369,8 @@ namespace Amazon.Lambda.Tools.Commands
                 different = true;
             }
 
-            var environmentVariables = applyDefaultsFile ? this.GetKeyValuePairOrDefault(this.EnvironmentVariables, LambdaDefinedCommandOptions.ARGUMENT_ENVIRONMENT_VARIABLES, false) : this.EnvironmentVariables;
-            if(environmentVariables != null && AreDifferent(environmentVariables, existingConfiguration?.Environment?.Variables))
+            var environmentVariables = GetEnvironmentVariables(applyDefaultsFile, existingConfiguration?.Environment?.Variables);
+            if (environmentVariables != null && AreDifferent(environmentVariables, existingConfiguration?.Environment?.Variables))
             {
                 request.Environment = new Model.Environment { Variables = environmentVariables };
                 different = true;
@@ -378,6 +382,31 @@ namespace Amazon.Lambda.Tools.Commands
                 return null;
 
             return request;
+        }
+
+        public Dictionary<string, string> GetEnvironmentVariables(bool applyDefaultsFile, Dictionary<string, string> existingEnvironmentVariables)
+        {
+            var specifiedEnvironmentVariables = applyDefaultsFile ? this.GetKeyValuePairOrDefault(this.EnvironmentVariables, LambdaDefinedCommandOptions.ARGUMENT_ENVIRONMENT_VARIABLES, false) : this.EnvironmentVariables;
+            var appendEnvironmentVariables = this.GetKeyValuePairOrDefault(this.AppendEnvironmentVariables, LambdaDefinedCommandOptions.ARGUMENT_APPEND_ENVIRONMENT_VARIABLES, false);
+            if (appendEnvironmentVariables == null)
+            {
+                return specifiedEnvironmentVariables;
+            }
+
+            var combineSet = specifiedEnvironmentVariables ?? existingEnvironmentVariables;
+            if (combineSet == null)
+            {
+                combineSet = appendEnvironmentVariables;
+            }
+            else
+            {
+                foreach (var kvp in appendEnvironmentVariables)
+                {
+                    combineSet[kvp.Key] = kvp.Value;
+                }
+            }
+
+            return combineSet;
         }
 
         private bool AreDifferent(IDictionary<string, string> source, IDictionary<string, string> target)

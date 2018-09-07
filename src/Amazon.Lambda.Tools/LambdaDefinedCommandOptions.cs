@@ -142,7 +142,16 @@ namespace Amazon.Lambda.Tools
                 ShortSwitch = "-ev",
                 Switch = "--environment-variables",
                 ValueType = CommandOption.CommandOptionValueType.KeyValuePairs,
-                Description = "Environment variables set for the function. Format is <key1>=<value1>;<key2>=<value2>"
+                Description = "Environment variables set for the function. For existing functions this replaces the current environment variables. Format is <key1>=<value1>;<key2>=<value2>"
+            };
+        public static readonly CommandOption ARGUMENT_APPEND_ENVIRONMENT_VARIABLES =
+            new CommandOption
+            {
+                Name = "Append Environment Variables",
+                ShortSwitch = "-aev",
+                Switch = "--append-environment-variables",
+                ValueType = CommandOption.CommandOptionValueType.KeyValuePairs,
+                Description = "Append environment variables to the existing set of environment variables for the function. Format is <key1>=<value1>;<key2>=<value2>"
             };
         public static readonly CommandOption ARGUMENT_FUNCTION_TAGS =
             new CommandOption
