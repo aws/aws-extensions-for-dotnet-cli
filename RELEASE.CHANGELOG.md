@@ -1,3 +1,19 @@
+### Release 2018-09-10
+* **Amazon.Lambda.Tools (3.0.0)**
+    * Switch to Global Tool.
+    * Made the **--apply-defaults** switch **obsolete**. Defaults from config file are now always applied.
+    * Added new **--append-environment-variables** switch to add new environment variables without overwriting existing environment variables.
+    * Added validation that if a config file is explicitly set and the file can not be found then throw an exception
+    * Improve error reporting when failed to parse command line arguments.
+    * Pull request [#29](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/29) changing publishing RID to rhel.7.2-x64 the closest match to Amazon Linux.
+    * **PreserveCompilationContext** in the **--msbuild-parameters** switch overrides this tool's default behavior of setting /p:PreserveCompilationContext=false.
+    * Fixed bug incorrectly executing chmod on a file with spaces in the name. 
+    * Add ability to pass AWS credentials using the switches --aws-access-key-id, --aws-secret-key and --aws-session-token
+* **Amazon.ECS.Tools (3.0.0)**
+    * Switch to Global Tool.
+* **Amazon.ElasticBeanstalk.Tools (3.0.0)**
+    * Switch to Global Tool.
+
 ### Release 2018-07-09
 * **Amazon.Lambda.Tools (2.2.0)**
     * Added support for the .NET Core 2.1 AWS Lambda runtime.
