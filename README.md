@@ -23,14 +23,46 @@ For a history of releases view the [release change log](RELEASE.CHANGELOG.md)
 
 ## Installing Extensions
 
-The extensions are provided through NuGet with their package type set to **DotnetCliTool**. At the time of 
-writing (11/2017), the NuGet command line tools and Visual Studio do not understand how to add these NuGet references
-to .NET Core projects. To install them you must manually add the **DotNetCliToolReference** element to 
-the csproj file. If you use the [AWS Toolkit for Visual Studio](https://marketplace.visualstudio.com/items?itemName=AmazonWebServices.AWSToolkitforVisualStudio2017)
-to do a deployment an option is provided to configure the .NET CLI extension for you so you do 
-not need to manually. The .NET Core Lambda blue prints provided in Visual Studio or through the [AWS Lambda 
-template package](https://aws.amazon.com/blogs/developer/creating-net-core-aws-lambda-projects-without-visual-studio/) 
-have the Lambda tool extension preconfigured.
+As of September 10th, 2018 these extensions have migrated to be .NET Core [Global Tools](https://docs.microsoft.com/en-us/dotnet/core/tools/global-tools).
+As part of the migration each of these tools version number was set to 3.0.0.0
+
+To install these tools use the **dotnet tool install** command.
+```
+dotnet tool install -g Amazon.Lambda.Tools
+```
+
+To update to the latest version of one of these tools use the **dotnet tool update** command.
+```
+dotnet tool update -g Amazon.Lambda.Tools
+```
+
+### Migrating from DotNetCliToolReference
+
+To migrate an existing project away from the older project tool, you need to edit your project file and remove the **DotNetCliToolReference** for the tool package. For example, let's look at an existing Lambda project file.
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+
+    <-- The new property indicating to AWS Toolkit for Visual Studio this is a Lambda project -->
+    <AWSProjectType>Lambda</AWSProjectType>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <-- This line needs to be removed -->
+    <DotNetCliToolReference Include="Amazon.Lambda.Tools" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Amazon.Lambda.Core" Version="1.0.0" />
+    <PackageReference Include="Amazon.Lambda.Serialization.Json" Version="1.3.0" />
+  </ItemGroup>
+</Project>
+```
+To migrate this project, you need to delete the **DotNetCliToolReference** element, including **Amazon.Lambda.Tools**. If you don't remove this line, the older project tool version of **Amazon.Lambda.Tools** will be used instead of an installed Global Tool.
+
+The AWS Toolkit for Visual Studio before .NET Core 2.1 would look for the presence of **Amazon.Lambda.Tools** in the project file to determine whether to show the Lambda deployment menu item. Because we knew we were going to switch to Global Tools, and the reference to **Amazon.Lambda.Tools** in the project was going away, we added the **AWSProjectType** property to the project file. The current version of the AWS Toolkit for Visual Studio now looks for either the presence of **Amazon.Lambda.Tools** or the **AWSProjectType** set to **Lambda**. Make sure when removing the **DotNetCliToolReference** that your project file has the **AWSProjectType** property to continue deploying with the AWS Toolkit for Visual Studio.
 
 ## Supported AWS Services
 
@@ -90,15 +122,10 @@ You must install Docker before using this extension to deploy your application.
 
 #### Install
 
-To install the extension, add the following to your csproj file. **Note:** the version below might not 
-be the latest version. For the latest version check the [NuGet package site](https://www.nuget.org/packages/Amazon.ECS.Tools/).
-If the command is not found after adding this snippet, you might need to run the command `dotnet restore` in the project root to 
-pull the package from NuGet.
+To install the extension run the following command.
 
-```xml
-<ItemGroup>
-   <DotNetCliToolReference Include="Amazon.ECS.Tools" Version="1.0.0" />
-</ItemGroup>
+```
+dotnet tool install -g Amazon.ECS.Tools
 ```
 
 
@@ -151,16 +178,12 @@ This tool extension deploys ASP.NET Core applications to AWS Elastic Beanstalk e
 
 #### Install
 
-To install the extension, add the following to your csproj file. **Note:** the version below might not 
-be the latest version. For the latest version check the [NuGet package site](https://www.nuget.org/packages/Amazon.ElasticBeanstalk.Tools/).
-If the command is not found after adding this snippet you might need to run the command `dotnet restore` in the project root to 
-pull the package from NuGet.
+To install the extension run the following command.
 
-```xml
-<ItemGroup>
-   <DotNetCliToolReference Include="Amazon.ElasticBeanstalk.Tools" Version="1.0.0" />
-</ItemGroup>
 ```
+dotnet tool install -g Amazon.ElasticBeanstalk.Tools
+```
+
 
 
 #### Available Commands
@@ -200,15 +223,10 @@ other tool extensions which will make it more consistent with the other tool ext
 
 #### Install
 
-To install the extension, add the following to your csproj file. **Note:** the version below might not 
-be the latest version. For the latest version check the [NuGet package site](https://www.nuget.org/packages/Amazon.Lambda.Tools/).
-If the command is not found after adding this snippet you might need to run the command `dotnet restore` in the project root to 
-pull the package from NuGet.
+To install the extension run the following command.
 
-```xml
-<ItemGroup>
-   <DotNetCliToolReference Include="Amazon.Lambda.Tools" Version="1.0.0" />
-</ItemGroup>
+```
+dotnet tool install -g Amazon.Lambda.Tools
 ```
 
 
