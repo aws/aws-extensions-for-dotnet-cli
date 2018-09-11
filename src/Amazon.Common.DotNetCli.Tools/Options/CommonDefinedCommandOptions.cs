@@ -114,7 +114,7 @@ namespace Amazon.Common.DotNetCli.Tools.Options
                 Name = "MSBuild Parameters",
                 Switch = "--msbuild-parameters",
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
-                Description = "Additional msbuild parameters passed to the 'dotnet publish' command",
+                Description = "Additional msbuild parameters passed to the 'dotnet publish' command. Add quotes around the value if the value contains spaces.",
             };
         
 
