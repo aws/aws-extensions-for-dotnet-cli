@@ -102,6 +102,64 @@ namespace Amazon.Lambda.Tools.Test
         }
 
         [Fact]
+        public async Task DeployWithPackage()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+
+            string packageZip = Path.GetTempFileName() + ".zip";
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestFunction");
+
+            var packageCommand = new PackageCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+            packageCommand.OutputPackageFileName = packageZip;
+            packageCommand.Configuration = "Release";
+            packageCommand.TargetFramework = "netcoreapp1.0";
+
+            await packageCommand.ExecuteAsync();
+
+            var deployCommand = new DeployFunctionCommand(new ConsoleToolLogger(), Path.GetTempPath(), new string[0]);
+            deployCommand.FunctionName = "test-function-" + DateTime.Now.Ticks;
+            deployCommand.Handler = "TestFunction::TestFunction.Function::ToUpper";
+            deployCommand.Timeout = 10;
+            deployCommand.MemorySize = 512;
+            deployCommand.Role = this._roleArn;
+            deployCommand.Package = packageZip;
+            deployCommand.Runtime = "dotnetcore1.0";
+            deployCommand.Region = "us-east-1";
+            deployCommand.DisableInteractive = true;
+
+            var created = await deployCommand.ExecuteAsync();
+            try
+            {
+                Assert.True(created);
+
+                var invokeRequest = new InvokeRequest
+                {
+                    FunctionName = deployCommand.FunctionName,
+                    LogType = LogType.Tail,
+                    Payload = "\"hello world\""
+                };
+                var response = await deployCommand.LambdaClient.InvokeAsync(invokeRequest);
+
+                var payload = new StreamReader(response.Payload).ReadToEnd();
+                Assert.Equal("\"HELLO WORLD\"", payload);
+            }
+            finally
+            {
+                if(File.Exists(packageZip))
+                {
+                    File.Delete(packageZip);
+                }
+
+                if (created)
+                {
+                    await deployCommand.LambdaClient.DeleteFunctionAsync(deployCommand.FunctionName);
+                }
+            }
+
+        }
+
+
+        [Fact]
         public async Task RunYamlServerlessDeployCommand()
         {
             var assembly = this.GetType().GetTypeInfo().Assembly;
