@@ -25,8 +25,6 @@ namespace Amazon.Lambda.Tools.Commands
 
         public static readonly IList<CommandOption> UpdateCommandOptions = BuildLineOptions(new List<CommandOption>
         {
-            CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION,
-            CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_DESCRIPTION,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_PUBLISH,

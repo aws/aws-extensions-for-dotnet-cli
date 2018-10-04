@@ -18,6 +18,25 @@ namespace Amazon.Lambda.Tools
     {
         public static readonly IList<string> ValidProjectExtensions = new List<string> { ".csproj", ".fsproj", ".vbproj" };
 
+
+        public static string DetermineTargetFrameworkFromLambdaRuntime(string lambdaRuntime)
+        {
+            if (lambdaRuntime == Amazon.Lambda.Runtime.Dotnetcore21)
+            {
+                return "netcoreapp2.1";
+            }
+            if (lambdaRuntime == Amazon.Lambda.Runtime.Dotnetcore20)
+            {
+                return "netcoreapp2.0";
+            }
+            if (lambdaRuntime == Amazon.Lambda.Runtime.Dotnetcore10)
+            {
+                return "netcoreapp1.0";
+            }
+
+            return null;
+        }
+        
         /// <summary>
         /// Make sure nobody is trying to deploy a function based on a higher .NET Core framework then the Lambda runtime knows about.
         /// </summary>

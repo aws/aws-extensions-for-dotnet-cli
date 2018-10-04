@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
+using Amazon.Lambda.Tools.TemplateProcessor;
 using ThirdParty.Json.LitJson;
 
 namespace Amazon.Lambda.Tools.Commands
@@ -94,8 +95,6 @@ namespace Amazon.Lambda.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
-            EnsureInProjectDirectory();
-
             // Disable interactive since this command is intended to be run as part of a pipeline.
             DisableInteractive = true;
             
@@ -115,32 +114,24 @@ namespace Amazon.Lambda.Tools.Commands
 
             await Utilities.ValidateBucketRegionAsync(this.S3Client, s3Bucket);
 
-            string zipArchivePath = null;
-            var configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, true);
-            var targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
-            var msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
-            var disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
-            string publishLocation;
-            LambdaPackager.CreateApplicationBundle(this.DefaultConfig, this.Logger, this.WorkingDirectory, projectLocation, configuration, targetFramework, msbuildParameters, disableVersionCheck, out publishLocation, ref zipArchivePath);
-            if (string.IsNullOrEmpty(zipArchivePath))
-                return false;
-
-            string s3KeyApplicationBundle;
-            using (var stream = new MemoryStream(File.ReadAllBytes(zipArchivePath)))
-            {
-                s3KeyApplicationBundle = await Utilities.UploadToS3Async(this.Logger, this.S3Client, s3Bucket, s3Prefix, Path.GetFileName(zipArchivePath), stream);
-            }
-
-            this.Logger.WriteLine($"Updating CloudFormation template to point to application bundle: s3://{s3Bucket}/{s3KeyApplicationBundle}");
             var templateBody = File.ReadAllText(templatePath);
 
             // Process any template substitutions
             templateBody = LambdaUtilities.ProcessTemplateSubstitions(this.Logger, templateBody, this.GetKeyValuePairOrDefault(this.TemplateSubstitutions, LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_TEMPLATE_SUBSTITUTIONS, false), Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation));
-
-            var transformedBody = LambdaUtilities.UpdateCodeLocationInTemplate(templateBody, s3Bucket, s3KeyApplicationBundle);
-
+                        
+            var options = new TemplateProcessorManager.DefaultLocationOption
+            {
+                Configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false),
+                TargetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false),
+                MSBuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false),
+                DisableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault()
+            };
+            
+            var templateProcessor = new TemplateProcessorManager(this.Logger, this.S3Client, s3Bucket, s3Prefix, options);
+            templateBody = await templateProcessor.TransformTemplateAsync(templatePath, templateBody);            
+            
             this.Logger.WriteLine($"Writing updated template: {outputTemplatePath}");
-            File.WriteAllText(outputTemplatePath, transformedBody);
+            File.WriteAllText(outputTemplatePath, templateBody);
 
             return true;            
         }
