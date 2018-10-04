@@ -31,7 +31,8 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
         public BaseCommand(IToolLogger logger, string workingDirectory, IList<CommandOption> possibleOptions, string[] args)
             : this(logger, workingDirectory)
         {
-            this.OriginalCommandLineArguments = args ?? new string[0];
+            args = args ?? new string[0];
+            this.OriginalCommandLineArguments = args;
             var values = CommandLineParser.ParseArguments(possibleOptions, args);
             ParseCommandArguments(values);
         }

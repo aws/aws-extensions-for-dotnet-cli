@@ -12,6 +12,7 @@ using Amazon.CloudFormation.Model;
 using ThirdParty.Json.LitJson;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
+using Amazon.Lambda.Tools.TemplateProcessor;
 using Newtonsoft.Json.Linq;
 
 namespace Amazon.Lambda.Tools.Commands
@@ -142,50 +143,24 @@ namespace Amazon.Lambda.Tools.Commands
             if (!File.Exists(templatePath))
                 throw new LambdaToolsException($"Template file {templatePath} cannot be found.", LambdaToolsException.LambdaErrorCode.ServerlessTemplateNotFound);
 
-
-            // Build and bundle up the users project.
-            string zipArchivePath = null;
-            string package = this.GetStringValueOrDefault(this.Package, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE, false);
-            if(string.IsNullOrEmpty(package))
-            {
-                EnsureInProjectDirectory();
-
-                string configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, true);
-                string targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
-                string msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
-                bool disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
-
-                string publishLocation;
-                LambdaPackager.CreateApplicationBundle(this.DefaultConfig, this.Logger, this.WorkingDirectory, projectLocation, configuration, targetFramework, msbuildParameters, disableVersionCheck, out publishLocation, ref zipArchivePath);
-                if (string.IsNullOrEmpty(zipArchivePath))
-                    return false;
-            }
-            else
-            {
-                if (!File.Exists(package))
-                    throw new LambdaToolsException($"Package {package} does not exist", LambdaToolsException.LambdaErrorCode.InvalidPackage);
-                if (!string.Equals(Path.GetExtension(package), ".zip", StringComparison.OrdinalIgnoreCase))
-                    throw new LambdaToolsException($"Package {package} must be a zip file", LambdaToolsException.LambdaErrorCode.InvalidPackage);
-
-                this.Logger.WriteLine($"Skipping compilation and using precompiled package {package}");
-                zipArchivePath = package;
-            }
-
-
-            // Upload the app bundle to S3
-            string s3KeyApplicationBundle;
-            using (var stream = new MemoryStream(File.ReadAllBytes(zipArchivePath)))
-            {
-                s3KeyApplicationBundle = await Utilities.UploadToS3Async(this.Logger, this.S3Client, s3Bucket, s3Prefix, stackName, stream);
-            }
-
             // Read in the serverless template and update all the locations for Lambda functions to point to the app bundle that was just uploaded.
             string templateBody = File.ReadAllText(templatePath);
 
             // Process any template substitutions
             templateBody = LambdaUtilities.ProcessTemplateSubstitions(this.Logger, templateBody, this.GetKeyValuePairOrDefault(this.TemplateSubstitutions, LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_TEMPLATE_SUBSTITUTIONS, false), Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation));
-
-            templateBody = LambdaUtilities.UpdateCodeLocationInTemplate(templateBody, s3Bucket, s3KeyApplicationBundle);
+            
+            
+            var options = new TemplateProcessorManager.DefaultLocationOption
+            {
+                Configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false),
+                TargetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false),
+                MSBuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false),
+                DisableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault(),
+                Package = this.GetStringValueOrDefault(this.Package, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE, false)
+            };
+            
+            var templateProcessor = new TemplateProcessorManager(this.Logger, this.S3Client, s3Bucket, s3Prefix, options);
+            templateBody = await templateProcessor.TransformTemplateAsync(templatePath, templateBody);
 
             // Upload the template to S3 instead of sending it straight to CloudFormation to avoid the size limitation
             string s3KeyTemplate;

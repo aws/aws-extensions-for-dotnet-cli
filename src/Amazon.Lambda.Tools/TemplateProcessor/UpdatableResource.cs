@@ -17,6 +17,8 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             this.DataSource = dataSource;
         }
 
+        public string LambdaRuntime => this.DataSource.GetValue("Runtime");
+
         public string GetLocalPath()
         {
             if (string.Equals(this.ResourceType, TemplateProcessorManager.CF_TYPE_SERVERLESS_FUNCTION, StringComparison.Ordinal))

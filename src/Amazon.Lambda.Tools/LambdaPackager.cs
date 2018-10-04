@@ -40,6 +40,9 @@ namespace Amazon.Lambda.Tools
             string projectLocation, string configuration, string targetFramework, string msbuildParameters, bool disableVersionCheck,
             out string publishLocation, ref string zipArchivePath)
         {
+            if(string.IsNullOrEmpty(configuration))
+                configuration = "Release";
+            
             string lambdaRuntimePackageStoreManifestContent = null;
             var computedProjectLocation = Utilities.DetermineProjectLocation(workingDirectory, projectLocation);
 
