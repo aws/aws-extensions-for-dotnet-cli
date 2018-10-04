@@ -16,6 +16,8 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
 
     public interface IUpdatableResource
     {
+        string Name { get; }
+
         string ResourceType { get; }
 
         string GetLocalPath();

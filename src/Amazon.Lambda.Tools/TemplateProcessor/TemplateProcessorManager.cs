@@ -29,18 +29,34 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
 
         public async Task<string> TransformTemplateAsync(string templateDirectory, string templateBody)
         {
+            var cacheOfLocalPathsToS3Keys = new Dictionary<string, string>();
             var parser = CreateTemplateParser(templateBody);
 
             foreach(var updatableResource in parser.UpdatableResources())
             {
-                await ProcessUpdatableResourceAsync(templateDirectory, updatableResource);                
+                this.Logger?.WriteLine($"Processing CloudFormation resource {updatableResource.Name}");
+
+                var localPath = updatableResource.GetLocalPath();
+                string s3Key;
+                if(!cacheOfLocalPathsToS3Keys.TryGetValue(localPath, out s3Key))
+                {
+                    s3Key = await ProcessUpdatableResourceAsync(templateDirectory, updatableResource);
+                    cacheOfLocalPathsToS3Keys[localPath] = s3Key;
+                }
+                else
+                {
+                    this.Logger.WriteLine($"Using previous upload artifact s3://{this.S3Bucket}/{s3Key} for {updatableResource.Name}");
+                }
+
+                updatableResource.SetS3Location(this.S3Bucket, s3Key);                
             }
 
             var newTemplate = parser.GetUpdatedTemplate();
             return newTemplate;
         }
 
-        public async Task ProcessUpdatableResourceAsync(string templateDirectory, IUpdatableResource updatableResource)
+
+        public async Task<string> ProcessUpdatableResourceAsync(string templateDirectory, IUpdatableResource updatableResource)
         {
             var localPath = updatableResource.GetLocalPath();
 
@@ -54,14 +70,31 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             }
             else if(IsDotnetProjectDirectory(localPath))
             {
-                
+                zipArchivePath = await PackageDotnetProjectAsync(updatableResource.Name, localPath);
             }
 
             using (var stream = File.OpenRead(zipArchivePath))
             {
                 var s3Key = await Utilities.UploadToS3Async(this.Logger, this.S3Client, this.S3Bucket, this.S3Prefix, Path.GetFileName(zipArchivePath), stream);
-                updatableResource.SetS3Location(this.S3Bucket, s3Key);
+                return s3Key; 
             }
+        }
+
+        private async Task<string> PackageDotnetProjectAsync(string rootName, string location)
+        {
+            var command = new Commands.PackageCommand(this.Logger, location, null);
+            var outputPackage = Path.Combine(Path.GetTempPath(), $"{rootName}-{DateTime.Now.Ticks}.zip");
+            command.OutputPackageFileName = outputPackage;
+            if(!await command.ExecuteAsync())
+            {
+                var message = $"Error packaging up project in {location} for CloudFormation resource {rootName}";
+                if (command.LastToolsException != null)
+                    message += $": {command.LastToolsException.Message}";
+
+                throw new LambdaToolsException($"Error packaging up project in {location} for CloudFormation resource {rootName}", ToolsException.CommonErrorCode.DotnetPublishFailed);
+            }
+
+            return outputPackage;
         }
 
         private bool IsDotnetProjectDirectory(string localPath)
