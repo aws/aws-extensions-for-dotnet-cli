@@ -88,13 +88,16 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                     GetLocalPath = (s) =>
                     {
                         var localPath = s.GetValue(propertyName);
-                        if (string.IsNullOrEmpty(localPath) && isCode)
+                        if (string.IsNullOrEmpty(localPath))
                         {
-                            localPath = ".";
+                            if (isCode)
+                            {
+                                localPath = ".";                                
+                            }
                         }
                         else if (localPath.StartsWith("s3://"))
                         {
-                            return null;
+                            localPath = null;
                         }
 
                         return localPath;

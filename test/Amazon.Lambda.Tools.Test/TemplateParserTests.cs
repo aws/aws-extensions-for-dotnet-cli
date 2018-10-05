@@ -274,6 +274,94 @@ namespace Amazon.Lambda.Tools.Test
 
             Assert.Null(resource.Fields[0].GetLocalPath());
         }
+        
+        [Fact]
+        public void ApiGatewayApi_GetCurrentDirectoryForWithNullCode()
+        {
+            var dataSource = new FakeUpdatableResourceDataSource(
+                new Dictionary<string, string>
+                {
+                });
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_SERVERLESS_API, dataSource);
+
+            Assert.Null(resource.Fields[0].GetLocalPath());
+        }
+        
+        [Theory]
+        [InlineData("/home/swagger.yml")]
+        public void ApiGatewayApi_GetLocalPathAndEmptyS3Bucket(string localPath)
+        {
+            var dataSource = new FakeUpdatableResourceDataSource(
+                new Dictionary<string, string>
+                {
+                    {"BodyS3Location/Key", localPath }
+                });
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_APIGATEWAY_RESTAPI, dataSource);
+
+            Assert.Equal(localPath, resource.Fields[0].GetLocalPath());
+
+            resource.Fields[0].SetS3Location("my-bucket", localPath);
+            Assert.Equal("my-bucket", dataSource.GetValue("BodyS3Location/Bucket"));
+            Assert.Equal(localPath, dataSource.GetValue("BodyS3Location/Key"));
+        }
+        
+        [Fact]
+        public void AppSyncGraphQl_GetCurrentDirectoryForWithNullCode()
+        {
+            var dataSource = new FakeUpdatableResourceDataSource(
+                new Dictionary<string, string>
+                {
+                });
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_APPSYNC_GRAPHQLSCHEMA, dataSource);
+
+            Assert.Null(resource.Fields[0].GetLocalPath());
+        }
+        
+        [Theory]
+        [InlineData("/home/swagger.yml")]
+        public void AppSyncGraphQl_GetLocalPathAndEmptyS3Bucket(string localPath)
+        {
+            var dataSource = new FakeUpdatableResourceDataSource(
+                new Dictionary<string, string>
+                {
+                    {"DefinitionS3Location", localPath }
+                });
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_APPSYNC_GRAPHQLSCHEMA, dataSource);
+
+            Assert.Equal(localPath, resource.Fields[0].GetLocalPath());
+
+            resource.Fields[0].SetS3Location("my-bucket", "swagger.yml");
+            Assert.Equal("s3://my-bucket/swagger.yml", dataSource.GetValue("DefinitionS3Location"));
+        }
+        
+        [Fact]
+        public void ServerlessApi_GetCurrentDirectoryForWithNullCode()
+        {
+            var dataSource = new FakeUpdatableResourceDataSource(
+                new Dictionary<string, string>
+                {
+                });
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_APIGATEWAY_RESTAPI, dataSource);
+
+            Assert.Null(resource.Fields[0].GetLocalPath());
+        }
+        
+        [Theory]
+        [InlineData("/home/swagger.yml")]
+        public void ServerlessApi_GetLocalPathAndEmptyS3Bucket(string localPath)
+        {
+            var dataSource = new FakeUpdatableResourceDataSource(
+                new Dictionary<string, string>
+                {
+                    {"DefinitionUri", localPath }
+                });
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_SERVERLESS_API, dataSource);
+
+            Assert.Equal(localPath, resource.Fields[0].GetLocalPath());
+
+            resource.Fields[0].SetS3Location("my-bucket", "swagger.yml");
+            Assert.Equal("s3://my-bucket/swagger.yml", dataSource.GetValue("DefinitionUri"));
+        }
 
 
         public class FakeUpdatableResourceDataSource : IUpdatableResourceDataSource
