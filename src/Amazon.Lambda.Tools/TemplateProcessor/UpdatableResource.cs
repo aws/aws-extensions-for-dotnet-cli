@@ -1,72 +1,59 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 
 namespace Amazon.Lambda.Tools.TemplateProcessor
 {
+
+    
     public class UpdatableResource : IUpdatableResource
     {
         public string Name { get; }
         public string ResourceType { get; }
+        public IList<IUpdateResourceField> Fields { get; }
+        
+        UpdatableResourceDefinition Definition { get; } 
         IUpdatableResourceDataSource DataSource { get; }
 
-        public UpdatableResource(string name, string resourceType, IUpdatableResourceDataSource dataSource)
+        public UpdatableResource(string name, UpdatableResourceDefinition definition, IUpdatableResourceDataSource dataSource)
         {
             this.Name = name;
-            this.ResourceType = resourceType;
+            this.Definition = definition;
             this.DataSource = dataSource;
+            
+            this.Fields = new List<IUpdateResourceField>();
+            foreach (var fieldDefinition in definition.Fields)
+            {
+                this.Fields.Add(new UpdatableResourceField(this, fieldDefinition));
+            }
         }
 
         public string LambdaRuntime => this.DataSource.GetValue("Runtime");
 
-        public string GetLocalPath()
+        public class UpdatableResourceField : IUpdateResourceField
         {
-            if (string.Equals(this.ResourceType, TemplateProcessorManager.CF_TYPE_SERVERLESS_FUNCTION, StringComparison.Ordinal))
-            {
-                var localPath = this.DataSource.GetValue("CodeUri") ?? ".";
-                if (localPath.StartsWith("s3://"))
-                    return null;
+            public IUpdatableResource Resource => this._resource;
+            public UpdatableResource _resource;
 
-                return localPath;
-            }
-            else if (string.Equals(this.ResourceType, TemplateProcessorManager.CF_TYPE_LAMBDA_FUNCTION, StringComparison.Ordinal))
-            {
-                var bucket = this.DataSource.GetValue("Code", "S3Bucket");
-                if (!string.IsNullOrEmpty(bucket))
-                    return null;
+            private UpdatableResourceDefinition.FieldDefinition Field { get; }
 
-                return this.DataSource.GetValue("Code", "S3Key") ?? ".";
+            public UpdatableResourceField(UpdatableResource resource, UpdatableResourceDefinition.FieldDefinition field)
+            {
+                this._resource = resource;
+                this.Field = field;
             }
 
-            return null;
-        }
-
-        public void SetS3Location(string s3Bucket, string s3Key)
-        {
-            if (string.Equals(this.ResourceType, TemplateProcessorManager.CF_TYPE_SERVERLESS_FUNCTION, StringComparison.Ordinal))
+            public string GetLocalPath()
             {
-                var s3Url = $"s3://{s3Bucket}/{s3Key}";
-                this.DataSource.SetValue(s3Url, "CodeUri");
+                return this.Field.GetLocalPath(this._resource.DataSource);
             }
-            else if (string.Equals(this.ResourceType, TemplateProcessorManager.CF_TYPE_LAMBDA_FUNCTION, StringComparison.Ordinal))
+
+            public void SetS3Location(string s3Bucket, string s3Key)
             {
-                this.DataSource.SetValue(s3Bucket, "Code", "S3Bucket");
-                this.DataSource.SetValue(s3Key, "Code", "S3Key");
-            }
-        }
-
-        public bool IsUpdatable
-        {
-            get
-            {
-                if ((string.Equals(this.ResourceType, TemplateProcessorManager.CF_TYPE_SERVERLESS_FUNCTION, StringComparison.Ordinal) ||
-                    string.Equals(this.ResourceType, TemplateProcessorManager.CF_TYPE_LAMBDA_FUNCTION, StringComparison.Ordinal)) && this.GetLocalPath() != null)
-                {
-                    return true;
-                }
-
-
-                return false;
+                this.Field.SetS3Location(this._resource.DataSource, s3Bucket, s3Key);
             }
         }
     }

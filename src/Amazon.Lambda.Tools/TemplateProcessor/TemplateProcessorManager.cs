@@ -3,28 +3,18 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.S3;
 using Amazon.S3.Transfer;
+using Newtonsoft.Json.Schema;
 
 namespace Amazon.Lambda.Tools.TemplateProcessor
 {    
     public class TemplateProcessorManager
-    {
-        public class DefaultLocationOption
-        {
-            public string Configuration { get; set; }
-            public string TargetFramework { get; set; }
-            public string MSBuildParameters { get; set; }
-            public bool DisableVersionCheck { get; set; }
-            public string Package { get; set; }
-        }
-        
-        public const string CF_TYPE_LAMBDA_FUNCTION = "AWS::Lambda::Function";
-        public const string CF_TYPE_SERVERLESS_FUNCTION = "AWS::Serverless::Function";
-
+    {        
         IToolLogger Logger { get; }
         IAmazonS3 S3Client { get; }
         string S3Bucket { get; }
@@ -52,20 +42,28 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             {
                 this.Logger?.WriteLine($"Processing CloudFormation resource {updatableResource.Name}");
 
-                var localPath = updatableResource.GetLocalPath();
-                string s3Key;
-                if(!cacheOfLocalPathsToS3Keys.TryGetValue(localPath, out s3Key))
+                foreach (var field in updatableResource.Fields)
                 {
-                    this.Logger?.WriteLine($"Initiate packaging of {updatableResource.GetLocalPath()} for resource {updatableResource.Name}");
-                    s3Key = await ProcessUpdatableResourceAsync(templateDirectory, updatableResource);
-                    cacheOfLocalPathsToS3Keys[localPath] = s3Key;
-                }
-                else
-                {
-                    this.Logger?.WriteLine($"Using previous upload artifact s3://{this.S3Bucket}/{s3Key} for resource {updatableResource.Name}");
-                }
+                    var localPath = field.GetLocalPath();
+                    if (localPath == null)
+                        continue;
+                    
+                    string s3Key;
+                    if (!cacheOfLocalPathsToS3Keys.TryGetValue(localPath, out s3Key))
+                    {
+                        this.Logger?.WriteLine(
+                            $"Initiate packaging of {field.GetLocalPath()} for resource {updatableResource.Name}");
+                        s3Key = await ProcessUpdatableResourceAsync(templateDirectory, field);
+                        cacheOfLocalPathsToS3Keys[localPath] = s3Key;
+                    }
+                    else
+                    {
+                        this.Logger?.WriteLine(
+                            $"Using previous upload artifact s3://{this.S3Bucket}/{s3Key} for resource {updatableResource.Name}");
+                    }
 
-                updatableResource.SetS3Location(this.S3Bucket, s3Key);                
+                    field.SetS3Location(this.S3Bucket, s3Key);
+                }
             }
 
             var newTemplate = parser.GetUpdatedTemplate();
@@ -73,26 +71,26 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         }
 
 
-        private async Task<string> ProcessUpdatableResourceAsync(string templateDirectory, IUpdatableResource updatableResource)
+        private async Task<string> ProcessUpdatableResourceAsync(string templateDirectory, IUpdateResourceField field)
         {
-            var localPath = updatableResource.GetLocalPath();
+            var localPath = field.GetLocalPath();
 
             if (!Path.IsPathRooted(localPath))
                 localPath = Path.Combine(templateDirectory, localPath);
 
             bool deleteArchiveAfterUploaded = false;
             string zipArchivePath = null;
-            if(File.Exists(localPath) && string.Equals(Path.GetExtension(localPath), ".zip", StringComparison.OrdinalIgnoreCase))
+            if(File.Exists(localPath))
             {                
                 zipArchivePath = localPath;
             }
-            else if (IsCurrentDirectory(updatableResource.GetLocalPath()) && !string.IsNullOrEmpty(this.DefaultOptions.Package))
+            else if (IsCurrentDirectory(field.GetLocalPath()) && !string.IsNullOrEmpty(this.DefaultOptions.Package))
             {
                 zipArchivePath = this.DefaultOptions.Package;
             }
             else if(IsDotnetProjectDirectory(localPath))
             {
-                zipArchivePath = await PackageDotnetProjectAsync(updatableResource, localPath);
+                zipArchivePath = await PackageDotnetProjectAsync(field, localPath);
                 deleteArchiveAfterUploaded = true;
             }
 
@@ -117,15 +115,15 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             return s3Key;
         }
 
-        private async Task<string> PackageDotnetProjectAsync(IUpdatableResource updatableResource, string location)
+        private async Task<string> PackageDotnetProjectAsync(IUpdateResourceField field, string location)
         {
             var command = new Commands.PackageCommand(this.Logger, location, null);
-            var outputPackage = Path.Combine(Path.GetTempPath(), $"{updatableResource.Name}-{DateTime.Now.Ticks}.zip");
+            var outputPackage = Path.Combine(Path.GetTempPath(), $"{field.Resource.Name}-{DateTime.Now.Ticks}.zip");
             command.OutputPackageFileName = outputPackage;
             command.TargetFramework =
-                LambdaUtilities.DetermineTargetFrameworkFromLambdaRuntime(updatableResource.LambdaRuntime);
+                LambdaUtilities.DetermineTargetFrameworkFromLambdaRuntime(field.Resource.LambdaRuntime);
 
-            if (IsCurrentDirectory(updatableResource.GetLocalPath()))
+            if (IsCurrentDirectory(field.GetLocalPath()))
             {
                 if (!string.IsNullOrEmpty(this.DefaultOptions.TargetFramework))
                     command.TargetFramework = this.DefaultOptions.TargetFramework;
@@ -138,7 +136,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             
             if(!await command.ExecuteAsync())
             {
-                var message = $"Error packaging up project in {location} for CloudFormation resource {updatableResource.Name}";
+                var message = $"Error packaging up project in {location} for CloudFormation resource {field.Resource.Name}";
                 if (command.LastToolsException != null)
                     message += $": {command.LastToolsException.Message}";
 

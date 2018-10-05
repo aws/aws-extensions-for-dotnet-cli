@@ -165,14 +165,13 @@ namespace Amazon.Lambda.Tools.Test
                                     new Dictionary<string, string>
                                     {
                                     });
-            var resource = new UpdatableResource("TestResource", TemplateProcessorManager.CF_TYPE_SERVERLESS_FUNCTION, dataSource);
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_SERVERLESS_FUNCTION, dataSource);
 
 
 
-            Assert.True(resource.IsUpdatable);
-            Assert.Equal(".", resource.GetLocalPath());
+            Assert.Equal(".", resource.Fields[0].GetLocalPath());
 
-            resource.SetS3Location("my-bucket", "my.zip");
+            resource.Fields[0].SetS3Location("my-bucket", "my.zip");
             Assert.Equal("s3://my-bucket/my.zip", dataSource.GetValue("CodeUri"));
         }
 
@@ -186,12 +185,11 @@ namespace Amazon.Lambda.Tools.Test
                                     {
                                         {"CodeUri", localPath }
                                     });
-            var resource = new UpdatableResource("TestResource", TemplateProcessorManager.CF_TYPE_SERVERLESS_FUNCTION, dataSource);
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_SERVERLESS_FUNCTION, dataSource);
 
-            Assert.True(resource.IsUpdatable);
-            Assert.Equal(localPath, resource.GetLocalPath());
+            Assert.Equal(localPath, resource.Fields[0].GetLocalPath());
 
-            resource.SetS3Location("my-bucket", "my.zip");
+            resource.Fields[0].SetS3Location("my-bucket", "my.zip");
             Assert.Equal("s3://my-bucket/my.zip", dataSource.GetValue("CodeUri"));
         }
 
@@ -203,9 +201,9 @@ namespace Amazon.Lambda.Tools.Test
                                     {
                                         {"CodeUri", "s3://my-bucket/my.zip" }
                                     });
-            var resource = new UpdatableResource("TestResource", TemplateProcessorManager.CF_TYPE_SERVERLESS_FUNCTION, dataSource);
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_SERVERLESS_FUNCTION, dataSource);
 
-            Assert.False(resource.IsUpdatable);
+            Assert.Null(resource.Fields[0].GetLocalPath());
         }
 
         [Fact]
@@ -215,12 +213,11 @@ namespace Amazon.Lambda.Tools.Test
                                     new Dictionary<string, string>
                                     {
                                     });
-            var resource = new UpdatableResource("TestResource", TemplateProcessorManager.CF_TYPE_LAMBDA_FUNCTION, dataSource);
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_LAMBDA_FUNCTION, dataSource);
 
-            Assert.True(resource.IsUpdatable);
-            Assert.Equal(".", resource.GetLocalPath());
+            Assert.Equal(".", resource.Fields[0].GetLocalPath());
 
-            resource.SetS3Location("my-bucket", "my.zip");
+            resource.Fields[0].SetS3Location("my-bucket", "my.zip");
             Assert.Equal("my-bucket", dataSource.GetValue("Code/S3Bucket"));
             Assert.Equal("my.zip", dataSource.GetValue("Code/S3Key"));
         }
@@ -235,12 +232,11 @@ namespace Amazon.Lambda.Tools.Test
                                     {
                                         {"Code/S3Key", localPath }
                                     });
-            var resource = new UpdatableResource("TestResource", TemplateProcessorManager.CF_TYPE_LAMBDA_FUNCTION, dataSource);
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_LAMBDA_FUNCTION, dataSource);
 
-            Assert.True(resource.IsUpdatable);
-            Assert.Equal(localPath, resource.GetLocalPath());
+            Assert.Equal(localPath, resource.Fields[0].GetLocalPath());
 
-            resource.SetS3Location("my-bucket", "my.zip");
+            resource.Fields[0].SetS3Location("my-bucket", "my.zip");
             Assert.Equal("my-bucket", dataSource.GetValue("Code/S3Bucket"));
             Assert.Equal("my.zip", dataSource.GetValue("Code/S3Key"));
         }
@@ -256,12 +252,11 @@ namespace Amazon.Lambda.Tools.Test
                                         {"Code/S3Bucket", "" },
                                         {"Code/S3Key", localPath }
                                     });
-            var resource = new UpdatableResource("TestResource", TemplateProcessorManager.CF_TYPE_LAMBDA_FUNCTION, dataSource);
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_LAMBDA_FUNCTION, dataSource);
 
-            Assert.True(resource.IsUpdatable);
-            Assert.Equal(localPath, resource.GetLocalPath());
+            Assert.Equal(localPath, resource.Fields[0].GetLocalPath());
 
-            resource.SetS3Location("my-bucket", "my.zip");
+            resource.Fields[0].SetS3Location("my-bucket", "my.zip");
             Assert.Equal("my-bucket", dataSource.GetValue("Code/S3Bucket"));
             Assert.Equal("my.zip", dataSource.GetValue("Code/S3Key"));
         }
@@ -275,9 +270,9 @@ namespace Amazon.Lambda.Tools.Test
                                         {"Code/S3Bucket", "my-bucket" },
                                         {"Code/S3Key", "my.zip" }
                                     });
-            var resource = new UpdatableResource("TestResource", TemplateProcessorManager.CF_TYPE_LAMBDA_FUNCTION, dataSource);
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_LAMBDA_FUNCTION, dataSource);
 
-            Assert.False(resource.IsUpdatable);
+            Assert.Null(resource.Fields[0].GetLocalPath());
         }
 
 
