@@ -43,10 +43,12 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                     continue;
 
                 var type = resource["Type"]?.ToString();
-                var updatableResource = new UpdatableResource(field, type, new JsonUpdatableResourceDataSource(properties));
-                if (!updatableResource.IsUpdatable)
+                UpdatableResourceDefinition updatableResourceDefinition;
+                if (!UpdatableResourceDefinition.ValidUpdatableResourceDefinitions.TryGetValue(type,
+                    out updatableResourceDefinition))
                     continue;
-
+                
+                var updatableResource = new UpdatableResource(field, updatableResourceDefinition, new JsonUpdatableResourceDataSource(properties));
                 yield return updatableResource;
             }
         }

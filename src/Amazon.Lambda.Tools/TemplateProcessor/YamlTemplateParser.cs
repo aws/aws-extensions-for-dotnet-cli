@@ -49,10 +49,14 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 if (properties == null) continue;
                 if (type == null) continue;
 
-                var updatableResource = new UpdatableResource(resource.Key.ToString(), type.Value, new YamlUpdatableResourceDataSource(properties));
-                if (!updatableResource.IsUpdatable)
+                
+                UpdatableResourceDefinition updatableResourceDefinition;
+                if (!UpdatableResourceDefinition.ValidUpdatableResourceDefinitions.TryGetValue(type.Value,
+                    out updatableResourceDefinition))
                     continue;
-
+                
+                var updatableResource = new UpdatableResource(resource.Key.ToString(), updatableResourceDefinition, new YamlUpdatableResourceDataSource(properties));
+                
                 yield return updatableResource;
             }
 

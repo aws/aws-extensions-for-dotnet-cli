@@ -21,10 +21,15 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         string ResourceType { get; }
 
         string LambdaRuntime { get; }
+        
+        IList<IUpdateResourceField> Fields { get; }
+    }
 
+    public interface IUpdateResourceField
+    {
+        IUpdatableResource Resource { get; }
         string GetLocalPath();
-
-        void SetS3Location(string s3Bucket, string s3Key);        
+        void SetS3Location(string s3Bucket, string s3Key);
     }
 
     public interface IUpdatableResourceDataSource
