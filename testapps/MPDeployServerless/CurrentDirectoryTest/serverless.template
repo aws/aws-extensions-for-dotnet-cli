@@ -69,6 +69,50 @@
           }
         }
       }
+    },
+
+    "SingleFileNodeFunction" : {
+      "Type" : "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "app.handler",
+        "Runtime": "nodejs8.10",
+        "CodeUri": "../SingleFileNodeFunction/app.js",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [ "AWSLambdaBasicExecutionRole" ],
+        "Events": {
+          "PutResource": {
+            "Type": "Api",
+            "Properties": {
+              "Path": "/singlenode",
+              "Method": "GET"
+            }
+          }
+        }
+      }
+    },
+
+    "DirectoryNodeFunction" : {
+      "Type" : "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "app.handler",
+        "Runtime": "nodejs8.10",
+        "CodeUri": "../DirectoryNodeFunction",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [ "AWSLambdaBasicExecutionRole" ],
+        "Events": {
+          "PutResource": {
+            "Type": "Api",
+            "Properties": {
+              "Path": "/directorynode",
+              "Method": "GET"
+            }
+          }
+        }
+      }
     }
 
   },

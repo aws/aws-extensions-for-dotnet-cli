@@ -12,7 +12,5 @@
     "framework"     : "netcoreapp2.1",
     "s3-prefix"     : "CurrentDirectoryTest/",
     "template"      : "serverless.template",
-    "template-parameters" : "",
-    "s3-bucket"           : "normj-west2",
-    "stack-name"          : "NewCodeTest"
+    "template-parameters" : ""
 }
