@@ -334,6 +334,40 @@ namespace Amazon.Lambda.Tools.Test
             Assert.Equal("s3://my-bucket/swagger.yml", dataSource.GetValue("DefinitionS3Location"));
         }
         
+
+        [Fact]
+        public void AppSyncResolver_GetCurrentDirectoryForWithNullCode()
+        {
+            var dataSource = new FakeUpdatableResourceDataSource(
+                new Dictionary<string, string>
+                {
+                });
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_APPSYNC_RESOLVER, dataSource);
+
+            Assert.Null(resource.Fields[0].GetLocalPath());
+            Assert.Null(resource.Fields[1].GetLocalPath());
+        }
+        
+        [Fact]
+        public void AppSyncResolver_GetLocalPathAndEmptyS3Bucket()
+        {
+            var dataSource = new FakeUpdatableResourceDataSource(
+                new Dictionary<string, string>
+                {
+                    {"ResponseMappingTemplateS3Location", "response.xml" },
+                    {"RequestMappingTemplateS3Location", "request.xml" }
+                });
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_APPSYNC_RESOLVER, dataSource);
+
+            Assert.Equal("response.xml", resource.Fields[0].GetLocalPath());
+            Assert.Equal("request.xml", resource.Fields[1].GetLocalPath());
+
+            resource.Fields[0].SetS3Location("my-bucket", "response.xml-updated");
+            Assert.Equal("s3://my-bucket/response.xml-updated", dataSource.GetValue("ResponseMappingTemplateS3Location"));
+            resource.Fields[1].SetS3Location("my-bucket", "request.xml-updated");
+            Assert.Equal("s3://my-bucket/request.xml-updated", dataSource.GetValue("RequestMappingTemplateS3Location"));
+        }
+        
         [Fact]
         public void ServerlessApi_GetCurrentDirectoryForWithNullCode()
         {
@@ -361,17 +395,73 @@ namespace Amazon.Lambda.Tools.Test
 
             resource.Fields[0].SetS3Location("my-bucket", "swagger.yml");
             Assert.Equal("s3://my-bucket/swagger.yml", dataSource.GetValue("DefinitionUri"));
+        }        
+        
+        
+        [Fact]
+        public void ElasticBeanstalkApplicationVersion_GetCurrentDirectoryForWithNullCode()
+        {
+            var dataSource = new FakeUpdatableResourceDataSource(
+                new Dictionary<string, string>
+                {
+                });
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_ELASTICBEANSTALK_APPLICATIONVERSION, dataSource);
+
+            Assert.Null(resource.Fields[0].GetLocalPath());
         }
+        
+        [Theory]
+        [InlineData("/home/app.zip")]
+        public void ElasticBeanstalkApplicationVersion_GetLocalPathAndEmptyS3Bucket(string localPath)
+        {
+            var dataSource = new FakeUpdatableResourceDataSource(
+                new Dictionary<string, string>
+                {
+                    {"SourceBundle/S3Key", localPath }
+                });
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_ELASTICBEANSTALK_APPLICATIONVERSION, dataSource);
 
+            Assert.Equal(localPath, resource.Fields[0].GetLocalPath());
 
+            resource.Fields[0].SetS3Location("my-bucket", localPath);
+            Assert.Equal("my-bucket", dataSource.GetValue("SourceBundle/S3Bucket"));
+            Assert.Equal(localPath, dataSource.GetValue("SourceBundle/S3Key"));
+        }  
+        
+        
+        [Fact]
+        public void CloudFormationStack_GetCurrentDirectoryForWithNullCode()
+        {
+            var dataSource = new FakeUpdatableResourceDataSource(
+                new Dictionary<string, string>
+                {
+                });
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_CLOUDFORMATION_STACK, dataSource);
+
+            Assert.Null(resource.Fields[0].GetLocalPath());
+        }
+        
+        [Theory]
+        [InlineData("/home/infra.template")]
+        public void CloudFormationStack_GetLocalPathAndEmptyS3Bucket(string localPath)
+        {
+            var dataSource = new FakeUpdatableResourceDataSource(
+                new Dictionary<string, string>
+                {
+                    {"TemplateUrl", localPath }
+                });
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_CLOUDFORMATION_STACK, dataSource);
+
+            Assert.Equal(localPath, resource.Fields[0].GetLocalPath());
+
+            resource.Fields[0].SetS3Location("my-bucket", "swagger.yml");
+            Assert.Equal("s3://my-bucket/swagger.yml", dataSource.GetValue("TemplateUrl"));
+        }     
+        
         public class FakeUpdatableResourceDataSource : IUpdatableResourceDataSource
         {
             IDictionary<string, string> Values { get; }
 
-            public FakeUpdatableResourceDataSource()
-            {
-                Values = new Dictionary<string, string>();
-            }
 
             public FakeUpdatableResourceDataSource(IDictionary<string, string> values)
             {
