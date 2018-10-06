@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\buildtools\common.props" />
 
@@ -25,10 +25,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.ElasticBeanstalk" Version="3.3.8.1" />
-    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.6.3" />
-    <PackageReference Include="AWSSDK.S3" Version="3.3.18.2" />
-    <PackageReference Include="AWSSDK.SecurityToken" Version="3.3.4.3" />
+    <PackageReference Include="AWSSDK.ElasticBeanstalk" Version="3.3.10.6" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.7.11" />
+    <PackageReference Include="AWSSDK.S3" Version="3.3.24.3" />
+    <PackageReference Include="AWSSDK.SecurityToken" Version="3.3.4.18" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
