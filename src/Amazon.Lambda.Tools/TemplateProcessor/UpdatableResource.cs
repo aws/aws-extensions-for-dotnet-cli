@@ -8,7 +8,10 @@ using System.Threading;
 namespace Amazon.Lambda.Tools.TemplateProcessor
 {
 
-    
+    /// <summary>
+    /// The updatable resource like a CloudFormation AWS::Lambda::Function. This class combines the UpdatableResourceDefinition
+    /// which identifies the fields that can be updated and IUpdatableResourceDataSource which abstracts the JSON or YAML definition.
+    /// </summary>
     public class UpdatableResource : IUpdatableResource
     {
         public string Name { get; }
@@ -45,6 +48,10 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 this._resource = resource;
                 this.Field = field;
             }
+
+            public string Name => this.Field.Name;
+
+            public bool IsCode => this.Field.IsCode;
 
             public string GetLocalPath()
             {

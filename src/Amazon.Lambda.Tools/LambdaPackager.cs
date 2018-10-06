@@ -103,10 +103,17 @@ namespace Amazon.Lambda.Tools
             }
 
 
+            BundleDirectory(zipArchivePath, publishLocation, flattenRuntime, logger);
+
+            return true;
+        }
+
+        public static void BundleDirectory(string zipArchivePath, string sourceDirectory, bool flattenRuntime, IToolLogger logger)
+        {
 #if NETCORE
             if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                BundleWithDotNetCompression(zipArchivePath, publishLocation, flattenRuntime, logger);
+                BundleWithDotNetCompression(zipArchivePath, sourceDirectory, flattenRuntime, logger);
             }
             else
             {
@@ -114,7 +121,7 @@ namespace Amazon.Lambda.Tools
                 var zipCLI = LambdaDotNetCLIWrapper.FindExecutableInPath("zip");
                 if (!string.IsNullOrEmpty(zipCLI))
                 {
-                    BundleWithZipCLI(zipCLI, zipArchivePath, publishLocation, flattenRuntime, logger);
+                    BundleWithZipCLI(zipCLI, zipArchivePath, sourceDirectory, flattenRuntime, logger);
                 }
                 else
                 {
@@ -122,12 +129,8 @@ namespace Amazon.Lambda.Tools
                 }
             }
 #else
-            BundleWithDotNetCompression(zipArchivePath, publishLocation, flattenRuntime, logger);
-#endif
-
-
-
-            return true;
+            BundleWithDotNetCompression(zipArchivePath, sourceDirectory, flattenRuntime, logger);
+#endif            
         }
 
         /// <summary>

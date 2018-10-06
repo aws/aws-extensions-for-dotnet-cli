@@ -5,6 +5,9 @@ using ThirdParty.Json.LitJson;
 
 namespace Amazon.Lambda.Tools.TemplateProcessor
 {
+    /// <summary>
+    /// JSON implementation of ITemplateParser
+    /// </summary>
     public class JsonTemplateParser : ITemplateParser
     {
         JsonData Root { get; }
@@ -53,6 +56,9 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             }
         }
 
+        /// <summary>
+        /// The JSON implementation of IUpdatableResourceDataSource
+        /// </summary>
         public class JsonUpdatableResourceDataSource : IUpdatableResourceDataSource
         {
             JsonData Properties { get; }
