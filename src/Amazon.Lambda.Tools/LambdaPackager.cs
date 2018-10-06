@@ -133,6 +133,58 @@ namespace Amazon.Lambda.Tools
 #endif            
         }
 
+        public static void BundleFiles(string zipArchivePath, string rootDirectory, string[] files, IToolLogger logger)
+        {
+            var includedFiles = ConvertToMapOfFiles(rootDirectory, files);
+
+#if NETCORE
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                BundleWithDotNetCompression(zipArchivePath, rootDirectory, includedFiles, logger);
+            }
+            else
+            {
+                // Use the native zip utility if it exist which will maintain linux/osx file permissions
+                var zipCLI = LambdaDotNetCLIWrapper.FindExecutableInPath("zip");
+                if (!string.IsNullOrEmpty(zipCLI))
+                {
+                    BundleWithZipCLI(zipCLI, zipArchivePath, rootDirectory, includedFiles, logger);
+                }
+                else
+                {
+                    throw new LambdaToolsException("Failed to find the \"zip\" utility program in path. This program is required to maintain Linux file permissions in the zip archive.", LambdaToolsException.LambdaErrorCode.FailedToFindZipProgram);
+                }
+            }
+#else
+            BundleWithDotNetCompression(zipArchivePath, sourceDirectory, flattenRuntime, logger);
+#endif            
+        }
+
+
+        public static IDictionary<string, string> ConvertToMapOfFiles(string rootDirectory, string[] files)
+        {
+            rootDirectory = rootDirectory.Replace("\\", "/");
+            if (!rootDirectory.EndsWith("/"))
+                rootDirectory += "/";
+
+            var includedFiles = new Dictionary<string, string>(files.Length);
+            foreach (var file in files)
+            {
+                var normalizedFile = file.Replace("\\", "/");
+                if (Path.IsPathRooted(file))
+                {
+                    var relativePath = file.Substring(rootDirectory.Length);
+                    includedFiles[relativePath] = normalizedFile;
+                }
+                else
+                {
+                    includedFiles[normalizedFile] = Path.Combine(rootDirectory, normalizedFile).Replace("\\", "/");
+                }
+            }
+
+            return includedFiles;
+        }
+
         /// <summary>
         /// Return the targets node which declares all the dependencies for the project along with the dependency's dependencies.
         /// </summary>
@@ -417,9 +469,21 @@ namespace Amazon.Lambda.Tools
         /// <param name="logger">Logger instance.</param>
         private static void BundleWithDotNetCompression(string zipArchivePath, string publishLocation, bool flattenRuntime, IToolLogger logger)
         {
+            var includedFiles = GetFilesToIncludeInArchive(publishLocation, flattenRuntime);
+            BundleWithDotNetCompression(zipArchivePath, publishLocation, includedFiles, logger);
+        }
+
+        /// <summary>
+        /// Zip up the publish folder using the .NET compression libraries. This is what is used when run on Windows.
+        /// </summary>
+        /// <param name="zipArchivePath">The path and name of the zip archive to create.</param>
+        /// <param name="rootDirectory">The root directory where all of the relative paths in includedFiles is pointing to.</param>
+        /// <param name="includedFiles">Map of relative to absolute path of files to include in bundle.</param>
+        /// <param name="logger">Logger instance.</param>
+        private static void BundleWithDotNetCompression(string zipArchivePath, string rootDirectory, IDictionary<string, string> includedFiles, IToolLogger logger)
+        {
             using (var zipArchive = ZipFile.Open(zipArchivePath, ZipArchiveMode.Create))
             {
-                var includedFiles = GetFilesToIncludeInArchive(publishLocation, flattenRuntime);
                 foreach (var kvp in includedFiles)
                 {
                     zipArchive.CreateEntryFromFile(kvp.Value, kvp.Key);
@@ -440,10 +504,24 @@ namespace Amazon.Lambda.Tools
         /// <param name="logger">Logger instance.</param>
         private static void BundleWithZipCLI(string zipCLI, string zipArchivePath, string publishLocation, bool flattenRuntime, IToolLogger logger)
         {
+            var allFiles = GetFilesToIncludeInArchive(publishLocation, flattenRuntime);
+            BundleWithZipCLI(zipCLI, zipArchivePath, publishLocation, allFiles, logger);
+        }
+
+        /// <summary>
+        /// Creates the deployment bundle using the native zip tool installed
+        /// on the system (default /usr/bin/zip). This is what is typically used on Linux and OSX
+        /// </summary>
+        /// <param name="zipCLI">The path to the located zip binary.</param>
+        /// <param name="zipArchivePath">The path and name of the zip archive to create.</param>
+        /// <param name="rootDirectory">The root directory where all of the relative paths in includedFiles is pointing to.</param>
+        /// <param name="includedFiles">Map of relative to absolute path of files to include in bundle.</param>
+        /// <param name="logger">Logger instance.</param>
+        private static void BundleWithZipCLI(string zipCLI, string zipArchivePath, string rootDirectory, IDictionary<string, string> includedFiles, IToolLogger logger)
+        {
             var args = new StringBuilder("\"" + zipArchivePath + "\"");
 
-            var allFiles = GetFilesToIncludeInArchive(publishLocation, flattenRuntime);
-            foreach (var kvp in allFiles)
+            foreach (var kvp in includedFiles)
             {
                 args.AppendFormat(" \"{0}\"", kvp.Key);
             }
@@ -452,7 +530,7 @@ namespace Amazon.Lambda.Tools
             {
                 FileName = zipCLI,
                 Arguments = args.ToString(),
-                WorkingDirectory = publishLocation,
+                WorkingDirectory = rootDirectory,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
