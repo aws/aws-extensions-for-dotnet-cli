@@ -7,6 +7,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SiblingProjectTest", "Sibli
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CurrentDirectoryTest", "CurrentDirectoryTest\CurrentDirectoryTest.csproj", "{B6D70388-E3C7-4006-B833-455A54D27293}"
 EndProject
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "SingleFileNodeFunction", "SingleFileNodeFunction\SingleFileNodeFunction.njsproj", "{93A99353-34B5-47FA-87C9-63D274E18909}"
+EndProject
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "DirectoryNodeFunction", "DirectoryNodeFunction\DirectoryNodeFunction.njsproj", "{49D8F6C3-001F-47A1-BBB1-0DE9C07F265A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{B6D70388-E3C7-4006-B833-455A54D27293}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B6D70388-E3C7-4006-B833-455A54D27293}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B6D70388-E3C7-4006-B833-455A54D27293}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93A99353-34B5-47FA-87C9-63D274E18909}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93A99353-34B5-47FA-87C9-63D274E18909}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93A99353-34B5-47FA-87C9-63D274E18909}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93A99353-34B5-47FA-87C9-63D274E18909}.Release|Any CPU.Build.0 = Release|Any CPU
+		{49D8F6C3-001F-47A1-BBB1-0DE9C07F265A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49D8F6C3-001F-47A1-BBB1-0DE9C07F265A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49D8F6C3-001F-47A1-BBB1-0DE9C07F265A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49D8F6C3-001F-47A1-BBB1-0DE9C07F265A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

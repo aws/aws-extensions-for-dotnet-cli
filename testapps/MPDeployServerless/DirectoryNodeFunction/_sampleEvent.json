@@ -1,0 +1,35 @@
+﻿{
+  "Records": [
+    {
+      "eventVersion": "2.0",
+      "eventSource": "aws:s3",
+      "awsRegion": "us-west-2",
+      "eventTime": "2015-01-31T01:36:58.497Z",
+      "eventName": "s3:ObjectCreated:Put",
+      "userIdentity": {
+        "principalId": "AIDAJDPLRKLG7UEXAMPLE"
+      },
+      "requestParameters": {
+        "sourceIPAddress": "127.0.0.1"
+      },
+      "responseElements": {
+        "x-amz-request-id": "C3D13FE58DE4C810",
+        "x-amz-id-2": "FMyUVURIY8\/IgAtTv8xRjskZQpcIZ9KG4V5Wp6S7S\/JRWeUWerMUE5JgHvANOjpD"
+      },
+      "s3": {
+        "s3SchemaVersion": "1.0",
+        "configurationId": "testConfigRule",
+        "bucket": {
+          "name": "*** INSERT BUCKET NAME ***",
+          "ownerIdentity": {
+            "principalId": "A3NL1KOZZKExample"
+          },
+          "arn": "arn:aws:s3:::*** INSERT BUCKET NAME ***"
+        },
+        "object": {
+          "key": "*** INSERT OBJECT KEY ***"
+        }
+      }
+    }
+  ]
+}
