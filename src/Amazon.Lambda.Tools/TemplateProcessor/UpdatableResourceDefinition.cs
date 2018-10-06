@@ -95,7 +95,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             public Func<IUpdatableResourceDataSource, string> GetLocalPath { get; set; }
             
             /// <summary>
-            /// The Action that knows how to set the S3 location for the field into thje datasource.
+            /// The Action that knows how to set the S3 location for the field into this datasource.
             /// </summary>
             public Action<IUpdatableResourceDataSource, string, string> SetS3Location { get; set; }
 

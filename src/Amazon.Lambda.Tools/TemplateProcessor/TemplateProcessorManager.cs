@@ -35,7 +35,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         
         /// <summary>
         /// Options to use when a local path is pointing to the current directory. This is needed to maintain backwards compatibility
-        /// with the original version of the deploy-serverless and package-cu commands.
+        /// with the original version of the deploy-serverless and package-ci commands.
         /// </summary>
         DefaultLocationOption DefaultOptions { get; }
 
@@ -51,7 +51,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="templateDirectory">The diretory where the template was found.</param>
+        /// <param name="templateDirectory">The directory where the template was found.</param>
         /// <param name="templateBody">The template to search for updatable resources. The file isn't just read from
         /// templateDirectory because template substitutions might have occurred before this was executed.</param>
         /// <returns></returns>
@@ -193,7 +193,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 LambdaUtilities.DetermineTargetFrameworkFromLambdaRuntime(field.Resource.LambdaRuntime);
 
             // If the project is in the same directory as the CloudFormation template then use any parameters
-            // there were specifed on the command to build the project.
+            // there were specified on the command to build the project.
             if (IsCurrentDirectory(field.GetLocalPath()))
             {
                 if (!string.IsNullOrEmpty(this.DefaultOptions.TargetFramework))
@@ -254,7 +254,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         }
 
         /// <summary>
-        /// Create the appropiate parser depending whether the template is JSON or YAML.
+        /// Create the appropriate parser depending whether the template is JSON or YAML.
         /// </summary>
         /// <param name="templateBody"></param>
         /// <returns></returns>
