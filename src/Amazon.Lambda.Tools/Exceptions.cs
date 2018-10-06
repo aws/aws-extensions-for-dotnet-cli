@@ -46,6 +46,8 @@ namespace Amazon.Lambda.Tools
             ServerlessTemplateParseError,
             ServerlessTemplateMissingResourceSection,
             ServerlessTemplateSubstitutionError,
+            ServerlessTemplateMissingLocalPath,
+            ServerlessTemplateUnknownActionForLocalPath,
             WaitingForStackError,
 
             FailedToFindZipProgram

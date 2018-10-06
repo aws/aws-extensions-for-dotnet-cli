@@ -6,6 +6,9 @@ using YamlDotNet.RepresentationModel;
 
 namespace Amazon.Lambda.Tools.TemplateProcessor
 {
+    /// <summary>
+    /// JSON implementation of ITemplateParser
+    /// </summary>
     public class YamlTemplateParser : ITemplateParser
     {
         YamlStream Yaml { get; }
@@ -62,6 +65,9 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
 
         }
 
+        /// <summary>
+        /// The JSON implementation of IUpdatableResourceDataSource
+        /// </summary>
         public class YamlUpdatableResourceDataSource : IUpdatableResourceDataSource
         {
             YamlMappingNode Properties { get; }

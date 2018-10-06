@@ -4,6 +4,9 @@ using System.Runtime.CompilerServices;
 
 namespace Amazon.Lambda.Tools.TemplateProcessor
 {
+    /// <summary>
+    /// Class that identifies the fields and the delegates to access those fields in a given IUpdatableResourceDataSource.
+    /// </summary>
     public class UpdatableResourceDefinition
     {
         public static readonly UpdatableResourceDefinition DEF_LAMBDA_FUNCTION = new UpdatableResourceDefinition(
@@ -47,7 +50,10 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             FieldDefinition.CreateFieldDefinitionUrlStyle(false, "TemplateUrl")
         );          
 
-        
+
+        /// <summary>
+        /// All of the known CloudFormation resources that have fields pointing to S3 locations that can be updated from a local path.
+        /// </summary>
         public static IDictionary<string, UpdatableResourceDefinition> ValidUpdatableResourceDefinitions = new
             Dictionary<string, UpdatableResourceDefinition>
             {
@@ -73,17 +79,38 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         
         public FieldDefinition[] Fields { get; }
 
+        
+        /// <summary>
+        /// FieldDefinition identity what fields in a CloudFormation resource can be updated and the delegates to retrieve
+        /// and set the information in the datasource.
+        /// </summary>
         public class FieldDefinition
         {
+            public string Name { get; set; }
             public bool IsCode { get; set; }
+            
+            /// <summary>
+            /// The Func that knows how to get the local path for the field from the datasource.
+            /// </summary>
             public Func<IUpdatableResourceDataSource, string> GetLocalPath { get; set; }
+            
+            /// <summary>
+            /// The Action that knows how to set the S3 location for the field into thje datasource.
+            /// </summary>
             public Action<IUpdatableResourceDataSource, string, string> SetS3Location { get; set; }
 
 
+            /// <summary>
+            /// Creates a field definition that is storing the S3 location as a S3 path like s3://mybucket/myfile.zip
+            /// </summary>
+            /// <param name="isCode"></param>
+            /// <param name="propertyName"></param>
+            /// <returns></returns>
             public static FieldDefinition CreateFieldDefinitionUrlStyle(bool isCode, string propertyName)
             {
                 return new FieldDefinition
                 {
+                    Name = propertyName,
                     IsCode = isCode,
                     GetLocalPath = (s) =>
                     {
@@ -110,10 +137,19 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 };
             }
             
+            /// <summary>
+            /// Creates a field definition that is storing the S3 location using separate fields for bucket and key.
+            /// </summary>
+            /// <param name="isCode"></param>
+            /// <param name="containerName"></param>
+            /// <param name="s3BucketProperty"></param>
+            /// <param name="s3KeyProperty"></param>
+            /// <returns></returns>
             public static FieldDefinition CreateFieldDefinitionS3LocationStyle(bool isCode, string containerName, string s3BucketProperty, string s3KeyProperty)
             {
                 return new FieldDefinition
                 {
+                    Name = containerName,
                     IsCode = isCode,
                     GetLocalPath = (s) =>
                     {
