@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -351,6 +353,51 @@ namespace Amazon.Lambda.Tools.Test
             Assert.Throws(typeof(LambdaToolsException), (() => LambdaUtilities.ValidateTargetFrameworkAndLambdaRuntime("dotnetcore1.1", "netcoreapp2.0")));
         }
 
+
+        [Fact]
+        public async Task DeployMultiProject()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/MPDeployServerless/CurrentDirectoryTest");
+            var command = new DeployServerlessCommand(new ConsoleToolLogger(), fullPath, new string[] { });
+            command.StackName = "DeployMultiProject-" + DateTime.Now.Ticks;
+            command.S3Bucket = this._bucket;
+            command.WaitForStackToComplete = true;
+            command.DisableInteractive = true;
+            command.ProjectLocation = fullPath;
+
+            var created = await command.ExecuteAsync();
+            try
+            {
+                Assert.True(created);
+
+                using (var cfClient = new AmazonCloudFormationClient(RegionEndpoint.USEast1))
+                {
+                    var stack = (await cfClient.DescribeStacksAsync(new DescribeStacksRequest { StackName = command.StackName })).Stacks[0];
+                    var apiUrl = stack.Outputs.FirstOrDefault(x => string.Equals(x.OutputKey, "ApiURL"))?.OutputValue;
+                    Assert.NotNull(apiUrl);
+
+                    Assert.Equal("CurrentProjectTest", await GetRestContent(apiUrl, "current"));
+                    Assert.Equal("SecondCurrentProjectTest", await GetRestContent(apiUrl, "current2"));
+                    Assert.Equal("SiblingProjectTest", await GetRestContent(apiUrl, "sibling"));
+                    Assert.Equal("SingleFileNodeFunction", await GetRestContent(apiUrl, "singlenode"));
+                    Assert.Equal("DirectoryNodeFunction", await GetRestContent(apiUrl, "directorynode"));
+                }
+
+            }
+            finally
+            {
+                if (created)
+                {
+                    var deleteCommand = new DeleteServerlessCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+                    deleteCommand.StackName = command.StackName;
+                    await deleteCommand.ExecuteAsync();
+                }
+            }
+        }
+
+
         [Fact]
         public async Task TestServerlessPackage()
         {
@@ -382,6 +429,17 @@ namespace Amazon.Lambda.Tools.Test
                 await AmazonS3Util.DeleteS3BucketWithObjectsAsync(command.S3Client, command.S3Bucket);
             }
 
+        }
+
+
+        public static async Task<string> GetRestContent(string basePath, string resourcePath)
+        {
+            using (var client = new HttpClient())
+            {
+                var uri = new Uri(new Uri(basePath), resourcePath);
+                var content = await client.GetStringAsync(uri);
+                return content;
+            }
         }
 
         #region IDisposable Support
