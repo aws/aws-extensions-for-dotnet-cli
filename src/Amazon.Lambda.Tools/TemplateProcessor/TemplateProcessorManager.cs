@@ -118,8 +118,17 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             bool deleteArchiveAfterUploaded = false;
             string zipArchivePath;
             if(File.Exists(localPath))
-            {                
-                zipArchivePath = localPath;
+            {
+                if(field.IsCode && !string.Equals(Path.GetExtension(localPath), ".zip", StringComparison.OrdinalIgnoreCase))
+                {
+                    this.Logger.WriteLine($"Creating zip archive for {localPath} file");
+                    zipArchivePath = GenerateOutputZipFilename(field);
+                    LambdaPackager.BundleFiles(zipArchivePath, Path.GetDirectoryName(localPath), new string[] { localPath }, this.Logger);
+                }
+                else
+                {
+                    zipArchivePath = localPath;
+                }
             }
             // If IsCode is false then the local path needs to point to a file and not a directory. When IsCode is true
             // it can point either to a file or a directory.
