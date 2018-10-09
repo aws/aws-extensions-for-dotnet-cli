@@ -477,7 +477,7 @@ namespace Amazon.Lambda.Tools
                 }
             }
             var myText = new StringWriter();
-            yaml.Save(myText);
+            yaml.Save(myText, false);
 
             return myText.ToString();
         }
