@@ -20,6 +20,8 @@ namespace Amazon.Lambda.Tools
 
         public const int MAX_TEMPLATE_BODY_IN_REQUEST_SIZE = 50000;
 
+        public const string DEFAULT_BUILD_CONFIGURATION = "Release";
+
         // The .NET Core 1.0 version of the runtime hierarchies for .NET Core taken from the corefx repository
         // https://github.com/dotnet/corefx/blob/release/1.0.0/pkg/Microsoft.NETCore.Platforms/runtime.json
         internal const string RUNTIME_HIERARCHY = "netcore.runtime.hierarchy.json";

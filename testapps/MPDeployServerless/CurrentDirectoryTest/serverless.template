@@ -1,0 +1,126 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Transform" : "AWS::Serverless-2016-10-31",
+  "Description" : "An AWS Serverless Application.",
+
+  "Resources" : {
+
+    "CurrentProject" : {
+      "Type" : "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "CurrentDirectoryTest::CurrentDirectoryTest.Functions::Get",
+        "Runtime": "dotnetcore2.1",
+        "CodeUri": "",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [ "AWSLambdaBasicExecutionRole" ],
+        "Events": {
+          "PutResource": {
+            "Type": "Api",
+            "Properties": {
+              "Path": "/current",
+              "Method": "GET"
+            }
+          }
+        }
+      }
+    },
+
+	"CurrentProject2" : {
+      "Type" : "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "CurrentDirectoryTest::CurrentDirectoryTest.Functions::Get2",
+        "Runtime": "dotnetcore2.1",
+        "CodeUri": "",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [ "AWSLambdaBasicExecutionRole" ],
+        "Events": {
+          "PutResource": {
+            "Type": "Api",
+            "Properties": {
+              "Path": "/current2",
+              "Method": "GET"
+            }
+          }
+        }
+      }
+    },
+
+    "SiblingProject" : {
+      "Type" : "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "SiblingProjectTest::SiblingProjectTest.Function::Get",
+        "Runtime": "dotnetcore2.1",
+        "CodeUri": "../SiblingProjectTest",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [ "AWSLambdaBasicExecutionRole" ],
+        "Events": {
+          "PutResource": {
+            "Type": "Api",
+            "Properties": {
+              "Path": "/sibling",
+              "Method": "GET"
+            }
+          }
+        }
+      }
+    },
+
+    "SingleFileNodeFunction" : {
+      "Type" : "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "app.handler",
+        "Runtime": "nodejs8.10",
+        "CodeUri": "../SingleFileNodeFunction/app.js",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [ "AWSLambdaBasicExecutionRole" ],
+        "Events": {
+          "PutResource": {
+            "Type": "Api",
+            "Properties": {
+              "Path": "/singlenode",
+              "Method": "GET"
+            }
+          }
+        }
+      }
+    },
+
+    "DirectoryNodeFunction" : {
+      "Type" : "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "app.handler",
+        "Runtime": "nodejs8.10",
+        "CodeUri": "../DirectoryNodeFunction",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [ "AWSLambdaBasicExecutionRole" ],
+        "Events": {
+          "PutResource": {
+            "Type": "Api",
+            "Properties": {
+              "Path": "/directorynode",
+              "Method": "GET"
+            }
+          }
+        }
+      }
+    }
+
+  },
+
+  "Outputs" : {
+    "ApiURL" : {
+        "Description" : "API endpoint URL for Prod environment",
+        "Value" : { "Fn::Sub" : "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/" }
+    }
+  }
+}

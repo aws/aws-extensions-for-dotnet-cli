@@ -16,10 +16,26 @@ namespace Amazon.Lambda.Tools
 {
     public static class LambdaUtilities
     {
+        public static readonly IList<string> ValidProjectExtensions = new List<string> { ".csproj", ".fsproj", ".vbproj" };
 
+        static readonly IReadOnlyDictionary<string, string> _lambdaRuntimeToDotnetFramework = new Dictionary<string, string>()
+        {
+            {Amazon.Lambda.Runtime.Dotnetcore21.Value, "netcoreapp2.1"},
+            {Amazon.Lambda.Runtime.Dotnetcore20.Value, "netcoreapp2.0"},
+            {Amazon.Lambda.Runtime.Dotnetcore10.Value, "netcoreapp1.0"}
+        };
 
+        public static string DetermineTargetFrameworkFromLambdaRuntime(string lambdaRuntime)
+        {
+            string runtime;
+            if (_lambdaRuntimeToDotnetFramework.TryGetValue(lambdaRuntime, out runtime))
+                return runtime;
+
+            return null;
+        }
+        
         /// <summary>
-        /// Make sure nobody is trying to deploy a function based on a higher .NET Core framework then the Lambda runtime knows about.
+        /// Make sure nobody is trying to deploy a function based on a higher .NET Core framework than the Lambda runtime knows about.
         /// </summary>
         /// <param name="lambdaRuntime"></param>
         /// <param name="targetFramework"></param>
@@ -78,12 +94,12 @@ namespace Amazon.Lambda.Tools
 
         public static void ValidateMicrosoftAspNetCoreAllReferenceFromProjectPath(IToolLogger logger, string targetFramework, string manifestContent, string profPath)
         {
-            HashSet<string> validProjectExtensions = new HashSet<string> { ".csproj", ".fsproj", ".vbproj" };
+            
 
             if (Directory.Exists(profPath))
             {
                 var projectFiles = Directory.GetFiles(profPath, "*.??proj", SearchOption.TopDirectoryOnly)
-                    .Where(x => validProjectExtensions.Contains(Path.GetExtension(x))).ToArray();
+                    .Where(x => ValidProjectExtensions.Contains(Path.GetExtension(x))).ToArray();
                 if (projectFiles.Length != 1)
                 {
                     logger?.WriteLine("Unable to determine project file when validating version of Microsoft.AspNetCore.All");
@@ -93,8 +109,8 @@ namespace Amazon.Lambda.Tools
             }
 
             // If the file is not a valid proj file then skip validation. This could happen
-            // if the project is an F# project or an older style project.json.
-            if (!validProjectExtensions.Contains(Path.GetExtension(profPath)))
+            // if the project is an older style project.json.
+            if (!ValidProjectExtensions.Contains(Path.GetExtension(profPath)))
                 return;
 
             var projectContent = File.ReadAllText(profPath);
