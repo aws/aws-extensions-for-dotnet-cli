@@ -73,7 +73,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         IUpdatableResource Resource { get; }
         
         /// <summary>
-        /// Gets the local path for the resource. If the value referencing an object in S3 then this returns null.
+        /// Gets the local path for the resource. If the value is referencing an object in S3 then this returns null.
         /// </summary>
         /// <returns></returns>
         string GetLocalPath();

@@ -41,7 +41,7 @@ namespace Amazon.Lambda.Tools
             out string publishLocation, ref string zipArchivePath)
         {
             if(string.IsNullOrEmpty(configuration))
-                configuration = "Release";
+                configuration = LambdaConstants.DEFAULT_BUILD_CONFIGURATION;
             
             string lambdaRuntimePackageStoreManifestContent = null;
             var computedProjectLocation = Utilities.DetermineProjectLocation(workingDirectory, projectLocation);
