@@ -1,1 +1,0 @@
-﻿To be completed - getting started text for the new project.

@@ -49,7 +49,9 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         }
 
         /// <summary>
-        /// 
+        /// Transforms the provided template by uploading to S3 any local resources the template is pointing to,
+        /// like .NET projects for a Lambda project, and then updating the CloudFormation resources to point to the
+        /// S3 locations.
         /// </summary>
         /// <param name="templateDirectory">The directory where the template was found.</param>
         /// <param name="templateBody">The template to search for updatable resources. The file isn't just read from
@@ -57,7 +59,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// <returns></returns>
         public async Task<string> TransformTemplateAsync(string templateDirectory, string templateBody)
         {
-            // If templateDirectoruy is actually pointing the CloudFormation template then grab its root.
+            // If templateDirectory is actually pointing the CloudFormation template then grab its root.
             if (File.Exists(templateDirectory))
                 templateDirectory = Path.GetDirectoryName(templateDirectory);
             
@@ -134,7 +136,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             // it can point either to a file or a directory.
             else if (!field.IsCode && !File.Exists(localPath))
             {
-                throw new LambdaToolsException($"File that the field {field.Resource.Name}/{field.Name} is pointing doesn't exist", LambdaToolsException.LambdaErrorCode.ServerlessTemplateMissingLocalPath);                
+                throw new LambdaToolsException($"File that the field {field.Resource.Name}/{field.Name} is pointing to doesn't exist", LambdaToolsException.LambdaErrorCode.ServerlessTemplateMissingLocalPath);                
             }
             else if (!Directory.Exists(localPath))
             {

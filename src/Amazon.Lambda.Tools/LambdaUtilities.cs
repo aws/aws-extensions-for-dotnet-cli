@@ -18,27 +18,24 @@ namespace Amazon.Lambda.Tools
     {
         public static readonly IList<string> ValidProjectExtensions = new List<string> { ".csproj", ".fsproj", ".vbproj" };
 
+        static readonly IReadOnlyDictionary<string, string> _lambdaRuntimeToDotnetFramework = new Dictionary<string, string>()
+        {
+            {Amazon.Lambda.Runtime.Dotnetcore21.Value, "netcoreapp2.1"},
+            {Amazon.Lambda.Runtime.Dotnetcore20.Value, "netcoreapp2.0"},
+            {Amazon.Lambda.Runtime.Dotnetcore10.Value, "netcoreapp1.0"}
+        };
 
         public static string DetermineTargetFrameworkFromLambdaRuntime(string lambdaRuntime)
         {
-            if (lambdaRuntime == Amazon.Lambda.Runtime.Dotnetcore21)
-            {
-                return "netcoreapp2.1";
-            }
-            if (lambdaRuntime == Amazon.Lambda.Runtime.Dotnetcore20)
-            {
-                return "netcoreapp2.0";
-            }
-            if (lambdaRuntime == Amazon.Lambda.Runtime.Dotnetcore10)
-            {
-                return "netcoreapp1.0";
-            }
+            string runtime;
+            if (_lambdaRuntimeToDotnetFramework.TryGetValue(lambdaRuntime, out runtime))
+                return runtime;
 
             return null;
         }
         
         /// <summary>
-        /// Make sure nobody is trying to deploy a function based on a higher .NET Core framework then the Lambda runtime knows about.
+        /// Make sure nobody is trying to deploy a function based on a higher .NET Core framework than the Lambda runtime knows about.
         /// </summary>
         /// <param name="lambdaRuntime"></param>
         /// <param name="targetFramework"></param>
@@ -112,7 +109,7 @@ namespace Amazon.Lambda.Tools
             }
 
             // If the file is not a valid proj file then skip validation. This could happen
-            // if the project is an F# project or an older style project.json.
+            // if the project is an older style project.json.
             if (!ValidProjectExtensions.Contains(Path.GetExtension(profPath)))
                 return;
 

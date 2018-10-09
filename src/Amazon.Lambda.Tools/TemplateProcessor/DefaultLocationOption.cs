@@ -14,14 +14,14 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// .NET Target Framework e.g. netcoreapp2.1
         /// </summary>
         public string TargetFramework { get; set; }
-        
+
         /// <summary>
-        /// Additional parameters passed in when invoke dotnet publish
+        /// Additional parameters to pass when invoking dotnet publish
         /// </summary>
         public string MSBuildParameters { get; set; }
         
         /// <summary>
-        /// If true disables checking for correct version of Microsoft.AspNetCore.App version.
+        /// If true disables checking for correct version of Microsoft.AspNetCore.App.
         /// </summary>
         public bool DisableVersionCheck { get; set; }
         
