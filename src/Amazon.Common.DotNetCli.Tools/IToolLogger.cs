@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -25,11 +26,18 @@ namespace Amazon.Common.DotNetCli.Tools
         public void WriteLine(string message)
         {
             Console.WriteLine(message);
+#if DEBUG
+            Debugger.Log(0, "console", message + "\n");
+#endif
         }
 
         public void WriteLine(string message, params object[] args)
         {
-            Console.WriteLine(string.Format(message, args));
+            var str = string.Format(message, args);
+            Console.WriteLine(str);
+#if DEBUG
+            Debugger.Log(0, "console", str + "\n");
+#endif
         }
     }
 }
