@@ -138,6 +138,8 @@ Resources:
 
             //Does not throw an error when parsing template
             var updateTemplateBody = LambdaUtilities.UpdateCodeLocationInYamlTemplate(template, S3_BUCKET, S3_OBJECT);
+            //validate that functions survive the template update
+            Assert.Contains("DevStack: !Equals [!Ref 'AWS::StackName', dev]", updateTemplateBody);
         }
     }
 }

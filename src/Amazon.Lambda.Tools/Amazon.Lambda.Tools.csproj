@@ -33,7 +33,7 @@
     <PackageReference Include="AWSSDK.Lambda" Version="3.3.13.2" />
     <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.6.3" />
     <PackageReference Include="AWSSDK.S3" Version="3.3.18.2" />
-    <PackageReference Include="YamlDotNet.Signed" Version="4.2.1" />
+    <PackageReference Include="YamlDotNet.Signed" Version="5.2.1" />
   </ItemGroup>
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
