@@ -46,6 +46,7 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_ROLE,
             LambdaDefinedCommandOptions.ARGUMENT_STACK_NAME,
             LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_DISABLE_CAPABILITIES,
+            LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TAGS,
             LambdaDefinedCommandOptions.ARGUMENT_STACK_WAIT,
             LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK
         });
@@ -64,6 +65,7 @@ namespace Amazon.Lambda.Tools.Commands
         public string CloudFormationRole { get; set; }
         public Dictionary<string, string> TemplateParameters { get; set; }
         public Dictionary<string, string> TemplateSubstitutions { get; set; }
+        public Dictionary<string, string> Tags { get; set; }
 
         public bool? DisableVersionCheck { get; set; }
 
@@ -106,6 +108,8 @@ namespace Amazon.Lambda.Tools.Commands
                 this.CloudFormationRole = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK.Switch)) != null)
                 this.DisableVersionCheck = tuple.Item2.BoolValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TAGS.Switch)) != null)
+                this.Tags = tuple.Item2.KeyValuePairs;
 
             if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS.Switch)) != null)
                 this.MSBuildParameters = tuple.Item2.StringValue;
@@ -173,6 +177,19 @@ namespace Amazon.Lambda.Tools.Commands
             this.Logger.WriteLine("Found existing stack: " + (existingStack != null));
             var changeSetName = "Lambda-Tools-" + DateTime.Now.Ticks;
 
+            List<Tag> tagList = null;
+            {
+                var tags = this.GetKeyValuePairOrDefault(this.Tags, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TAGS, false);
+                if(tags != null)
+                {
+                    tagList = new List<Tag>();
+                    foreach(var kvp in tags)
+                    {
+                        tagList.Add(new Tag { Key = kvp.Key, Value = kvp.Value });
+                    }
+                }
+            }
+
             // Determine if the stack is in a good state to be updated.
             ChangeSetType changeSetType;
             if (existingStack == null || existingStack.StackStatus == StackStatus.REVIEW_IN_PROGRESS || existingStack.StackStatus == StackStatus.DELETE_COMPLETE)
@@ -208,6 +225,10 @@ namespace Amazon.Lambda.Tools.Commands
                     existingStack.StackStatus == StackStatus.UPDATE_ROLLBACK_COMPLETE)
             {
                 changeSetType = ChangeSetType.UPDATE;
+                if(tagList == null)
+                {
+                    tagList = existingStack.Tags;
+                }
             }
             // All other states means the Stack is in an inconsistent state.
             else
@@ -261,6 +282,16 @@ namespace Amazon.Lambda.Tools.Commands
                     capabilities.Add("CAPABILITY_NAMED_IAM");
                 }
 
+                if(tagList == null)
+                {
+                    tagList = new List<Tag>();
+                }
+
+                if(tagList.FirstOrDefault(x => string.Equals(x.Key, LambdaConstants.SERVERLESS_TAG_NAME)) == null)
+                {
+                    tagList.Add(new Tag { Key = LambdaConstants.SERVERLESS_TAG_NAME, Value = "true" });
+                }
+
                 var changeSetRequest = new CreateChangeSetRequest
                 {
                     StackName = stackName,
@@ -269,7 +300,7 @@ namespace Amazon.Lambda.Tools.Commands
                     ChangeSetType = changeSetType,
                     Capabilities = capabilities,
                     RoleARN = this.GetStringValueOrDefault(this.CloudFormationRole, LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_ROLE, false),
-                    Tags = new List<Tag> { new Tag { Key = LambdaConstants.SERVERLESS_TAG_NAME, Value = "true" } }
+                    Tags = tagList
                 };
 
                 if(new FileInfo(templatePath).Length < LambdaConstants.MAX_TEMPLATE_BODY_IN_REQUEST_SIZE)

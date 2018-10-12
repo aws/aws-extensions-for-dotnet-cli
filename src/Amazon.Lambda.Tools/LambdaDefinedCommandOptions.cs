@@ -156,10 +156,10 @@ namespace Amazon.Lambda.Tools
         public static readonly CommandOption ARGUMENT_FUNCTION_TAGS =
             new CommandOption
             {
-                Name = "Function Tags",
+                Name = "Tags",
                 Switch = "--tags",
                 ValueType = CommandOption.CommandOptionValueType.KeyValuePairs,
-                Description = "Tags applied to the function. Format is <name1>=<value1>;<name2>=<value2>"
+                Description = "AWS tags to apply. Format is <name1>=<value1>;<name2>=<value2>"
             };
         public static readonly CommandOption ARGUMENT_KMS_KEY_ARN =
             new CommandOption
