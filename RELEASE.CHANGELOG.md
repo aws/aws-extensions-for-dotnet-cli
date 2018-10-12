@@ -1,3 +1,11 @@
+### Release 2018-10-12
+* **Amazon.Lambda.Tools (3.1.0)**
+    * Updated the `deploy-serverless` and `package-ci` command to support deploying multiple projects.
+Each `AWS::Lambda::Function` or `AWS::Serverless::Function` can now point to different .NET projects locally using the CloudFormation resource's code properties. 
+If the code property is not set then the current directory assumed.
+    * Pull request [#39](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/39), fixing issue related to yaml templates containing intrinsic functions in the short form. Thanks to [Albert Szilvasy](https://github.com/szilvaa)
+    * Added `--tags` property to `deploy-serverless` command to apply AWS Tags to the CloudFormation stack and the resources the stack creates.
+
 ### Release 2018-09-11
 * **Amazon.Lambda.Tools (3.0.1)**
     * Fixed issue incorrectly checking being executed in a project directory when using a precompiled package zip file.
