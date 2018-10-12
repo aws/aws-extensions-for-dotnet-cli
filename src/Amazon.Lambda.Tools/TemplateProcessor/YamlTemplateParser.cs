@@ -24,7 +24,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         public string GetUpdatedTemplate()
         {
             var myText = new StringWriter();
-            this.Yaml.Save(myText);
+            this.Yaml.Save(myText, assignAnchors: false);
 
             return myText.ToString();
         }
