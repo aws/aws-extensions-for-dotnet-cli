@@ -156,7 +156,7 @@ namespace Amazon.Lambda.Tools
                 }
             }
 #else
-            BundleWithDotNetCompression(zipArchivePath, sourceDirectory, flattenRuntime, logger);
+            BundleWithDotNetCompression(zipArchivePath, rootDirectory, includedFiles, logger);
 #endif            
         }
 
