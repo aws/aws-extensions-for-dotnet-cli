@@ -298,12 +298,15 @@ namespace Amazon.Common.DotNetCli.Tools
         /// <returns></returns>
         private static IDictionary<string, string> GetFilesToIncludeInArchive(string publishLocation)
         {
+            const char uniformDirectorySeparator = '/';
             var includedFiles = new Dictionary<string, string>();
             var allFiles = Directory.GetFiles(publishLocation, "*.*", SearchOption.AllDirectories);
             foreach (var file in allFiles)
             {
-                var relativePath = file.Substring(publishLocation.Length);
-                if (relativePath[0] == Path.DirectorySeparatorChar)
+                var relativePath = file.Substring(publishLocation.Length)
+                    .Replace(Path.DirectorySeparatorChar.ToString(), uniformDirectorySeparator.ToString());
+                
+                if (relativePath[0] == uniformDirectorySeparator)
                     relativePath = relativePath.Substring(1);
 
                 includedFiles[relativePath] = file;
