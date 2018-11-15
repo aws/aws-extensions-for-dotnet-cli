@@ -34,7 +34,19 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             }
         }
 
-        public string LambdaRuntime => this.DataSource.GetValue("Runtime");
+        public string LambdaRuntime
+        {
+            get
+            {
+                var runtime = this.DataSource.GetValue("Runtime");
+                if(string.IsNullOrEmpty(runtime))
+                {
+                    runtime = this.DataSource.GetValueFromRoot("Globals", "Function", "Runtime");
+                }
+
+                return runtime;
+            }
+        }
 
         public class UpdatableResourceField : IUpdateResourceField
         {

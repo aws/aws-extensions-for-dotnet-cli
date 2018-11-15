@@ -45,14 +45,14 @@ namespace Amazon.Lambda.Tools.Test
             {
                 var rootData = new JsonData();
                 rootData["CodeUri"] = "/home/code";
-                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(rootData);
+                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, rootData);
                 list.Add(new object[] { source });
             }
             {
                 var rootData = new YamlMappingNode();
                 rootData.Children.Add("CodeUri", new YamlScalarNode("/home/code"));
 
-                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(rootData);
+                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(null, rootData);
                 list.Add(new object[] { source });
             }
 
@@ -81,7 +81,7 @@ namespace Amazon.Lambda.Tools.Test
                 var rootData = new JsonData();
                 rootData["Code"] = codeData;
 
-                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(rootData);
+                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, rootData);
                 list.Add(new object[] { source });
             }
             {
@@ -92,7 +92,7 @@ namespace Amazon.Lambda.Tools.Test
                 var rootData = new YamlMappingNode();
                 rootData.Children.Add("Code", codeData);
 
-                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(rootData);
+                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(null, rootData);
                 list.Add(new object[] { source });
             }
 
@@ -115,13 +115,13 @@ namespace Amazon.Lambda.Tools.Test
             {
                 var rootData = new JsonData();
 
-                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(rootData);
+                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, rootData);
                 list.Add(new object[] { source });
             }
             {
                 var rootData = new YamlMappingNode();
 
-                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(rootData);
+                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(null, rootData);
                 list.Add(new object[] { source });
             }
 
@@ -144,13 +144,13 @@ namespace Amazon.Lambda.Tools.Test
             {
                 var rootData = new JsonData();
 
-                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(rootData);
+                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, rootData);
                 list.Add(new object[] { source });
             }
             {
                 var rootData = new YamlMappingNode();
 
-                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(rootData);
+                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(null, rootData);
                 list.Add(new object[] { source });
             }
 
@@ -460,18 +460,34 @@ namespace Amazon.Lambda.Tools.Test
         
         public class FakeUpdatableResourceDataSource : IUpdatableResourceDataSource
         {
-            IDictionary<string, string> Values { get; }
+            IDictionary<string, string> Root { get; }
+            IDictionary<string, string> Properties { get; }
 
-
-            public FakeUpdatableResourceDataSource(IDictionary<string, string> values)
+            public FakeUpdatableResourceDataSource(IDictionary<string, string> root, IDictionary<string, string> properties)
             {
-                this.Values = values;
+                this.Root = root;
+                this.Properties = properties;
+            }
+
+            public FakeUpdatableResourceDataSource(IDictionary<string, string> properties)
+                : this(properties, properties)
+            {
+            }
+
+            public string GetValueFromRoot(params string[] keyPath)
+            {
+                return GetValue(this.Root, keyPath);
             }
 
             public string GetValue(params string[] keyPath)
             {
+                return GetValue(this.Properties, keyPath);
+            }
+
+            private string GetValue(IDictionary<string, string> values, params string[] keyPath)
+            {
                 var key = string.Join("/", keyPath);
-                if (Values.TryGetValue(key, out var value))
+                if (values.TryGetValue(key, out var value))
                     return value;
                 return null;
             }
@@ -479,7 +495,7 @@ namespace Amazon.Lambda.Tools.Test
             public void SetValue(string value, params string[] keyPath)
             {
                 var key = string.Join("/", keyPath);
-                Values[key] = value;
+                Properties[key] = value;
             }
         }
     }

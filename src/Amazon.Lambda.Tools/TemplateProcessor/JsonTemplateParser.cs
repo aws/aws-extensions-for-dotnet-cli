@@ -51,7 +51,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                     out updatableResourceDefinition))
                     continue;
                 
-                var updatableResource = new UpdatableResource(field, updatableResourceDefinition, new JsonUpdatableResourceDataSource(properties));
+                var updatableResource = new UpdatableResource(field, updatableResourceDefinition, new JsonUpdatableResourceDataSource(this.Root, properties));
                 yield return updatableResource;
             }
         }
@@ -61,16 +61,27 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// </summary>
         public class JsonUpdatableResourceDataSource : IUpdatableResourceDataSource
         {
+            JsonData Root { get; }
             JsonData Properties { get; }
 
-            public JsonUpdatableResourceDataSource(JsonData properties)
+            public JsonUpdatableResourceDataSource(JsonData root, JsonData properties)
             {
+                this.Root = root;
                 this.Properties = properties;
+            }
+
+            public string GetValueFromRoot(params string[] keyPath)
+            {
+                return GetValue(this.Root, keyPath);
             }
 
             public string GetValue(params string[] keyPath)
             {
-                JsonData node = this.Properties;
+                return GetValue(this.Properties, keyPath);
+            }
+
+            private string GetValue(JsonData node, params string[] keyPath)
+            {
                 foreach (var key in keyPath)
                 {
                     if (node == null)

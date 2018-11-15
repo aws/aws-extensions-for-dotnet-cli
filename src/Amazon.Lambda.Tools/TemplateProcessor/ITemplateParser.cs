@@ -92,6 +92,14 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
     public interface IUpdatableResourceDataSource
     {
         /// <summary>
+        /// Gets value starting from the root document.
+        /// </summary>
+        /// <param name="keyPath"></param>
+        /// <returns></returns>
+        string GetValueFromRoot(params string[] keyPath);
+
+
+        /// <summary>
         /// Gets value in datasource.
         /// </summary>
         /// <param name="keyPath"></param>
