@@ -1,3 +1,9 @@
+### Release 2018-11-19
+* **Amazon.Lambda.Tools (3.1.1)**
+    * Fix issue looking for Lambda runtime from CloudFormation template when runtime specified in the Globals section.
+* **Amazon.ElasticBeanstalk.Tools (3.0.0)**
+    * Pull request [#43](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/43), fixing issue with wrong directory separater when creating zip file. Thanks [bartoszsiekanski](https://github.com/bartoszsiekanski)
+
 ### Release 2018-10-12
 * **Amazon.Lambda.Tools (3.1.0)**
     * Updated the `deploy-serverless` and `package-ci` command to support deploying multiple projects.
