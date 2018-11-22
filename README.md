@@ -102,7 +102,7 @@ not need to enter those values.
 {
     "region" : "us-west-2",
     "profile" : "default",
-    "configuration" : "Release
+    "configuration" : "Release"
 }
 ```
 
