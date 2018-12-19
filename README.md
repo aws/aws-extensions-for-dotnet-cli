@@ -100,9 +100,9 @@ not need to enter those values.
 
 ```json
 {
-    "region" : "us-west-2",
-    "profile" : "default",
-    "configuration" : "Release
+    "region": "us-west-2",
+    "profile": "default",
+    "configuration": "Release"
 }
 ```
 
