@@ -303,7 +303,7 @@ namespace Amazon.Lambda.Tools.Commands
                     Tags = tagList
                 };
 
-                if(new FileInfo(templatePath).Length < LambdaConstants.MAX_TEMPLATE_BODY_IN_REQUEST_SIZE)
+                if(templateBody.Length < LambdaConstants.MAX_TEMPLATE_BODY_IN_REQUEST_SIZE)
                 {
                     changeSetRequest.TemplateBody = templateBody;
                 }
