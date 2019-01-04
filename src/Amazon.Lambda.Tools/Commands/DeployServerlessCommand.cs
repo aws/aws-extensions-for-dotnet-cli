@@ -281,8 +281,12 @@ namespace Amazon.Lambda.Tools.Commands
                 {
                     capabilities.Add("CAPABILITY_NAMED_IAM");
                 }
+                if (disabledCapabilties?.FirstOrDefault(x => string.Equals(x, "CAPABILITY_AUTO_EXPAND", StringComparison.OrdinalIgnoreCase)) == null)
+                {
+                    capabilities.Add("CAPABILITY_AUTO_EXPAND");
+                }
 
-                if(tagList == null)
+                if (tagList == null)
                 {
                     tagList = new List<Tag>();
                 }
