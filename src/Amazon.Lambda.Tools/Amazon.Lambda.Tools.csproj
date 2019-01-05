@@ -12,10 +12,10 @@
 	<ToolCommandName>dotnet-lambda</ToolCommandName>
 	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Company>Amazon.com, Inc</Company>
-    <Copyright>Copyright 2009-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
+    <Copyright>Copyright 2009-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
     <Product>AWS Lambda Tools for .NET CLI</Product>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <Version>3.1.1</Version>
+    <Version>3.1.2</Version>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Amazon.Common.DotNetCli.Tools\Amazon.Common.DotNetCli.Tools.csproj">
