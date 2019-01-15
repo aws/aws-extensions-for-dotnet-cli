@@ -1,3 +1,8 @@
+### Release 2019-01-04
+* **Amazon.Lambda.Tools (3.1.2)**
+    * Fixed issue with failed deployments when CloudFormation template was greater then 50,000 .
+    * Added support for CAPABILITY_AUTO_EXPAND for deploy-serverless command.
+
 ### Release 2018-11-19
 * **Amazon.Lambda.Tools (3.1.1)**
     * Fix issue looking for Lambda runtime from CloudFormation template when runtime specified in the Globals section.

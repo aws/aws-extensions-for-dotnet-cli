@@ -431,6 +431,46 @@ namespace Amazon.Lambda.Tools.Test
 
         }
 
+        [Fact]
+        public async Task TestDeployLargeServerless()
+        {
+            var logger = new TestToolLogger();
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestServerlessWebApp");
+            var command = new DeployServerlessCommand(logger, fullPath, new string[0]);
+            command.Region = "us-east-1";
+            command.Configuration = "Release";
+            command.TargetFramework = "netcoreapp2.0";
+            command.CloudFormationTemplate = "large-serverless.template";
+            command.StackName = "TestDeployLargeServerless-" + DateTime.Now.Ticks;
+            command.S3Bucket = this._bucket;
+
+            command.WaitForStackToComplete = true;
+            command.ProjectLocation = fullPath;
+            command.DisableInteractive = true;
+
+
+
+            var created = await command.ExecuteAsync();
+            try
+            {
+                Assert.True(created);
+            }
+            finally
+            {
+                if (created)
+                {
+                    var deleteCommand = new DeleteServerlessCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+                    deleteCommand.StackName = command.StackName;
+                    deleteCommand.Region = command.Region;
+                    deleteCommand.DisableInteractive = true;
+                    await deleteCommand.ExecuteAsync();
+                }
+            }
+
+        }
+
 
         public static async Task<string> GetRestContent(string basePath, string resourcePath)
         {
