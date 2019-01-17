@@ -126,6 +126,15 @@ namespace Amazon.Lambda.Tools
                 ValueType = CommandOption.CommandOptionValueType.CommaDelimitedList,
                 Description = "Comma delimited list of Lambda layer version arns"
             };
+        public static readonly CommandOption ARGUMENT_OPT_DIRECTORY =
+            new CommandOption
+            {
+                Name = "Opt Directory",
+                ShortSwitch = "-od",
+                Switch = "--opt-directory",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "The directory under the /opt directory the contents of the layer will be placed. If not set a directory name will be generated."
+            };
         public static readonly CommandOption ARGUMENT_DEADLETTER_TARGET_ARN =
             new CommandOption
             {

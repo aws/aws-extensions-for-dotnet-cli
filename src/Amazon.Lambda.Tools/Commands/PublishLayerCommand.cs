@@ -26,6 +26,7 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_LAYER_TYPE,
             LambdaDefinedCommandOptions.ARGUMENT_LAYER_LICENSE_INFO,
             LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_MANIFEST,
+            LambdaDefinedCommandOptions.ARGUMENT_OPT_DIRECTORY,
             LambdaDefinedCommandOptions.ARGUMENT_ENABLE_PACKAGE_OPTIMIZATION
         });
 
@@ -36,6 +37,7 @@ namespace Amazon.Lambda.Tools.Commands
         public string LayerType { get; set; }
         public string LayerLicenseInfo { get; set; }
         public string PackageManifest { get; set; }
+        public string OptDirectory { get; set; }
         public bool? EnablePackageOptimization { get; set; }
 
 
@@ -73,6 +75,8 @@ namespace Amazon.Lambda.Tools.Commands
                 this.LayerLicenseInfo = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_MANIFEST.Switch)) != null)
                 this.PackageManifest = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_OPT_DIRECTORY.Switch)) != null)
+                this.OptDirectory = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_ENABLE_PACKAGE_OPTIMIZATION.Switch)) != null)
                 this.EnablePackageOptimization = tuple.Item2.BoolValue;
         }
@@ -153,7 +157,7 @@ namespace Amazon.Lambda.Tools.Commands
             var enableOptimization = this.GetBoolValueOrDefault(this.EnablePackageOptimization, LambdaDefinedCommandOptions.ARGUMENT_ENABLE_PACKAGE_OPTIMIZATION, false).GetValueOrDefault();
 
 #if NETCORE
-            if(enableOptimization)
+            if (enableOptimization)
             {
                 if(!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
@@ -204,8 +208,13 @@ namespace Amazon.Lambda.Tools.Commands
 
             // Create second subdirectory so that when the directory is zipped the sub directory is retained in the zip file.
             // The sub directory will be created in the /opt directory in the Lambda environment.
-            var layerSubDirectory = $"{layerName}-{DateTime.UtcNow.Ticks}".ToLower();
-            var storeOutputDiectory = Path.Combine(Path.GetTempPath(), layerSubDirectory, layerSubDirectory);
+            var tempDirectoryName = $"{layerName}-{DateTime.UtcNow.Ticks}".ToLower();
+            var optDirectory = this.GetStringValueOrDefault(this.OptDirectory, LambdaDefinedCommandOptions.ARGUMENT_OPT_DIRECTORY, false);
+            if (string.IsNullOrEmpty(optDirectory))
+            {
+                optDirectory = tempDirectoryName;
+            }
+            var storeOutputDiectory = Path.Combine(Path.GetTempPath(), tempDirectoryName, optDirectory);
 
             var cliWrapper = new LambdaDotNetCLIWrapper(this.Logger, this.WorkingDirectory);
             if(cliWrapper.Store(this.DefaultConfig, projectLocation, storeOutputDiectory, targetFramework, packageManifest, enableOptimization) != 0)
@@ -234,14 +243,14 @@ namespace Amazon.Lambda.Tools.Commands
             var result = new CreateLayerZipFileResult
             {
                 ZipFile = zipPath,
-                LayerDirectory = layerSubDirectory
+                LayerDirectory = optDirectory
             };
 
             var s3Bucket = this.GetStringValueOrDefault(this.S3Bucket, LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET, true);
 
             // Set the description field to the our JSON layer manifest file so when the tooling is used
             // to create a package of a Lambda function in the future the artifact.xml file can be used during "dotnet publish".
-            result.Description = GeneratorRuntimePackageManifestLayerDescription(layerSubDirectory, s3Bucket, s3Key, enableOptimization);
+            result.Description = GeneratorRuntimePackageManifestLayerDescription(optDirectory, s3Bucket, s3Key, enableOptimization);
 
             var compatibleRuntime = LambdaUtilities.DetermineLambdaRuntimeFromTargetFramework(targetFramework);
             if(!string.IsNullOrEmpty(compatibleRuntime))
