@@ -636,9 +636,9 @@ namespace Amazon.Lambda.Tools
                         logger.WriteLine($"... {arn}: Skipped, does not contain a layer description manifest");
                         continue;
                     }
-                    if (manifest.Type != LayerDescriptionManifest.ManifestType.RuntimePackageStore)
+                    if (manifest.Nlt != LayerDescriptionManifest.ManifestType.RuntimePackageStore)
                     {
-                        logger.WriteLine($"... {arn}: Skipped, layer is of type {manifest.Type.ToString()}, not {LayerDescriptionManifest.ManifestType.RuntimePackageStore}");
+                        logger.WriteLine($"... {arn}: Skipped, layer is of type {manifest.Nlt.ToString()}, not {LayerDescriptionManifest.ManifestType.RuntimePackageStore}");
                         continue;
                     }
 

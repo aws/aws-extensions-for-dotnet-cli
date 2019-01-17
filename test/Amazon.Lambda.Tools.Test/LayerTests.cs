@@ -84,7 +84,7 @@ namespace Amazon.Lambda.Tools.Test
 
                 
                 var data = JsonMapper.ToObject<LayerDescriptionManifest>(getResponse.Description);
-                Assert.Equal(LayerDescriptionManifest.ManifestType.RuntimePackageStore, data.Type);
+                Assert.Equal(LayerDescriptionManifest.ManifestType.RuntimePackageStore, data.Nlt);
                 Assert.NotNull(data.Dir);
                 Assert.Equal(this._bucket, data.Buc);
                 Assert.NotNull(data.Key);
@@ -140,7 +140,7 @@ namespace Amazon.Lambda.Tools.Test
 
 
                     var data = JsonMapper.ToObject<LayerDescriptionManifest>(getResponse.Description);
-                    Assert.Equal(LayerDescriptionManifest.ManifestType.RuntimePackageStore, data.Type);
+                    Assert.Equal(LayerDescriptionManifest.ManifestType.RuntimePackageStore, data.Nlt);
                     Assert.NotNull(data.Dir);
                     Assert.Equal(this._bucket, data.Buc);
                     Assert.NotNull(data.Key);
