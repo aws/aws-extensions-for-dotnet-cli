@@ -83,8 +83,6 @@ namespace Amazon.Lambda.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
-            EnsureInProjectDirectory();
-
             var layerName = this.GetStringValueOrDefault(this.LayerName, LambdaDefinedCommandOptions.ARGUMENT_LAYER_NAME, true);
 
             var s3Bucket = this.GetStringValueOrDefault(this.S3Bucket, LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET, true);
