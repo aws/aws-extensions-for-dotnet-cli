@@ -31,32 +31,18 @@ using Xunit.Abstractions;
 
 namespace Amazon.Lambda.Tools.Test
 {
-    public class LayerTests : IDisposable
+    public class LayerTests : IClassFixture<LayerTestsFixture>
     {
         private readonly ITestOutputHelper _testOutputHelper;
 
-        string _bucket;
+        static string _singleLayerFunctionPath = Path.GetFullPath(Path.GetDirectoryName(typeof(LayerTests).GetTypeInfo().Assembly.Location) + "../../../../../../testapps/TestLayerExample");
 
-        IAmazonS3 _s3Client;
-        IAmazonLambda _lambdaClient;
+        LayerTestsFixture _testFixture;
 
-        string _singleLayerFunctionPath = Path.GetFullPath(Path.GetDirectoryName(typeof(LayerTests).GetTypeInfo().Assembly.Location) + "../../../../../../testapps/TestLayerExample");
-
-
-        public LayerTests(ITestOutputHelper testOutputHelper)
+        public LayerTests(LayerTestsFixture testFixture, ITestOutputHelper testOutputHelper)
         {
+            this._testFixture = testFixture;
             this._testOutputHelper = testOutputHelper;
-
-            this._s3Client = new AmazonS3Client(RegionEndpoint.USEast1);
-            this._lambdaClient = new AmazonLambdaClient(RegionEndpoint.USEast1);
-
-            this._bucket = "dotnet-lambda-layer-tests-" + DateTime.Now.Ticks;
-
-            Task.Run(async () =>
-            {
-                await _s3Client.PutBucketAsync(this._bucket);
-            }).Wait();
-
         }
 
 
@@ -68,7 +54,7 @@ namespace Amazon.Lambda.Tools.Test
             var command = new PublishLayerCommand(logger, _singleLayerFunctionPath, new string[0]);
             command.Region = "us-east-1";
             command.TargetFramework = "netcoreapp2.1";
-            command.S3Bucket = this._bucket;
+            command.S3Bucket = this._testFixture.Bucket;
             command.DisableInteractive = true;
             command.LayerName = "DotnetTest-CreateLayer";
             command.LayerType = LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE;
@@ -79,18 +65,18 @@ namespace Amazon.Lambda.Tools.Test
                 Assert.True(await command.ExecuteAsync());
                 Assert.NotNull(command.NewLayerVersionArn);
 
-                var getResponse = await this._lambdaClient.GetLayerVersionAsync(new GetLayerVersionRequest {LayerName = command.NewLayerArn, VersionNumber = command.NewLayerVersionNumber });
+                var getResponse = await this._testFixture.LambdaClient.GetLayerVersionAsync(new GetLayerVersionRequest {LayerName = command.NewLayerArn, VersionNumber = command.NewLayerVersionNumber });
                 Assert.NotNull(getResponse.Description);
 
                 
                 var data = JsonMapper.ToObject<LayerDescriptionManifest>(getResponse.Description);
                 Assert.Equal(LayerDescriptionManifest.ManifestType.RuntimePackageStore, data.Nlt);
                 Assert.NotNull(data.Dir);
-                Assert.Equal(this._bucket, data.Buc);
+                Assert.Equal(this._testFixture.Bucket, data.Buc);
                 Assert.NotNull(data.Key);
 
 
-                using (var getManifestResponse = await this._s3Client.GetObjectAsync(data.Buc, data.Key))
+                using (var getManifestResponse = await this._testFixture.S3Client.GetObjectAsync(data.Buc, data.Key))
                 using(var reader = new StreamReader(getManifestResponse.ResponseStream))
                 {
                     var xml = await reader.ReadToEndAsync();
@@ -100,7 +86,7 @@ namespace Amazon.Lambda.Tools.Test
             }
             finally
             {
-                await this._lambdaClient.DeleteLayerVersionAsync(new DeleteLayerVersionRequest { LayerName = command.NewLayerArn, VersionNumber = command.NewLayerVersionNumber });
+                await this._testFixture.LambdaClient.DeleteLayerVersionAsync(new DeleteLayerVersionRequest { LayerName = command.NewLayerArn, VersionNumber = command.NewLayerVersionNumber });
             }
 
         }
@@ -115,7 +101,7 @@ namespace Amazon.Lambda.Tools.Test
             var command = new PublishLayerCommand(logger, fullPath, new string[] { "--enable-package-optimization", "true"});
             command.Region = "us-east-1";
             command.TargetFramework = "netcoreapp2.1";
-            command.S3Bucket = this._bucket;
+            command.S3Bucket = this._testFixture.Bucket;
             command.DisableInteractive = true;
             command.LayerName = "DotnetTest-AttemptToCreateAnOptmizedLayer";
             command.LayerType = LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE;
@@ -135,18 +121,18 @@ namespace Amazon.Lambda.Tools.Test
                     Assert.True(success);
                     Assert.NotNull(command.NewLayerVersionArn);
 
-                    var getResponse = await this._lambdaClient.GetLayerVersionAsync(new GetLayerVersionRequest { LayerName = command.NewLayerArn, VersionNumber = command.NewLayerVersionNumber });
+                    var getResponse = await this._testFixture.LambdaClient.GetLayerVersionAsync(new GetLayerVersionRequest { LayerName = command.NewLayerArn, VersionNumber = command.NewLayerVersionNumber });
                     Assert.NotNull(getResponse.Description);
 
 
                     var data = JsonMapper.ToObject<LayerDescriptionManifest>(getResponse.Description);
                     Assert.Equal(LayerDescriptionManifest.ManifestType.RuntimePackageStore, data.Nlt);
                     Assert.NotNull(data.Dir);
-                    Assert.Equal(this._bucket, data.Buc);
+                    Assert.Equal(this._testFixture.Bucket, data.Buc);
                     Assert.NotNull(data.Key);
 
 
-                    using (var getManifestResponse = await this._s3Client.GetObjectAsync(data.Buc, data.Key))
+                    using (var getManifestResponse = await this._testFixture.S3Client.GetObjectAsync(data.Buc, data.Key))
                     using (var reader = new StreamReader(getManifestResponse.ResponseStream))
                     {
                         var xml = await reader.ReadToEndAsync();
@@ -159,18 +145,20 @@ namespace Amazon.Lambda.Tools.Test
             {
                 if(success)
                 {
-                    await this._lambdaClient.DeleteLayerVersionAsync(new DeleteLayerVersionRequest { LayerName = command.NewLayerArn, VersionNumber = command.NewLayerVersionNumber });
+                    await this._testFixture.LambdaClient.DeleteLayerVersionAsync(new DeleteLayerVersionRequest { LayerName = command.NewLayerArn, VersionNumber = command.NewLayerVersionNumber });
                 }
             }
 
         }
 
-        [Fact]
-        public async Task DeployFunctionWithLayer()
+        [Theory]
+        [InlineData("")]
+        [InlineData("nuget-store")]
+        public async Task DeployFunctionWithLayer(string optDirectory)
         {
             var logger = new TestToolLogger(_testOutputHelper);
 
-            var publishLayerCommand = await PublishLayerAsync();
+            var publishLayerCommand = await PublishLayerAsync(optDirectory);
 
             try
             {
@@ -198,10 +186,16 @@ namespace Amazon.Lambda.Tools.Test
                     await ValidateInvokeAsync(deployCommand.FunctionName, "\"TEST\"", "\"Amazon.S3.Model.ListBucketsRequest\"");
 
 
-                    var getConfigResponse = await this._lambdaClient.GetFunctionConfigurationAsync(new GetFunctionConfigurationRequest { FunctionName = deployCommand.FunctionName });
+                    var getConfigResponse = await this._testFixture.LambdaClient.GetFunctionConfigurationAsync(new GetFunctionConfigurationRequest { FunctionName = deployCommand.FunctionName });
                     Assert.NotNull(getConfigResponse.Layers.FirstOrDefault(x => string.Equals(x.Arn, publishLayerCommand.NewLayerVersionArn)));
+                    
+                    if(!string.IsNullOrEmpty(optDirectory))
+                    {
+                        var dotnetSharedSource = getConfigResponse.Environment.Variables[LambdaConstants.ENV_DOTNET_SHARED_STORE];
+                        Assert.Equal($"/opt/{optDirectory}/", dotnetSharedSource);
+                    }
 
-                    var getCodeResponse = await this._lambdaClient.GetFunctionAsync(deployCommand.FunctionName);
+                    var getCodeResponse = await this._testFixture.LambdaClient.GetFunctionAsync(deployCommand.FunctionName);
                     using (var client = new HttpClient())
                     {
                         var data = await client.GetByteArrayAsync(getCodeResponse.Code.Location);
@@ -212,7 +206,7 @@ namespace Amazon.Lambda.Tools.Test
                         Assert.Null(zipArchive.GetEntry("AWSSDK.S3.dll"));
                     }
 
-                    var redeployLayerCommand = await PublishLayerAsync();
+                    var redeployLayerCommand = await PublishLayerAsync(optDirectory);
 
                     var redeployFunctionCommand = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), _singleLayerFunctionPath, new string[0]);
                     redeployFunctionCommand.FunctionName = deployCommand.FunctionName;
@@ -236,18 +230,18 @@ namespace Amazon.Lambda.Tools.Test
                 }
                 finally
                 {
-                    await this._lambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = deployCommand.FunctionName });
+                    await this._testFixture.LambdaClient.DeleteFunctionAsync(new DeleteFunctionRequest { FunctionName = deployCommand.FunctionName });
                 }
             }
             finally
             {
-                await this._lambdaClient.DeleteLayerVersionAsync(new DeleteLayerVersionRequest { LayerName = publishLayerCommand.NewLayerArn, VersionNumber = publishLayerCommand.NewLayerVersionNumber });
+                await this._testFixture.LambdaClient.DeleteLayerVersionAsync(new DeleteLayerVersionRequest { LayerName = publishLayerCommand.NewLayerArn, VersionNumber = publishLayerCommand.NewLayerVersionNumber });
             }
         }
 
         private async Task ValidateInvokeAsync(string functionName, string payload, string expectedResult)
         {
-            var invokeResponse = await this._lambdaClient.InvokeAsync(new InvokeRequest
+            var invokeResponse = await this._testFixture.LambdaClient.InvokeAsync(new InvokeRequest
             {
                 InvocationType = InvocationType.RequestResponse,
                 FunctionName = functionName,
@@ -259,17 +253,18 @@ namespace Amazon.Lambda.Tools.Test
             Assert.Equal(expectedResult, content);
         }
 
-        private async Task<PublishLayerCommand> PublishLayerAsync()
+        private async Task<PublishLayerCommand> PublishLayerAsync(string optDirectory)
         {
             var logger = new TestToolLogger(_testOutputHelper);
             
             var publishLayerCommand = new PublishLayerCommand(logger, _singleLayerFunctionPath, new string[0]);
             publishLayerCommand.Region = "us-east-1";
             publishLayerCommand.TargetFramework = "netcoreapp2.1";
-            publishLayerCommand.S3Bucket = this._bucket;
+            publishLayerCommand.S3Bucket = this._testFixture.Bucket;
             publishLayerCommand.DisableInteractive = true;
             publishLayerCommand.LayerName = "Dotnet-IntegTest-";
             publishLayerCommand.LayerType = LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE;
+            publishLayerCommand.OptDirectory = optDirectory;
             publishLayerCommand.PackageManifest = _singleLayerFunctionPath;
 
             if(!(await publishLayerCommand.ExecuteAsync()))
@@ -279,9 +274,27 @@ namespace Amazon.Lambda.Tools.Test
 
             return publishLayerCommand;
         }
+    }
 
+    public class LayerTestsFixture : IDisposable
+    {
+        public string Bucket { get; set; }
+        public IAmazonS3 S3Client { get; set; }
+        public IAmazonLambda LambdaClient { get; set; }
 
-        #region IDisposable Support
+        public LayerTestsFixture()
+        {
+            this.S3Client = new AmazonS3Client(RegionEndpoint.USEast1);
+            this.LambdaClient = new AmazonLambdaClient(RegionEndpoint.USEast1);
+
+            this.Bucket = "dotnet-lambda-layer-tests-" + DateTime.Now.Ticks;
+
+            Task.Run(async () =>
+            {
+                await S3Client.PutBucketAsync(this.Bucket);
+            }).Wait();
+        }
+
         private bool disposedValue;
         protected virtual void Dispose(bool disposing)
         {
@@ -289,9 +302,9 @@ namespace Amazon.Lambda.Tools.Test
             {
                 if (disposing)
                 {
-                    AmazonS3Util.DeleteS3BucketWithObjectsAsync(this._s3Client, this._bucket).Wait();
+                    AmazonS3Util.DeleteS3BucketWithObjectsAsync(this.S3Client, this.Bucket).Wait();
 
-                    this._s3Client.Dispose();
+                    this.S3Client.Dispose();
                 }
 
                 disposedValue = true;
@@ -302,6 +315,5 @@ namespace Amazon.Lambda.Tools.Test
         {
             Dispose(true);
         }
-        #endregion
     }
 }
