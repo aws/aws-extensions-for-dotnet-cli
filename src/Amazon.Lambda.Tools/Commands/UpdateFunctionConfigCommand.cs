@@ -33,6 +33,7 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME,
+            LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TAGS,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SUBNETS,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SECURITY_GROUPS,
@@ -51,6 +52,7 @@ namespace Amazon.Lambda.Tools.Commands
         public int? MemorySize { get; set; }
         public string Role { get; set; }
         public int? Timeout { get; set; }
+        public string[] LayerVersionArns { get; set; }
         public string[] SubnetIds { get; set; }
         public string[] SecurityGroupIds { get; set; }
         public Runtime Runtime { get; set; }
@@ -102,6 +104,8 @@ namespace Amazon.Lambda.Tools.Commands
                 this.Timeout = tuple.Item2.IntValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME.Switch)) != null)
                 this.Runtime = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS.Switch)) != null)
+                this.LayerVersionArns = tuple.Item2.StringValues;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TAGS.Switch)) != null)
                 this.Tags = tuple.Item2.KeyValuePairs;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SUBNETS.Switch)) != null)
@@ -129,7 +133,11 @@ namespace Amazon.Lambda.Tools.Commands
                 this.Logger.WriteLine($"Could not find existing Lambda function {this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true)}");
                 return false;
             }
-            await UpdateConfigAsync(currentConfiguration);
+
+            var layerVersionArns = this.GetStringValuesOrDefault(this.LayerVersionArns, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS, false);
+            var layerPackageInfo = await LambdaUtilities.LoadLayerPackageInfos(this.Logger, this.LambdaClient, this.S3Client, layerVersionArns);
+
+            await UpdateConfigAsync(currentConfiguration, layerPackageInfo.GenerateDotnetSharedStoreValue());
 
             await ApplyTags(currentConfiguration.FunctionArn);
 
@@ -181,9 +189,9 @@ namespace Amazon.Lambda.Tools.Commands
             }
         }
 
-        protected async Task UpdateConfigAsync(GetFunctionConfigurationResponse existingConfiguration)
+        protected async Task UpdateConfigAsync(GetFunctionConfigurationResponse existingConfiguration, string dotnetSharedStoreValue)
         {
-            var request = CreateConfigurationRequestIfDifferent(existingConfiguration);
+            var request = CreateConfigurationRequestIfDifferent(existingConfiguration, dotnetSharedStoreValue);
             if (request != null)
             {
                 this.Logger.WriteLine($"Updating runtime configuration for function {this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true)}");
@@ -225,7 +233,7 @@ namespace Amazon.Lambda.Tools.Commands
         /// </summary>
         /// <param name="existingConfiguration"></param>
         /// <returns></returns>
-        private UpdateFunctionConfigurationRequest CreateConfigurationRequestIfDifferent(GetFunctionConfigurationResponse existingConfiguration)
+        private UpdateFunctionConfigurationRequest CreateConfigurationRequestIfDifferent(GetFunctionConfigurationResponse existingConfiguration, string dotnetSharedStoreValue)
         {
             bool different = false;
             var request = new UpdateFunctionConfigurationRequest
@@ -281,6 +289,13 @@ namespace Amazon.Lambda.Tools.Commands
             if (timeout.HasValue && timeout.Value != existingConfiguration.Timeout)
             {
                 request.Timeout = timeout.Value;
+                different = true;
+            }
+
+            var layerVersionArns = this.GetStringValuesOrDefault(this.LayerVersionArns, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS, false);
+            if(layerVersionArns != null && AreDifferent(layerVersionArns, existingConfiguration.Layers?.Select(x => x.Arn)))
+            {
+                request.Layers = layerVersionArns.ToList();
                 different = true;
             }
 
@@ -358,6 +373,18 @@ namespace Amazon.Lambda.Tools.Commands
             }
 
             var environmentVariables = GetEnvironmentVariables(existingConfiguration?.Environment?.Variables);
+
+            // If runtime package store layers were set, then set the environment variable to tell the .NET Core runtime
+            // to look for assemblies in the folder where the layer will be expanded. 
+            if(!string.IsNullOrEmpty(dotnetSharedStoreValue))
+            {
+                if(environmentVariables == null)
+                {
+                    environmentVariables = new Dictionary<string, string>();
+                }
+                environmentVariables[LambdaConstants.ENV_DOTNET_SHARED_STORE] = dotnetSharedStoreValue;
+            }
+
             if (environmentVariables != null && AreDifferent(environmentVariables, existingConfiguration?.Environment?.Variables))
             {
                 request.Environment = new Model.Environment { Variables = environmentVariables };

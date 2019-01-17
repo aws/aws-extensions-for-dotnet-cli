@@ -22,39 +22,30 @@ using Amazon.SQS;
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 using Amazon.Common.DotNetCli.Tools;
-
+using Xunit.Abstractions;
 
 namespace Amazon.Lambda.Tools.Test
 {
     public class DeployTest : IDisposable
     {
-        const string LAMBDATOOL_TEST_ROLE = "lambdatools-test-role2";
-        IAmazonIdentityManagementService _iamCient;
+        private readonly ITestOutputHelper _testOutputHelper;
+
         string _roleArn;
         string _bucket;
 
         IAmazonS3 _s3Client;
 
-        public DeployTest()
+        public DeployTest(ITestOutputHelper testOutputHelper)
         {
-            this._iamCient = new AmazonIdentityManagementServiceClient();
+            this._testOutputHelper = testOutputHelper;
             this._s3Client = new AmazonS3Client(RegionEndpoint.USEast1);
 
             this._bucket = "dotnet-lambda-tests-" + DateTime.Now.Ticks;
+            this._roleArn = TestHelper.GetTestRoleArn();
 
             Task.Run(async () => 
             {
                 await _s3Client.PutBucketAsync(this._bucket);
-                try
-                {
-                    this._roleArn = (await this._iamCient.GetRoleAsync(new GetRoleRequest { RoleName = LAMBDATOOL_TEST_ROLE })).Role.Arn;
-                }
-                catch (NoSuchEntityException)
-                {
-                    // Role is not found so create a role with no permissions other then Lambda can assume the role. 
-                    // The role is deleted and reused in other runs of the test to make the test run faster.
-                    this._roleArn = RoleHelper.CreateRole(this._iamCient, LAMBDATOOL_TEST_ROLE, Constants.LAMBDA_ASSUME_ROLE_POLICY, "arn:aws:iam::aws:policy/PowerUserAccess");
-                }
             }).Wait();
 
         }
@@ -67,7 +58,7 @@ namespace Amazon.Lambda.Tools.Test
             var assembly = this.GetType().GetTypeInfo().Assembly;
 
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestFunction");
-            var command = new DeployFunctionCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+            var command = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
             command.FunctionName = "test-function-" + DateTime.Now.Ticks;
             command.Handler = "TestFunction::TestFunction.Function::ToUpper";
             command.Timeout = 10;
@@ -111,14 +102,14 @@ namespace Amazon.Lambda.Tools.Test
             string packageZip = Path.GetTempFileName() + ".zip";
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestFunction");
 
-            var packageCommand = new PackageCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+            var packageCommand = new PackageCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
             packageCommand.OutputPackageFileName = packageZip;
             packageCommand.Configuration = "Release";
             packageCommand.TargetFramework = "netcoreapp1.0";
 
             await packageCommand.ExecuteAsync();
 
-            var deployCommand = new DeployFunctionCommand(new ConsoleToolLogger(), Path.GetTempPath(), new string[0]);
+            var deployCommand = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), Path.GetTempPath(), new string[0]);
             deployCommand.FunctionName = "test-function-" + DateTime.Now.Ticks;
             deployCommand.Handler = "TestFunction::TestFunction.Function::ToUpper";
             deployCommand.Timeout = 10;
@@ -167,7 +158,7 @@ namespace Amazon.Lambda.Tools.Test
             var assembly = this.GetType().GetTypeInfo().Assembly;
 
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/ServerlessWithYamlFunction");
-            var command = new DeployServerlessCommand(new ConsoleToolLogger(), fullPath, new string[] { "--template-parameters", "Environment=whatever" });
+            var command = new DeployServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[] { "--template-parameters", "Environment=whatever" });
             command.StackName = "ServerlessYamlStackTest-" + DateTime.Now.Ticks;
             command.S3Bucket = this._bucket;
             command.WaitForStackToComplete = true;
@@ -180,7 +171,7 @@ namespace Amazon.Lambda.Tools.Test
                 Assert.True(created);
 
                 // Test if a redeployment happens with different template parameters it works.
-                var renameParameterCommand = new DeployServerlessCommand(new ConsoleToolLogger(), fullPath, new string[] { "--template-parameters", "EnvironmentRename=whatever" });
+                var renameParameterCommand = new DeployServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[] { "--template-parameters", "EnvironmentRename=whatever" });
                 renameParameterCommand.StackName = command.StackName;
                 renameParameterCommand.S3Bucket = this._bucket;
                 renameParameterCommand.WaitForStackToComplete = true;
@@ -195,7 +186,7 @@ namespace Amazon.Lambda.Tools.Test
             {
                 if (created)
                 {
-                    var deleteCommand = new DeleteServerlessCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+                    var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
                     deleteCommand.StackName = command.StackName;
                     await deleteCommand.ExecuteAsync();
                 }
@@ -215,7 +206,7 @@ namespace Amazon.Lambda.Tools.Test
                 var assembly = this.GetType().GetTypeInfo().Assembly;
 
                 var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestFunction");
-                var initialDeployCommand = new DeployFunctionCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+                var initialDeployCommand = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
                 initialDeployCommand.FunctionName = "test-function-" + DateTime.Now.Ticks;
                 initialDeployCommand.Handler = "TestFunction::TestFunction.Function::ToUpper";
                 initialDeployCommand.Timeout = 10;
@@ -236,7 +227,7 @@ namespace Amazon.Lambda.Tools.Test
                     var funcConfig = await initialDeployCommand.LambdaClient.GetFunctionConfigurationAsync(initialDeployCommand.FunctionName);
                     Assert.Equal(queueArn, funcConfig.DeadLetterConfig?.TargetArn);
 
-                    var redeployCommand = new DeployFunctionCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+                    var redeployCommand = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
                     redeployCommand.FunctionName = initialDeployCommand.FunctionName;
                     redeployCommand.Configuration = "Release";
                     redeployCommand.TargetFramework = "netcoreapp1.0";
@@ -249,7 +240,7 @@ namespace Amazon.Lambda.Tools.Test
                     funcConfig = await initialDeployCommand.LambdaClient.GetFunctionConfigurationAsync(initialDeployCommand.FunctionName);
                     Assert.Equal(queueArn, funcConfig.DeadLetterConfig?.TargetArn);
 
-                    redeployCommand = new DeployFunctionCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+                    redeployCommand = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
                     redeployCommand.FunctionName = initialDeployCommand.FunctionName;
                     redeployCommand.Configuration = "Release";
                     redeployCommand.TargetFramework = "netcoreapp1.0";
@@ -323,7 +314,7 @@ namespace Amazon.Lambda.Tools.Test
                     {
                         try
                         {
-                            var deleteCommand = new DeleteServerlessCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+                            var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
                             deleteCommand.StackName = command.StackName;
                             await deleteCommand.ExecuteAsync();
                         }
@@ -360,7 +351,7 @@ namespace Amazon.Lambda.Tools.Test
             var assembly = this.GetType().GetTypeInfo().Assembly;
 
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/MPDeployServerless/CurrentDirectoryTest");
-            var command = new DeployServerlessCommand(new ConsoleToolLogger(), fullPath, new string[] { });
+            var command = new DeployServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[] { });
             command.StackName = "DeployMultiProject-" + DateTime.Now.Ticks;
             command.S3Bucket = this._bucket;
             command.WaitForStackToComplete = true;
@@ -390,7 +381,7 @@ namespace Amazon.Lambda.Tools.Test
             {
                 if (created)
                 {
-                    var deleteCommand = new DeleteServerlessCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+                    var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
                     deleteCommand.StackName = command.StackName;
                     await deleteCommand.ExecuteAsync();
                 }
@@ -461,7 +452,7 @@ namespace Amazon.Lambda.Tools.Test
             {
                 if (created)
                 {
-                    var deleteCommand = new DeleteServerlessCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+                    var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
                     deleteCommand.StackName = command.StackName;
                     deleteCommand.Region = command.Region;
                     deleteCommand.DisableInteractive = true;
@@ -491,8 +482,6 @@ namespace Amazon.Lambda.Tools.Test
                 if (disposing)
                 {
                     AmazonS3Util.DeleteS3BucketWithObjectsAsync(this._s3Client, this._bucket).Wait();
-
-                    this._iamCient.Dispose();
                     this._s3Client.Dispose();
                 }
 

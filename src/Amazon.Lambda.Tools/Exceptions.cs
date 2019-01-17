@@ -41,6 +41,13 @@ namespace Amazon.Lambda.Tools
             LambdaUpdateFunctionConfiguration,
             LambdaPublishFunction,
             LambdaTaggingFunction,
+            LambdaPublishLayerVersion,
+
+            UnknownLayerType,
+            StoreCommandError,
+            FailedToFindArtifactZip,
+            LayerPackageManifestNotFound,
+            UnsupportedOptimizationPlatform,
 
             ServerlessTemplateNotFound,
             ServerlessTemplateParseError,

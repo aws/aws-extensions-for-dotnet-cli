@@ -26,7 +26,9 @@ namespace Amazon.Lambda.Tools
                     new CommandInfo<ListServerlessCommand>(ListServerlessCommand.COMMAND_NAME, ListServerlessCommand.COMMAND_DESCRIPTION, ListServerlessCommand.ListCommandOptions),
                     new CommandInfo<DeleteServerlessCommand>(DeleteServerlessCommand.COMMAND_NAME, DeleteServerlessCommand.COMMAND_DESCRIPTION, DeleteServerlessCommand.DeleteCommandOptions, DeleteServerlessCommand.COMMAND_ARGUMENTS),
 
-                    
+                    new GroupHeaderInfo("Commands to publish and manage AWS Lambda Layers:"),
+                    new CommandInfo<PublishLayerCommand>(PublishLayerCommand.COMMAND_NAME, PublishLayerCommand.COMMAND_DESCRIPTION, PublishLayerCommand.PublishLayerCommandOptions, PublishLayerCommand.COMMAND_ARGUMENTS),
+
                     new GroupHeaderInfo("Other Commands:"),
                     new CommandInfo<PackageCommand>(PackageCommand.COMMAND_NAME, PackageCommand.COMMAND_DESCRIPTION, PackageCommand.PackageCommandOptions, PackageCommand.COMMAND_ARGUMENTS),
                     new CommandInfo<PackageCICommand>(PackageCICommand.COMMAND_NAME, PackageCICommand.COMMAND_SYNOPSIS, PackageCICommand.PackageCICommandOptions)

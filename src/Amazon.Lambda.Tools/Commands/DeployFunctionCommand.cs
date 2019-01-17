@@ -39,6 +39,7 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME,
+            LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TAGS,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SUBNETS,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SECURITY_GROUPS,
@@ -120,6 +121,10 @@ namespace Amazon.Lambda.Tools.Commands
             string projectLocation = this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false);
             string zipArchivePath = null;
             string package = this.GetStringValueOrDefault(this.Package, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE, false);
+
+            var layerVersionArns = this.GetStringValuesOrDefault(this.LayerVersionArns, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS, false);
+            var layerPackageInfo = await LambdaUtilities.LoadLayerPackageInfos(this.Logger, this.LambdaClient, this.S3Client, layerVersionArns);
+
             if(string.IsNullOrEmpty(package))
             {
                 EnsureInProjectDirectory();
@@ -134,7 +139,7 @@ namespace Amazon.Lambda.Tools.Commands
 
                 bool disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
                 string publishLocation;
-                LambdaPackager.CreateApplicationBundle(this.DefaultConfig, this.Logger, this.WorkingDirectory, projectLocation, configuration, targetFramework, msbuildParameters, disableVersionCheck, out publishLocation, ref zipArchivePath);
+                LambdaPackager.CreateApplicationBundle(this.DefaultConfig, this.Logger, this.WorkingDirectory, projectLocation, configuration, targetFramework, msbuildParameters, disableVersionCheck, layerPackageInfo, out publishLocation, ref zipArchivePath);
                 if (string.IsNullOrEmpty(zipArchivePath))
                     return false;
             }
@@ -177,6 +182,7 @@ namespace Amazon.Lambda.Tools.Commands
                             Constants.LAMBDA_PRINCIPAL, LambdaConstants.AWS_LAMBDA_MANAGED_POLICY_PREFIX, 
                             LambdaConstants.KNOWN_MANAGED_POLICY_DESCRIPTIONS, true),
                         
+                        Layers = layerVersionArns?.ToList(),
                         Handler = this.GetStringValueOrDefault(this.Handler, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER, true),
                         Publish = this.GetBoolValueOrDefault(this.Publish, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_PUBLISH, false).GetValueOrDefault(),
                         MemorySize = this.GetIntValueOrDefault(this.MemorySize, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_MEMORY_SIZE, true).GetValueOrDefault(),
@@ -191,6 +197,16 @@ namespace Amazon.Lambda.Tools.Commands
                     };
 
                     var environmentVariables = GetEnvironmentVariables(null);
+
+                    var dotnetShareStoreVal = layerPackageInfo.GenerateDotnetSharedStoreValue();
+                    if(!string.IsNullOrEmpty(dotnetShareStoreVal))
+                    {
+                        if(environmentVariables == null)
+                        {
+                            environmentVariables = new Dictionary<string, string>();
+                        }
+                        environmentVariables[LambdaConstants.ENV_DOTNET_SHARED_STORE] = dotnetShareStoreVal;
+                    }
 
                     if (environmentVariables != null && environmentVariables.Count > 0)
                     {
@@ -274,7 +290,7 @@ namespace Amazon.Lambda.Tools.Commands
                         throw new LambdaToolsException($"Error updating code for Lambda function: {e.Message}", LambdaToolsException.LambdaErrorCode.LambdaUpdateFunctionCode, e);
                     }
 
-                    await base.UpdateConfigAsync(currentConfiguration);
+                    await base.UpdateConfigAsync(currentConfiguration, layerPackageInfo.GenerateDotnetSharedStoreValue());
 
                     await base.ApplyTags(currentConfiguration.FunctionArn);
 
@@ -315,6 +331,7 @@ namespace Amazon.Lambda.Tools.Commands
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE.ConfigFileKey, this.GetStringValueOrDefault(this.Role, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT.ConfigFileKey, this.GetIntValueOrDefault(this.Timeout, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME.ConfigFileKey, this.GetStringValueOrDefault(this.Runtime, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS.ConfigFileKey, LambdaToolsDefaults.FormatCommaDelimitedList(this.GetStringValuesOrDefault(this.LayerVersionArns, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS, false)));
 
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SUBNETS.ConfigFileKey, LambdaToolsDefaults.FormatCommaDelimitedList(this.GetStringValuesOrDefault(this.SubnetIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SUBNETS, false)));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SECURITY_GROUPS.ConfigFileKey, LambdaToolsDefaults.FormatCommaDelimitedList(this.GetStringValuesOrDefault(this.SecurityGroupIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SECURITY_GROUPS, false)));

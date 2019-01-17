@@ -11,6 +11,10 @@ namespace Amazon.Lambda.Tools
 
     public static class LambdaConstants
     {
+        public const string ENV_DOTNET_SHARED_STORE = "DOTNET_SHARED_STORE";
+        public const string LAYER_TYPE_RUNTIME_PACKAGE_STORE = "runtime-package-store";
+        public const string LAYER_TYPE_ALLOWED_VALUES = LAYER_TYPE_RUNTIME_PACKAGE_STORE;
+
         public const string ENV_DOTNET_LAMBDA_CLI_LOCAL_MANIFEST_OVERRIDE = "DOTNET_LAMBDA_CLI_LOCAL_MANIFEST_OVERRIDE";
 
         public const string IAM_ARN_PREFIX = "arn:aws:iam::";

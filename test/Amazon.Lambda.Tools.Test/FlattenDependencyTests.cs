@@ -8,11 +8,19 @@ using Amazon.Lambda.Tools.Commands;
 using System.IO;
 using System.Runtime.InteropServices;
 using Amazon.Common.DotNetCli.Tools;
+using Xunit.Abstractions;
 
 namespace Amazon.Lambda.Tools.Test
 {
     public class FlattenDependencyTests
     {
+        private readonly ITestOutputHelper _testOutputHelper;
+
+        public FlattenDependencyTests(ITestOutputHelper testOutputHelper)
+        {
+            this._testOutputHelper = testOutputHelper;
+        }
+
         private string GetTestProjectPath(string project)
         {
             var assembly = this.GetType().GetTypeInfo().Assembly;
@@ -24,7 +32,7 @@ namespace Amazon.Lambda.Tools.Test
         public async Task NpgsqlTest()
         {
             var fullPath = GetTestProjectPath("NpgsqlExample");
-            var command = new PackageCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+            var command = new PackageCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
             command.DisableInteractive = true;
             command.Configuration = "Release";
             command.TargetFramework = "netcoreapp1.0";
@@ -55,7 +63,7 @@ namespace Amazon.Lambda.Tools.Test
         public async Task SqlClientTest()
         {
             var fullPath = GetTestProjectPath("SQLServerClientExample");
-            var command = new PackageCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+            var command = new PackageCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
             command.DisableInteractive = true;
             command.Configuration = "Release";
             command.TargetFramework = "netcoreapp1.0";
@@ -89,7 +97,7 @@ namespace Amazon.Lambda.Tools.Test
         public async Task NativeDependencyExample()
         {
             var fullPath = GetTestProjectPath("NativeDependencyExample");
-            var command = new PackageCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+            var command = new PackageCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
             command.DisableInteractive = true;
             command.Configuration = "Release";
             command.TargetFramework = "netcoreapp1.0";
@@ -120,7 +128,7 @@ namespace Amazon.Lambda.Tools.Test
         public async Task NativeDependency2Example()
         {
             var fullPath = GetTestProjectPath("NativeDependencyExample2");
-            var command = new PackageCommand(new ConsoleToolLogger(), fullPath, new string[0]);
+            var command = new PackageCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
             command.DisableInteractive = true;
             command.Configuration = "Release";
             command.TargetFramework = "netcoreapp2.1";
