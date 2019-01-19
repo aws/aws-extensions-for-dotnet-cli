@@ -7,6 +7,15 @@ namespace Amazon.ElasticBeanstalk.Tools
 {
     public class EBDefinedCommandOptions
     {
+        public static readonly CommandOption ARGUMENT_EB_PACKAGE =
+            new CommandOption
+            {
+                Name = "Package",
+                ShortSwitch = "-pac",
+                Switch = "--package",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "Application package to use for deployment, skips building the project"
+            };
         public static readonly CommandOption ARGUMENT_EB_APPLICATION =
             new CommandOption
             {
