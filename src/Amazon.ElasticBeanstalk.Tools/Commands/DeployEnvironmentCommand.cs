@@ -134,7 +134,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 throw new ElasticBeanstalkExceptions("Error executing \"dotnet publish\"", ElasticBeanstalkExceptions.CommonErrorCode.DotnetPublishFailed);
             }
 
-            SetupAWSDeploymentManifest(publishLocation);
+            EBUtilities.SetupAWSDeploymentManifest(this.Logger, this, this.DeployEnvironmentOptions, publishLocation);
 
             var zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, new DirectoryInfo(projectLocation).Name + "-" + DateTime.Now.Ticks + ".zip");
 
@@ -503,77 +503,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 return DateTime.Now;
 
             return response.Events[0].EventDate;
-        }
-
-        private void SetupAWSDeploymentManifest(string publishLocation)
-        {
-            var iisAppPath = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.UrlPath, EBDefinedCommandOptions.ARGUMENT_APP_PATH, false) ?? "/";
-            var iisWebSite = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.IISWebSite, EBDefinedCommandOptions.ARGUMENT_IIS_WEBSITE, false) ?? "Default Web Site";
-
-
-            var pathToManifest = Path.Combine(publishLocation, "aws-windows-deployment-manifest.json");
-            string manifest;
-            if (File.Exists(pathToManifest))
-            {
-                this.Logger?.WriteLine("Updating existing deployment manifest");
-
-                Func<string, JsonData, JsonData> getOrCreateNode = (name, node) =>
-                {
-                    JsonData child = node[name] as JsonData;
-                    if (child == null)
-                    {
-                        child = new JsonData();
-                        node[name] = child;
-                    }
-                    return child;
-                };
-
-                JsonData root = JsonMapper.ToObject(File.ReadAllText(pathToManifest));
-                if (root["manifestVersion"] == null || !root["manifestVersion"].IsInt)
-                {
-                    root["manifestVersion"] = 1;
-                }
-
-                JsonData deploymentNode = getOrCreateNode("deployments", root);
-
-                JsonData aspNetCoreWebNode = getOrCreateNode("aspNetCoreWeb", deploymentNode);
-
-                JsonData appNode;
-                if (aspNetCoreWebNode.GetJsonType() == JsonType.None || aspNetCoreWebNode.Count == 0)
-                {
-                    appNode = new JsonData();
-                    aspNetCoreWebNode.Add(appNode);
-                }
-                else
-                    appNode = aspNetCoreWebNode[0];
-
-
-                if (appNode["name"] == null || !appNode["name"].IsString || string.IsNullOrEmpty((string)appNode["name"]))
-                {
-                    appNode["name"] = "app";
-                }
-
-                JsonData parametersNode = getOrCreateNode("parameters", appNode);
-                parametersNode["appBundle"] = ".";
-                parametersNode["iisPath"] = iisAppPath;
-                parametersNode["iisWebSite"] = iisWebSite;
-
-                manifest = root.ToJson();
-            }
-            else
-            {
-                this.Logger?.WriteLine("Creating deployment manifest");
-
-                manifest = EBConstants.DEFAULT_MANIFEST.Replace("{iisPath}", iisAppPath).Replace("{iisWebSite}", iisWebSite);
-
-                if (File.Exists(pathToManifest))
-                    File.Delete(pathToManifest);
-            }
-
-            this.Logger?.WriteLine("\tIIS App Path: " + iisAppPath);
-            this.Logger?.WriteLine("\tIIS Web Site: " + iisWebSite);
-
-            File.WriteAllText(pathToManifest, manifest);
         }
 
         private async Task<S3Location> UploadDeploymentPackageAsync(string application, string versionLabel, string deploymentPackage)
