@@ -13,11 +13,37 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using Amazon.Util;
+using System.Text.RegularExpressions;
 
 namespace Amazon.Common.DotNetCli.Tools
 {
     public static class Utilities
     {
+        /// <summary>
+        /// Compiled Regex for {VARIABLE} token searches
+        /// </summary>
+        private readonly static Regex EnvironmentVaraibleTokens = new Regex(@"\{.*?\}", RegexOptions.Compiled);
+
+        /// <summary>
+        /// Replaces {VARIABLE} tokens with environment variables
+        /// </summary>
+        /// <param name="original">original string</param>
+        /// <returns>string with environment variable replacements</returns>
+        public static string ReplaceEnvironmentVariables(string original)
+        {
+            MatchCollection matches = EnvironmentVaraibleTokens.Matches(original);
+
+            var modified = original;
+
+            foreach (Match m in matches)
+            {
+                var withoutBrackets = m.Value.Substring(1, m.Value.Length - 2);
+                var env = Environment.GetEnvironmentVariable(withoutBrackets);
+                modified = modified.Replace(m.Value, env);
+            }
+
+            return modified;
+        }
 
         public static string[] SplitByComma(this string str)
         {
