@@ -18,7 +18,8 @@ namespace Amazon.ElasticBeanstalk.Tools
             FailedToUpdateTags,
             FailedToDeleteEnvironment,
             FailedToUpdateEnvironment,
-            FailedToCreateEnvironment
+            FailedToCreateEnvironment,
+            InvalidPackage,
         }
 
         public ElasticBeanstalkExceptions(string message, EBCode code) : base(message, code.ToString(), null)
