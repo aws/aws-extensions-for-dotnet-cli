@@ -98,21 +98,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                     }
                 }
 
-                if (!doesApplicationExist)
-                {
-                    try
-                    {
-                        this.Logger?.WriteLine("Creating new Elastic Beanstalk Application");
-                        await this.EBClient.CreateApplicationAsync(new CreateApplicationRequest
-                        {
-                            ApplicationName = application
-                        });
-                    }
-                    catch (Exception e)
-                    {
-                        throw new ElasticBeanstalkExceptions("Error creating Elastic Beanstalk application: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedCreateApplication);
-                    }
-                }
+                await CreateEBApplicationIfNotExist(application, doesApplicationExist);
 
                 var dotnetCli = new DotNetCLIWrapper(this.Logger, projectLocation);
 
@@ -136,6 +122,8 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             }
             else
             {
+                await CreateEBApplicationIfNotExist(application, doesApplicationExist);
+
                 if (!File.Exists(package))
                     throw new ElasticBeanstalkExceptions($"Package {package} does not exist", ElasticBeanstalkExceptions.EBCode.InvalidPackage);
                 if (!string.Equals(Path.GetExtension(package), ".zip", StringComparison.OrdinalIgnoreCase))
@@ -223,6 +211,25 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             }
 
             return true;
+        }
+
+        private async Task CreateEBApplicationIfNotExist(string application, bool doesApplicationExist)
+        {
+            if (!doesApplicationExist)
+            {
+                try
+                {
+                    this.Logger?.WriteLine("Creating new Elastic Beanstalk Application");
+                    await this.EBClient.CreateApplicationAsync(new CreateApplicationRequest
+                    {
+                        ApplicationName = application
+                    });
+                }
+                catch (Exception e)
+                {
+                    throw new ElasticBeanstalkExceptions("Error creating Elastic Beanstalk application: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedCreateApplication);
+                }
+            }
         }
 
         private List<Tag> ConvertToTagsCollection()
