@@ -25,6 +25,8 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             EBDefinedCommandOptions.ARGUMENT_IIS_WEBSITE,
         });
 
+        public string Package { get; set; }
+
         public DeployEnvironmentProperties DeployEnvironmentOptions { get; } = new DeployEnvironmentProperties();
 
         public CreatePackageCommand(IToolLogger logger, string workingDirectory, string[] args)
@@ -78,7 +80,17 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
             EBUtilities.SetupAWSDeploymentManifest(this.Logger, this, this.DeployEnvironmentOptions, publishLocation);
 
-            var zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, new DirectoryInfo(projectLocation).Name + "-" + DateTime.Now.Ticks + ".zip");
+            string package = this.GetStringValueOrDefault(this.Package, EBDefinedCommandOptions.ARGUMENT_EB_PACKAGE, false);
+            string zipArchivePath  = null;
+
+            if (!string.IsNullOrWhiteSpace(package))
+            {
+                zipArchivePath = package;
+            }
+            else
+            {
+                zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, new DirectoryInfo(projectLocation).Name + "-" + DateTime.Now.Ticks + ".zip");
+            }
 
             this.Logger?.WriteLine("Zipping up publish folder");
             Utilities.ZipDirectory(this.Logger, publishLocation, zipArchivePath);
