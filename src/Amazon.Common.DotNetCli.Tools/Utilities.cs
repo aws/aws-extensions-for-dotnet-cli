@@ -22,7 +22,7 @@ namespace Amazon.Common.DotNetCli.Tools
         /// <summary>
         /// Compiled Regex for {VARIABLE} token searches
         /// </summary>
-        private readonly static Regex EnvironmentVaraibleTokens = new Regex(@"\{.*?\}", RegexOptions.Compiled);
+        private readonly static Regex EnvironmentVariableTokens = new Regex(@"\{.*?\}", RegexOptions.Compiled);
 
         /// <summary>
         /// Replaces {VARIABLE} tokens with environment variables
@@ -31,7 +31,7 @@ namespace Amazon.Common.DotNetCli.Tools
         /// <returns>string with environment variable replacements</returns>
         public static string ReplaceEnvironmentVariables(string original)
         {
-            MatchCollection matches = EnvironmentVaraibleTokens.Matches(original);
+            MatchCollection matches = EnvironmentVariableTokens.Matches(original);
 
             var modified = original;
 
