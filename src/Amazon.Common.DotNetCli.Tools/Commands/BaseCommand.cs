@@ -286,7 +286,9 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             else if (!string.IsNullOrEmpty(DefaultConfig[option.Switch] as string))
             {
                 var configDefault = DefaultConfig[option.Switch] as string;
-                return configDefault;
+                var expanded = Utilities.ReplaceEnvironmentVariables(configDefault);
+
+                return expanded;
             }
             else if(DefaultConfig[option.Switch] is int)
             {
