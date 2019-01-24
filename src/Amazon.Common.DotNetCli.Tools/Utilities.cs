@@ -22,7 +22,7 @@ namespace Amazon.Common.DotNetCli.Tools
         /// <summary>
         /// Compiled Regex for {VARIABLE} token searches
         /// </summary>
-        private readonly static Regex EnvironmentVariableTokens = new Regex(@"\{.*?\}", RegexOptions.Compiled);
+        private readonly static Regex EnvironmentVariableTokens = new Regex(@"[$][(].*?[)]", RegexOptions.Compiled);
 
         /// <summary>
         /// Replaces {VARIABLE} tokens with environment variables
@@ -37,7 +37,7 @@ namespace Amazon.Common.DotNetCli.Tools
 
             foreach (Match m in matches)
             {
-                var withoutBrackets = m.Value.Substring(1, m.Value.Length - 2);
+                var withoutBrackets = m.Value.Substring(2, m.Value.Length - 3);
                 var env = Environment.GetEnvironmentVariable(withoutBrackets);
                 modified = modified.Replace(m.Value, env);
             }
