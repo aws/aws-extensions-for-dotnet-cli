@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -14,18 +15,19 @@ using System.Xml.Linq;
 using System.Xml.XPath;
 using Amazon.Util;
 using System.Text.RegularExpressions;
+using System.Collections;
 
 namespace Amazon.Common.DotNetCli.Tools
 {
     public static class Utilities
     {
         /// <summary>
-        /// Compiled Regex for {VARIABLE} token searches
+        /// Compiled Regex for $(Variable) token searches
         /// </summary>
         private readonly static Regex EnvironmentVariableTokens = new Regex(@"[$][(].*?[)]", RegexOptions.Compiled);
 
         /// <summary>
-        /// Replaces {VARIABLE} tokens with environment variables
+        /// Replaces $(Variable) tokens with environment variables
         /// </summary>
         /// <param name="original">original string</param>
         /// <returns>string with environment variable replacements</returns>
@@ -38,11 +40,40 @@ namespace Amazon.Common.DotNetCli.Tools
             foreach (Match m in matches)
             {
                 var withoutBrackets = m.Value.Substring(2, m.Value.Length - 3);
-                var env = Environment.GetEnvironmentVariable(withoutBrackets);
+
+                var entry = FindEnvironmentVariable(withoutBrackets);
+
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                var env = (string)entry.Value.Value;
+
                 modified = modified.Replace(m.Value, env);
             }
 
             return modified;
+        }
+
+        /// <summary>
+        /// Helper method to find an environment variable if it exists
+        /// </summary>
+        /// <param name="name">environennt variable name</param>
+        /// <returns>DictionaryEntry containing environment variable key value</returns>
+        private static DictionaryEntry? FindEnvironmentVariable(string name)
+        {
+            var allEnvironmentVariables = Environment.GetEnvironmentVariables();
+
+            foreach (DictionaryEntry de in allEnvironmentVariables)
+            {
+                if ((string)de.Key == name)
+                {
+                    return de;
+                }
+            }
+
+            return null;
         }
 
         public static string[] SplitByComma(this string str)

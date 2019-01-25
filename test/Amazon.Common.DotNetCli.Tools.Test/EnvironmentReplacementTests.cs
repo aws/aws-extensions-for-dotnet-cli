@@ -17,7 +17,7 @@ namespace Amazon.Common.DotNetCli.Tools.Test
         public void EnvironmentVariableNotSet()
         {
             var result = Utilities.ReplaceEnvironmentVariables("some string=$(variable)");
-            Assert.Equal("some string=", result);
+            Assert.Equal("some string=$(variable)", result);
         }
 
         [Fact]
@@ -32,11 +32,11 @@ namespace Amazon.Common.DotNetCli.Tools.Test
         [Fact]
         public void MultipleReplacement()
         {
-            Environment.SetEnvironmentVariable("key1", "replacement1");
+            Environment.SetEnvironmentVariable("otherkey1", "replacement1");
             Environment.SetEnvironmentVariable("Key2", "variable2");
             Environment.SetEnvironmentVariable("KEY3", "3333");
 
-            var result = Utilities.ReplaceEnvironmentVariables($"some string=$(key1) other $(Key2) last $(KEY3) set");
+            var result = Utilities.ReplaceEnvironmentVariables($"some string=$(otherkey1) other $(Key2) last $(KEY3) set");
             Assert.Equal("some string=replacement1 other variable2 last 3333 set", result);
         }
     }
