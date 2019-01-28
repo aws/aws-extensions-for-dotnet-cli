@@ -47,6 +47,34 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             }
         }
 
+        public string[] LambdaLayers
+        {
+            get
+            {
+                var layers = new List<string>();
+                
+                var resourceLayers = this.DataSource.GetValueList("Layers");
+                if (resourceLayers != null)
+                {
+                    layers.AddRange(resourceLayers);
+                }
+                
+                
+                var globalLayers = this.DataSource.GetValueListFromRoot("Globals", "Function", "Layers");
+                if (globalLayers != null)
+                {
+                    layers.AddRange(globalLayers);
+                }
+
+                return layers.Count == 0 ? null : layers.ToArray();
+            }
+        }
+
+        public void SetEnvironmentVariable(string key, string value)
+        {
+            this.DataSource.SetValue(value, "Environment", "Variables", key);
+        }
+
         public class UpdatableResourceField : IUpdateResourceField
         {
             public IUpdatableResource Resource => this._resource;

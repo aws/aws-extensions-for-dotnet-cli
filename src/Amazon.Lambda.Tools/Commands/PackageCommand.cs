@@ -34,7 +34,21 @@ namespace Amazon.Lambda.Tools.Commands
         public string[] LayerVersionArns { get; set; }
 
         public bool? DisableVersionCheck { get; set; }
+        
+        /// <summary>
+        /// Property set when the package command is being created from another command or tool
+        /// and the service clients have been copied over. In that case there is no reason
+        /// to look for a region or aws credentials.
+        /// </summary>
+        public bool DisableRegionCheck { get; set; }
 
+        
+        /// <summary>
+        /// If runtime package store layers were specified the DOTNET_SHARED_STORE environment variable
+        /// has to be set. This property will contain the value the environment variable must be set.
+        /// </summary>
+        public string NewDotnetSharedStoreValue { get; private set; }
+        
 
         /// <summary>
         /// If the value for Payload points to an existing file then the contents of the file is sent, otherwise
@@ -95,24 +109,27 @@ namespace Amazon.Lambda.Tools.Commands
             LayerPackageInfo layerPackageInfo = null;
             if (layerVersionArns != null)
             {
-                // Region and credentials are only required if using layers. This is new behavior so do a preemptive check when there are layers to
-                // see if region and credentials are set. If they are not set give a specific error message about region and credentials required
-                // when using layers.
-                try
+                if (!this.DisableRegionCheck)
                 {
-                    base.DetermineAWSRegion();
-                }
-                catch (Exception)
-                {
-                    throw new ToolsException("Region is required for the package command when layers are specified. The layers must be inspected to see how they affect packaging.", ToolsException.CommonErrorCode.RegionNotConfigured);
-                }
-                try
-                {
-                    base.DetermineAWSCredentials();
-                }
-                catch (Exception)
-                {
-                    throw new ToolsException("AWS credentials are required for the package command when layers are specified. The layers must be inspected to see how they affect packaging.", ToolsException.CommonErrorCode.InvalidCredentialConfiguration);
+                    // Region and credentials are only required if using layers. This is new behavior so do a preemptive check when there are layers to
+                    // see if region and credentials are set. If they are not set give a specific error message about region and credentials required
+                    // when using layers.
+                    try
+                    {
+                        base.DetermineAWSRegion();
+                    }
+                    catch (Exception)
+                    {
+                        throw new ToolsException("Region is required for the package command when layers are specified. The layers must be inspected to see how they affect packaging.", ToolsException.CommonErrorCode.RegionNotConfigured);
+                    }
+                    try
+                    {
+                        base.DetermineAWSCredentials();
+                    }
+                    catch (Exception)
+                    {
+                        throw new ToolsException("AWS credentials are required for the package command when layers are specified. The layers must be inspected to see how they affect packaging.", ToolsException.CommonErrorCode.InvalidCredentialConfiguration);
+                    }                    
                 }
 
                 layerPackageInfo = await LambdaUtilities.LoadLayerPackageInfos(this.Logger, this.LambdaClient, this.S3Client, layerVersionArns);
@@ -146,6 +163,8 @@ namespace Amazon.Lambda.Tools.Commands
             var dotnetSharedStoreValue = layerPackageInfo.GenerateDotnetSharedStoreValue();
             if(!string.IsNullOrEmpty(dotnetSharedStoreValue))
             {
+                this.NewDotnetSharedStoreValue = dotnetSharedStoreValue;
+                
                 this.Logger.WriteLine($"\nWarning: You must the {LambdaConstants.ENV_DOTNET_SHARED_STORE} environment variable when deploying the package. " +
                                       "If not set the layers specified will not be located by the .NET Core runtime. The trailing '/' is required.");
                 this.Logger.WriteLine($"{LambdaConstants.ENV_DOTNET_SHARED_STORE}: {dotnetSharedStoreValue}");

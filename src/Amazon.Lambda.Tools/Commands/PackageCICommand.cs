@@ -127,7 +127,7 @@ namespace Amazon.Lambda.Tools.Commands
                 DisableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault()
             };
             
-            var templateProcessor = new TemplateProcessorManager(this.Logger, this.S3Client, s3Bucket, s3Prefix, options);
+            var templateProcessor = new TemplateProcessorManager(this, s3Bucket, s3Prefix, options);
             templateBody = await templateProcessor.TransformTemplateAsync(templatePath, templateBody);            
             
             this.Logger.WriteLine($"Writing updated template: {outputTemplatePath}");
