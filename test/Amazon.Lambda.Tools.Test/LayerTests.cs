@@ -36,6 +36,7 @@ namespace Amazon.Lambda.Tools.Test
         private readonly ITestOutputHelper _testOutputHelper;
 
         static string _singleLayerFunctionPath = Path.GetFullPath(Path.GetDirectoryName(typeof(LayerTests).GetTypeInfo().Assembly.Location) + "../../../../../../testapps/TestLayerExample");
+        static string _serverlessLayerFunctionPath = Path.GetFullPath(Path.GetDirectoryName(typeof(LayerTests).GetTypeInfo().Assembly.Location) + "../../../../../../testapps/TestLayerServerless");
 
         LayerTestsFixture _testFixture;
 
@@ -158,7 +159,7 @@ namespace Amazon.Lambda.Tools.Test
         {
             var logger = new TestToolLogger(_testOutputHelper);
 
-            var publishLayerCommand = await PublishLayerAsync(optDirectory);
+            var publishLayerCommand = await PublishLayerAsync(_singleLayerFunctionPath, optDirectory);
 
             try
             {
@@ -206,7 +207,7 @@ namespace Amazon.Lambda.Tools.Test
                         Assert.Null(zipArchive.GetEntry("AWSSDK.S3.dll"));
                     }
 
-                    var redeployLayerCommand = await PublishLayerAsync(optDirectory);
+                    var redeployLayerCommand = await PublishLayerAsync(_singleLayerFunctionPath, optDirectory);
 
                     var redeployFunctionCommand = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), _singleLayerFunctionPath, new string[0]);
                     redeployFunctionCommand.FunctionName = deployCommand.FunctionName;
@@ -239,6 +240,81 @@ namespace Amazon.Lambda.Tools.Test
             }
         }
 
+        [Fact]
+        public async Task DeployServerlessWithlayer()
+        {
+            var logger = new TestToolLogger(_testOutputHelper);
+
+            var templateTilePath = Path.Combine(_serverlessLayerFunctionPath, "serverless.template");
+            if (File.Exists(templateTilePath))
+            {
+                File.Delete(templateTilePath);
+            }
+
+            var publishLayerCommand = await PublishLayerAsync(_singleLayerFunctionPath, "");            
+            try
+            {
+                var templateContent = File.ReadAllText(Path.Combine(_serverlessLayerFunctionPath, "fake.template"));
+                templateContent =
+                    templateContent.Replace("LAYER_ARN_PLACEHOLDER", publishLayerCommand.NewLayerVersionArn);
+                
+                File.WriteAllText(templateTilePath, templateContent);
+                
+                var command = new DeployServerlessCommand(new TestToolLogger(_testOutputHelper), _serverlessLayerFunctionPath, new string[] { });
+                command.DisableInteractive = true;
+                command.StackName = "DeployServerlessWithlayer-" + DateTime.Now.Ticks;
+                command.Region = publishLayerCommand.Region;
+                command.S3Bucket = this._testFixture.Bucket;
+                command.WaitForStackToComplete = true;
+                command.DisableInteractive = true;
+                command.ProjectLocation = _serverlessLayerFunctionPath;
+
+                var created = await command.ExecuteAsync();
+                try
+                {
+                    Assert.True(created);
+
+                    var lambdaFunctionName =
+                        await TestHelper.GetPhysicalCloudFormationResourceId(_testFixture.CFClient, command.StackName, "TheFunction");
+                    
+                    await ValidateInvokeAsync(lambdaFunctionName, "\"hello\"", "\"HELLO\"");
+
+                    var getConfigResponse = await this._testFixture.LambdaClient.GetFunctionConfigurationAsync(new GetFunctionConfigurationRequest { FunctionName = lambdaFunctionName });
+                    Assert.NotNull(getConfigResponse.Layers.FirstOrDefault(x => string.Equals(x.Arn, publishLayerCommand.NewLayerVersionArn)));
+                    
+                    var getCodeResponse = await this._testFixture.LambdaClient.GetFunctionAsync(lambdaFunctionName);
+                    using (var client = new HttpClient())
+                    {
+                        var data = await client.GetByteArrayAsync(getCodeResponse.Code.Location);
+                        var zipArchive = new ZipArchive(new MemoryStream(data), ZipArchiveMode.Read);
+
+                        Assert.NotNull(zipArchive.GetEntry("TestLayerServerless.dll"));
+                        Assert.Null(zipArchive.GetEntry("Amazon.Lambda.Core.dll"));
+                    }
+                }
+                finally
+                {
+                    if (created)
+                    {
+                        var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), _serverlessLayerFunctionPath, new string[0]);
+                        deleteCommand.DisableInteractive = true;
+                        deleteCommand.Region = publishLayerCommand.Region;                        
+                        deleteCommand.StackName = command.StackName;
+                        await deleteCommand.ExecuteAsync();
+                    }
+                }
+
+            }
+            finally
+            {
+                await this._testFixture.LambdaClient.DeleteLayerVersionAsync(new DeleteLayerVersionRequest { LayerName = publishLayerCommand.NewLayerArn, VersionNumber = publishLayerCommand.NewLayerVersionNumber });
+                if (File.Exists(templateTilePath))
+                {
+                    File.Delete(templateTilePath);
+                }                
+            }
+        }
+
         private async Task ValidateInvokeAsync(string functionName, string payload, string expectedResult)
         {
             var invokeResponse = await this._testFixture.LambdaClient.InvokeAsync(new InvokeRequest
@@ -253,11 +329,11 @@ namespace Amazon.Lambda.Tools.Test
             Assert.Equal(expectedResult, content);
         }
 
-        private async Task<PublishLayerCommand> PublishLayerAsync(string optDirectory)
+        private async Task<PublishLayerCommand> PublishLayerAsync(string projectDirectory, string optDirectory)
         {
             var logger = new TestToolLogger(_testOutputHelper);
             
-            var publishLayerCommand = new PublishLayerCommand(logger, _singleLayerFunctionPath, new string[0]);
+            var publishLayerCommand = new PublishLayerCommand(logger, projectDirectory, new string[0]);
             publishLayerCommand.Region = "us-east-1";
             publishLayerCommand.TargetFramework = "netcoreapp2.1";
             publishLayerCommand.S3Bucket = this._testFixture.Bucket;
@@ -281,9 +357,11 @@ namespace Amazon.Lambda.Tools.Test
         public string Bucket { get; set; }
         public IAmazonS3 S3Client { get; set; }
         public IAmazonLambda LambdaClient { get; set; }
+        public IAmazonCloudFormation CFClient { get; set; }
 
         public LayerTestsFixture()
         {
+            this.CFClient = new AmazonCloudFormationClient(RegionEndpoint.USEast1);
             this.S3Client = new AmazonS3Client(RegionEndpoint.USEast1);
             this.LambdaClient = new AmazonLambdaClient(RegionEndpoint.USEast1);
 

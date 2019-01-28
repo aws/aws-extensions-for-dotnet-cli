@@ -478,6 +478,11 @@ namespace Amazon.Lambda.Tools.Test
             {
                 return GetValue(this.Root, keyPath);
             }
+            
+            public string[] GetValueListFromRoot(params string[] keyPath)
+            {
+                return GetValueList(this.Root, keyPath);
+            }
 
             public string GetValue(params string[] keyPath)
             {
@@ -491,11 +496,30 @@ namespace Amazon.Lambda.Tools.Test
                     return value;
                 return null;
             }
+            
+            public string[] GetValueList(params string[] keyPath)
+            {
+                return GetValueList(this.Properties, keyPath);
+            }
+
+            private string[] GetValueList(IDictionary<string, string> values, params string[] keyPath)
+            {
+                var key = string.Join("/", keyPath);
+                if (values.TryGetValue(key, out var value))
+                    return value.Split(',');
+                return null;
+            }            
 
             public void SetValue(string value, params string[] keyPath)
             {
                 var key = string.Join("/", keyPath);
                 Properties[key] = value;
+            }
+            
+            public void SetValueList(string[] values, params string[] keyPath)
+            {
+                var key = string.Join("/", keyPath);
+                Properties[key] = string.Join(',', values);
             }
         }
     }

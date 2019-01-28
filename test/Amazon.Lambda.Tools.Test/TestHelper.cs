@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
+using Amazon.CloudFormation;
+using Amazon.CloudFormation.Model;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 using Amazon.Common.DotNetCli.Tools;
+using Amazon.Lambda.Tools.Commands;
 
 namespace Amazon.Lambda.Tools.Test
 {
@@ -48,6 +52,25 @@ namespace Amazon.Lambda.Tools.Test
 
                 return _roleArn;
             }
+        }
+
+        public static async Task<string> GetPhysicalCloudFormationResourceId(IAmazonCloudFormation cfClient, string stackName, string logicalId)
+        {
+            var response = await cfClient.DescribeStackResourcesAsync(new DescribeStackResourcesRequest()
+            {
+                StackName = stackName,
+                LogicalResourceId = logicalId
+            });
+
+            foreach (var resource in response.StackResources)
+            {
+                if (string.Equals(resource.LogicalResourceId, logicalId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return resource.PhysicalResourceId;
+                }
+            }
+
+            return null;
         }
     }
 }
