@@ -19,7 +19,7 @@ If the code property is not set then the current directory assumed.
 
 ### Release 2018-09-11
 * **Amazon.Lambda.Tools (3.0.1)**
-    * Fixed issue incorrectly checking being executed in a project directory when using a precompiled package zip file.
+    * Fixed issue incorrectly checking if deployment command was being executed in a project directory when using a precompiled package zip file.
 
 ### Release 2018-09-10
 * **Amazon.Lambda.Tools (3.0.0)**
