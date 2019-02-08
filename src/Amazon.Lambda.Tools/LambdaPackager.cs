@@ -17,6 +17,13 @@ namespace Amazon.Lambda.Tools
     /// </summary>
     public static class LambdaPackager
     {
+        private const string Shebang = "#!";
+        private const char LinuxLineEnding = '\n';
+        private const string BootstrapFilename = "bootstrap";
+        private static readonly string BuildLambdaZipCliPath = Path.Combine(
+            Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath),
+            "Resources\\build-lambda-zip.exe");
+
         static IDictionary<string, Version> NETSTANDARD_LIBRARY_VERSIONS = new Dictionary<string, Version>
         {
             { "netcoreapp1.0", Version.Parse("1.6.0") },
@@ -113,7 +120,7 @@ namespace Amazon.Lambda.Tools
 #if NETCORE
             if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                BundleWithDotNetCompression(zipArchivePath, sourceDirectory, flattenRuntime, logger);
+                BundleWithBuildLambdaZip(zipArchivePath, sourceDirectory, flattenRuntime, logger);
             }
             else
             {
@@ -129,7 +136,7 @@ namespace Amazon.Lambda.Tools
                 }
             }
 #else
-            BundleWithDotNetCompression(zipArchivePath, sourceDirectory, flattenRuntime, logger);
+                BundleWithBuildLambdaZip(BuildLambdaZipCliPath, zipArchivePath, sourceDirectory, flattenRuntime, logger);
 #endif            
         }
 
@@ -140,7 +147,7 @@ namespace Amazon.Lambda.Tools
 #if NETCORE
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                BundleWithDotNetCompression(zipArchivePath, rootDirectory, includedFiles, logger);
+                BundleWithBuildLambdaZip(zipArchivePath, rootDirectory, includedFiles, logger);
             }
             else
             {
@@ -156,8 +163,8 @@ namespace Amazon.Lambda.Tools
                 }
             }
 #else
-            BundleWithDotNetCompression(zipArchivePath, rootDirectory, includedFiles, logger);
-#endif            
+                BundleWithBuildLambdaZip(zipArchivePath, rootDirectory, includedFiles, logger);
+#endif
         }
 
 
@@ -461,36 +468,127 @@ namespace Amazon.Lambda.Tools
         }
 
         /// <summary>
-        /// Zip up the publish folder using the .NET compression libraries. This is what is used when run on Windows.
-        /// </summary>
+        /// Zip up the publish folder using the build-lambda-zip utility which will maintain linux/osx file permissions.
+        /// This is what is used when run on Windows.
         /// <param name="zipArchivePath">The path and name of the zip archive to create.</param>
         /// <param name="publishLocation">The location to be bundled.</param>
         /// <param name="flattenRuntime">If true the runtimes folder will be flatten</param>
         /// <param name="logger">Logger instance.</param>
-        private static void BundleWithDotNetCompression(string zipArchivePath, string publishLocation, bool flattenRuntime, IToolLogger logger)
+        private static void BundleWithBuildLambdaZip(string zipArchivePath, string publishLocation, bool flattenRuntime, IToolLogger logger)
         {
             var includedFiles = GetFilesToIncludeInArchive(publishLocation, flattenRuntime);
-            BundleWithDotNetCompression(zipArchivePath, publishLocation, includedFiles, logger);
+            BundleWithBuildLambdaZip(zipArchivePath, publishLocation, includedFiles, logger);
         }
 
         /// <summary>
-        /// Zip up the publish folder using the .NET compression libraries. This is what is used when run on Windows.
+        /// Zip up the publish folder using the build-lambda-zip utility which will maintain linux/osx file permissions.
+        /// This is what is used when run on Windows.
         /// </summary>
         /// <param name="zipArchivePath">The path and name of the zip archive to create.</param>
         /// <param name="rootDirectory">The root directory where all of the relative paths in includedFiles is pointing to.</param>
         /// <param name="includedFiles">Map of relative to absolute path of files to include in bundle.</param>
         /// <param name="logger">Logger instance.</param>
-        private static void BundleWithDotNetCompression(string zipArchivePath, string rootDirectory, IDictionary<string, string> includedFiles, IToolLogger logger)
+        private static void BundleWithBuildLambdaZip(string zipArchivePath, string rootDirectory, IDictionary<string, string> includedFiles, IToolLogger logger)
         {
-            using (var zipArchive = ZipFile.Open(zipArchivePath, ZipArchiveMode.Create))
+            if (!File.Exists(BuildLambdaZipCliPath))
             {
-                foreach (var kvp in includedFiles)
-                {
-                    zipArchive.CreateEntryFromFile(kvp.Value, kvp.Key);
+                throw new LambdaToolsException("Failed to find the \"build-lambda-zip\" utility. This program is required to maintain Linux file permissions in the zip archive.", LambdaToolsException.LambdaErrorCode.FailedToFindZipProgram);
+            }
 
-                    logger?.WriteLine($"... zipping: {kvp.Key}");
+            EnsureBootstrapLinuxLineEndings(rootDirectory, includedFiles);
+
+            var args = new StringBuilder("-o \"" + zipArchivePath + "\"");
+
+            foreach (var kvp in includedFiles)
+            {
+                args.AppendFormat(" \"{0}\"", kvp.Key);
+            }
+
+            var psiZip = new ProcessStartInfo
+            {
+                FileName = BuildLambdaZipCliPath,
+                Arguments = args.ToString(),
+                WorkingDirectory = rootDirectory,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            var handler = (DataReceivedEventHandler)((o, e) =>
+            {
+                if (string.IsNullOrEmpty(e.Data))
+                    return;
+                logger?.WriteLine("... zipping: " + e.Data);
+            });
+
+            using (var proc = new Process())
+            {
+                proc.StartInfo = psiZip;
+                proc.Start();
+
+                proc.ErrorDataReceived += handler;
+                proc.OutputDataReceived += handler;
+                proc.BeginOutputReadLine();
+                proc.BeginErrorReadLine();
+
+                proc.EnableRaisingEvents = true;
+                proc.WaitForExit();
+
+                if (proc.ExitCode == 0)
+                {
+                    logger?.WriteLine(string.Format("Created publish archive ({0}).", zipArchivePath));
                 }
             }
+        }
+
+        /// <summary>
+        /// Detects if there is a bootstrap file, and if it's a script (as opposed to an actual executable),
+        /// and corrects the line endings so it can be run in Linux.
+        /// 
+        /// TODO: possibly expand to allow files other than bootstrap to be corrected
+        /// </summary>
+        /// <param name="rootDirectory"></param>
+        /// <param name="includedFiles"></param>
+        private static void EnsureBootstrapLinuxLineEndings(string rootDirectory, IDictionary<string, string> includedFiles)
+        {
+            if (includedFiles.ContainsKey(BootstrapFilename))
+            {
+                var bootstrapPath = Path.Combine(rootDirectory, BootstrapFilename);
+                if (FileIsLinuxShellScript(bootstrapPath))
+                {
+                    var lines = File.ReadAllLines(bootstrapPath);
+                    using (var sw = File.CreateText(bootstrapPath))
+                    {
+                        foreach (var line in lines)
+                        {
+                            sw.Write(line);
+                            sw.Write(LinuxLineEnding);
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Returns true if the first characters of the file are #!, false otherwise.
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        private static bool FileIsLinuxShellScript(string filePath)
+        {
+            using (var sr = File.OpenText(filePath))
+            {
+                while (!sr.EndOfStream)
+                {
+                    var line = sr.ReadLine().Trim();
+                    if (line.Length > 0)
+                    {
+                        return line.StartsWith(Shebang);
+                    }
+                }
+            }
+            return false;
         }
 
         /// <summary>

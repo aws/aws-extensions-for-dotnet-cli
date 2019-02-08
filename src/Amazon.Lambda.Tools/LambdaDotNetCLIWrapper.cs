@@ -98,7 +98,13 @@ namespace Amazon.Lambda.Tools
                 // will not run. So only do this packaging optimization if there are no Razor views.
                 if (Directory.GetFiles(fullProjectLocation, "*.cshtml", SearchOption.AllDirectories).Length == 0)
                 {
-                    arguments.Append($" -r {LambdaConstants.RUNTIME_HIERARCHY_STARTING_POINT} --self-contained false ");
+                    arguments.Append($" -r {LambdaConstants.RUNTIME_HIERARCHY_STARTING_POINT}");
+
+                    if (msbuildParameters == null ||
+                        !msbuildParameters.Contains("--self-contained", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        arguments.Append(" --self-contained false ");
+                    }
 
                     if (string.IsNullOrEmpty(msbuildParameters) ||
                         !msbuildParameters.Contains("PreserveCompilationContext"))
@@ -171,14 +177,14 @@ namespace Amazon.Lambda.Tools
                 {
                     // as we are not invoking through a shell, which would handle
                     // wildcard expansion for us, we need to invoke per-file
-                    var dllFiles = Directory.GetFiles(outputLocation, "*.dll", SearchOption.TopDirectoryOnly);
-                    foreach (var dllFile in dllFiles)
+                    var files = Directory.GetFiles(outputLocation, "*", SearchOption.TopDirectoryOnly);
+                    foreach (var file in files)
                     {
-                        var dllFilename = Path.GetFileName(dllFile);
+                        var filename = Path.GetFileName(file);
                         var psiChmod = new ProcessStartInfo
                         {
                             FileName = chmodPath,
-                            Arguments = "+r \"" + dllFilename + "\"",
+                            Arguments = "+rx \"" + filename + "\"",
                             WorkingDirectory = outputLocation,
                             RedirectStandardOutput = true,
                             RedirectStandardError = true,
@@ -201,7 +207,7 @@ namespace Amazon.Lambda.Tools
 
                             if (proc.ExitCode == 0)
                             {
-                                this._logger?.WriteLine($"Changed permissions on published dll (chmod +r {dllFilename}).");
+                                this._logger?.WriteLine($"Changed permissions on published file (chmod +rx {filename}).");
                             }
                         }
                     }
