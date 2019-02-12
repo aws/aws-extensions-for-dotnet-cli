@@ -15,7 +15,7 @@ namespace Amazon.Lambda.Tools.Commands
     public class ListLayersCommand : LambdaBaseCommand
     {
         public const string COMMAND_NAME = "list-layers";
-        public const string COMMAND_DESCRIPTION = "Command to list Lambda layers";
+        public const string COMMAND_DESCRIPTION = "Command to list Layers";
 
         const int TIMESTAMP_WIDTH = 20;
         const int LAYER_NAME_WIDTH = 30;

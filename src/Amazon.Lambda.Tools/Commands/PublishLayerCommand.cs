@@ -14,7 +14,7 @@ namespace Amazon.Lambda.Tools.Commands
     public class PublishLayerCommand : LambdaBaseCommand
     {
         public const string COMMAND_NAME = "publish-layer";
-        public const string COMMAND_DESCRIPTION = "Command to publish an Amazon Layer that can be associated with a Lambda function";
+        public const string COMMAND_DESCRIPTION = "Command to publish a Layer that can be associated with a Lambda function";
         public const string COMMAND_ARGUMENTS = "<LAYER-NAME> The name of the layer";
 
         public static readonly IList<CommandOption> PublishLayerCommandOptions = BuildLineOptions(new List <CommandOption>

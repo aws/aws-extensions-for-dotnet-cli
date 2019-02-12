@@ -15,7 +15,7 @@ namespace Amazon.Lambda.Tools.Commands
     public class DeleteFunctionCommand : LambdaBaseCommand
     {
         public const string COMMAND_NAME = "delete-function";
-        public const string COMMAND_DESCRIPTION = "Command to delete an AWS Lambda function";
+        public const string COMMAND_DESCRIPTION = "Command to delete a Lambda function";
         public const string COMMAND_ARGUMENTS = "<FUNCTION-NAME> The name of the function to delete";
 
 

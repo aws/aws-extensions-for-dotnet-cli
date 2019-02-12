@@ -20,7 +20,7 @@ namespace Amazon.Lambda.Tools.Commands
         const int PAD_SIZE = 25;
         
         public const string COMMAND_NAME = "get-layer-version";
-        public const string COMMAND_DESCRIPTION = "Command to get the details of a Lambda layer version";
+        public const string COMMAND_DESCRIPTION = "Command to get the details of a Layer version";
         public const string COMMAND_ARGUMENTS = "<LAYER-VERSION-ARN> The layer version arn to get details for";
         
         public static readonly IList<CommandOption> CommandOptions = BuildLineOptions(new List<CommandOption>
