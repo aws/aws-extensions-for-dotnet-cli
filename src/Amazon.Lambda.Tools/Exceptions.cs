@@ -42,6 +42,11 @@ namespace Amazon.Lambda.Tools
             LambdaPublishFunction,
             LambdaTaggingFunction,
             LambdaPublishLayerVersion,
+            LambdaListLayers,
+            LambdaListLayerVersions,
+            LambdaGetLayerVersionDetails,
+            LambdaDeleteLayerVersion,
+            ParseLayerVersionArnFail,
 
             UnknownLayerType,
             StoreCommandError,

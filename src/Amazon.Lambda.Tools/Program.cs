@@ -28,6 +28,10 @@ namespace Amazon.Lambda.Tools
 
                     new GroupHeaderInfo("Commands to publish and manage AWS Lambda Layers:"),
                     new CommandInfo<PublishLayerCommand>(PublishLayerCommand.COMMAND_NAME, PublishLayerCommand.COMMAND_DESCRIPTION, PublishLayerCommand.PublishLayerCommandOptions, PublishLayerCommand.COMMAND_ARGUMENTS),
+                    new CommandInfo<ListLayersCommand>(ListLayersCommand.COMMAND_NAME, ListLayersCommand.COMMAND_DESCRIPTION, ListLayersCommand.ListCommandOptions),
+                    new CommandInfo<ListLayerVersionsCommand>(ListLayerVersionsCommand.COMMAND_NAME, ListLayerVersionsCommand.COMMAND_DESCRIPTION, ListLayerVersionsCommand.ListCommandOptions, ListLayerVersionsCommand.COMMAND_ARGUMENTS),
+                    new CommandInfo<GetLayerVersionDetailsCommand>(GetLayerVersionDetailsCommand.COMMAND_NAME, GetLayerVersionDetailsCommand.COMMAND_DESCRIPTION, GetLayerVersionDetailsCommand.CommandOptions, GetLayerVersionDetailsCommand.COMMAND_ARGUMENTS),
+                    new CommandInfo<DeleteLayerVersionCommand>(DeleteLayerVersionCommand.COMMAND_NAME, DeleteLayerVersionCommand.COMMAND_DESCRIPTION, DeleteLayerVersionCommand.CommandOptions, DeleteLayerVersionCommand.COMMAND_ARGUMENTS),
 
                     new GroupHeaderInfo("Other Commands:"),
                     new CommandInfo<PackageCommand>(PackageCommand.COMMAND_NAME, PackageCommand.COMMAND_DESCRIPTION, PackageCommand.PackageCommandOptions, PackageCommand.COMMAND_ARGUMENTS),

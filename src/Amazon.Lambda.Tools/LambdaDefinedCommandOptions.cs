@@ -318,6 +318,14 @@ namespace Amazon.Lambda.Tools
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = "AWS Lambda layer name"
             };
+        public static readonly CommandOption ARGUMENT_LAYER_VERSION_ARN =
+            new CommandOption
+            {
+                Name = "Layer Version Arn",
+                Switch = "--layer-version-arn",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "AWS Lambda layer version arn"
+            };
         public static readonly CommandOption ARGUMENT_LAYER_TYPE =
             new CommandOption
             {
