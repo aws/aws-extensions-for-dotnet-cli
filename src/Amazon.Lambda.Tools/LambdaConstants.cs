@@ -12,6 +12,7 @@ namespace Amazon.Lambda.Tools
     public static class LambdaConstants
     {
         public const string ENV_DOTNET_SHARED_STORE = "DOTNET_SHARED_STORE";
+        public const string LAYER_TYPE_RUNTIME_PACKAGE_STORE_DISPLAY_NAME = ".NET Runtime Package Store";
         public const string LAYER_TYPE_RUNTIME_PACKAGE_STORE = "runtime-package-store";
         public const string LAYER_TYPE_ALLOWED_VALUES = LAYER_TYPE_RUNTIME_PACKAGE_STORE;
 

@@ -682,12 +682,36 @@ namespace Amazon.Lambda.Tools
 
         internal static (string name, long versionNumber) ParseLayerVersionArn(string layerVersionArn)
         {
-            int pos = layerVersionArn.LastIndexOf(':');
+            try
+            {
+                int pos = layerVersionArn.LastIndexOf(':');
 
-            var number = long.Parse(layerVersionArn.Substring(pos + 1));
-            var arn = layerVersionArn.Substring(0, pos);
+                var number = long.Parse(layerVersionArn.Substring(pos + 1));
+                var arn = layerVersionArn.Substring(0, pos);
 
-            return (arn, number);
+                return (arn, number);
+            }
+            catch (Exception)
+            {
+                throw new LambdaToolsException("Error parsing layer version arn into layer name and version number",
+                    LambdaToolsException.LambdaErrorCode.ParseLayerVersionArnFail);
+            }
         }
+        
+        internal static string DetermineListDisplayLayerDescription(string description, int maxDescriptionLength)
+        {
+            if (string.IsNullOrWhiteSpace(description))
+                return "";
+            try
+            {
+                var manifest = JsonMapper.ToObject<LayerDescriptionManifest>(description);
+                if (manifest.Nlt == LayerDescriptionManifest.ManifestType.RuntimePackageStore)
+                    return LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE_DISPLAY_NAME;
+            }
+            catch (Exception)
+            {
+            }
+            return description.Substring(0, maxDescriptionLength);
+        }        
     }
 }
