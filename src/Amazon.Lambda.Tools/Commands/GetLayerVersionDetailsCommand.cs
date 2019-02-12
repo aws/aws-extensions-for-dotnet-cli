@@ -127,10 +127,14 @@ namespace Amazon.Lambda.Tools.Commands
                 this.Logger.WriteLine("");
                 this.Logger.WriteLine($"{LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE_DISPLAY_NAME} Details:");
                 this.Logger.WriteLine("Manifest Location:".PadRight(PAD_SIZE) + $"s3://{manifest.Buc}/{manifest.Key}");
+                this.Logger.WriteLine("Packages Optimized:".PadRight(PAD_SIZE) + (manifest.Op == LayerDescriptionManifest.OptimizedState.Optimized));
+                this.Logger.WriteLine("Packages Directory:".PadRight(PAD_SIZE) + "/opt/" + manifest.Dir);
                 using (var response = await this.S3Client.GetObjectAsync(manifest.Buc, manifest.Key))
                 using(var reader = new StreamReader(response.ResponseStream))
                 {
-                    this.Logger.WriteLine("Manifest Contents:");
+                    this.Logger.WriteLine("");
+                    this.Logger.WriteLine("Manifest Contents");
+                    this.Logger.WriteLine("-----------------------");
                     this.Logger.WriteLine(reader.ReadToEnd());
                 }
             }

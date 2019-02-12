@@ -70,10 +70,6 @@ namespace Amazon.Lambda.Tools
 
 
             StringBuilder arguments = new StringBuilder("store");
-            if (!string.IsNullOrEmpty(projectLocation))
-            {
-                arguments.Append($" \"{fullProjectLocation}\"");
-            }
             if (!string.IsNullOrEmpty(outputLocation))
             {
                 arguments.Append($" --output \"{outputLocation}\"");

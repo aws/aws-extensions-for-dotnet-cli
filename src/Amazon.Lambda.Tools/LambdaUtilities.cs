@@ -704,9 +704,14 @@ namespace Amazon.Lambda.Tools
                 return "";
             try
             {
-                var manifest = JsonMapper.ToObject<LayerDescriptionManifest>(description);
-                if (manifest.Nlt == LayerDescriptionManifest.ManifestType.RuntimePackageStore)
+                var manifest = AttemptToParseLayerDescriptionManifest(description);
+                if (manifest?.Nlt == LayerDescriptionManifest.ManifestType.RuntimePackageStore)
+                {
+                    if(manifest.Op == LayerDescriptionManifest.OptimizedState.Optimized)
+                        return LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE_DISPLAY_NAME + " (Optimized)";
+
                     return LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE_DISPLAY_NAME;
+                }
             }
             catch (Exception)
             {
