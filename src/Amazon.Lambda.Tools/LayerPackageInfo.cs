@@ -18,9 +18,14 @@ namespace Amazon.Lambda.Tools
         public string GenerateDotnetSharedStoreValue()
         {
             var sb = new StringBuilder();
-
+            var processedDirectories = new HashSet<string>();
             foreach(var item in Items)
             {
+                if (processedDirectories.Contains(item.Directory))
+                    continue;
+
+                processedDirectories.Add(item.Directory);
+
                 if (sb.Length > 0)
                     sb.Append(":");
 

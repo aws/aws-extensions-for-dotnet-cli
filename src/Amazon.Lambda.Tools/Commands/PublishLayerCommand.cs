@@ -210,7 +210,7 @@ namespace Amazon.Lambda.Tools.Commands
             var optDirectory = this.GetStringValueOrDefault(this.OptDirectory, LambdaDefinedCommandOptions.ARGUMENT_OPT_DIRECTORY, false);
             if (string.IsNullOrEmpty(optDirectory))
             {
-                optDirectory = "runtime-store/" + tempDirectoryName;
+                optDirectory = LambdaConstants.DEFAULT_LAYER_OPT_DIRECTORY;
             }
             var storeOutputDirectory = Path.Combine(Path.GetTempPath(), tempDirectoryName, optDirectory);
 

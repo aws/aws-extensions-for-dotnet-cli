@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Xunit;
@@ -315,6 +316,31 @@ namespace Amazon.Lambda.Tools.Test
             }
         }
 
+        [Fact]
+        public void MakeSureDirectoryInDotnetSharedStoreValueOnce()
+        {
+            var info = new LayerPackageInfo();
+            info.Items.Add(new LayerPackageInfo.LayerPackageInfoItem
+            {
+                Directory = LambdaConstants.DEFAULT_LAYER_OPT_DIRECTORY
+            });
+            info.Items.Add(new LayerPackageInfo.LayerPackageInfoItem
+            {
+                Directory = "Custom/Foo"
+            });
+            info.Items.Add(new LayerPackageInfo.LayerPackageInfoItem
+            {
+                Directory = LambdaConstants.DEFAULT_LAYER_OPT_DIRECTORY
+            });
+
+            var env = info.GenerateDotnetSharedStoreValue();
+            var tokens = env.Split(':');
+
+            Assert.Equal(2, tokens.Length);
+            Assert.Equal(1, tokens.Count(x => x.Equals("/opt/" + LambdaConstants.DEFAULT_LAYER_OPT_DIRECTORY + "/")));
+            Assert.Equal(1, tokens.Count(x => x.Equals("/opt/Custom/Foo/")));
+        }
+
         private async Task ValidateInvokeAsync(string functionName, string payload, string expectedResult)
         {
             var invokeResponse = await this._testFixture.LambdaClient.InvokeAsync(new InvokeRequest
@@ -370,6 +396,9 @@ namespace Amazon.Lambda.Tools.Test
             Task.Run(async () =>
             {
                 await S3Client.PutBucketAsync(this.Bucket);
+
+                // Wait for bucket to exist
+                Thread.Sleep(10000);
             }).Wait();
         }
 
