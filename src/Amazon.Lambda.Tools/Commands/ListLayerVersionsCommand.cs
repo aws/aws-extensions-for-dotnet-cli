@@ -15,7 +15,7 @@ namespace Amazon.Lambda.Tools.Commands
     public class ListLayerVersionsCommand : LambdaBaseCommand
     {
         public const string COMMAND_NAME = "list-layer-versions";
-        public const string COMMAND_DESCRIPTION = "Command to list versions for Lambda layer";
+        public const string COMMAND_DESCRIPTION = "Command to list versions for a Layer";
         public const string COMMAND_ARGUMENTS = "<LAYER-NAME> The name of the layer";
      
         
