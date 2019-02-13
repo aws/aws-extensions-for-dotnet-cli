@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/urfave/cli.v1"
 )
@@ -89,7 +90,9 @@ func compressExeAndArgs(outZipPath string, args []string) error {
 			return err
 		}
 
-		err = writeExe(zipWriter, arg, data)
+		linuxName := strings.Replace(arg, "\\", "/", -1)
+		fmt.Println(linuxName)
+		err = writeExe(zipWriter, linuxName, data)
 		if err != nil {
 			return err
 		}
