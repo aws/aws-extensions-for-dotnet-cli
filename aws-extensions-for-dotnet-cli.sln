@@ -63,6 +63,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestLayerExample", "testapp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestLayerServerless", "testapps\TestLayerServerless\TestLayerServerless.csproj", "{1B90F7DE-9E8D-4F2B-A417-23263925429A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestLayerAspNetCore", "testapps\TestLayerAspNetCore\TestLayerAspNetCore.csproj", "{D9C49D8B-0162-4C6B-9CAD-FBF8E246CDC9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -153,6 +155,10 @@ Global
 		{1B90F7DE-9E8D-4F2B-A417-23263925429A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1B90F7DE-9E8D-4F2B-A417-23263925429A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1B90F7DE-9E8D-4F2B-A417-23263925429A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9C49D8B-0162-4C6B-9CAD-FBF8E246CDC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9C49D8B-0162-4C6B-9CAD-FBF8E246CDC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9C49D8B-0162-4C6B-9CAD-FBF8E246CDC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9C49D8B-0162-4C6B-9CAD-FBF8E246CDC9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -182,6 +188,7 @@ Global
 		{846348DD-9034-4C36-8342-955B1BAA42C5} = {9F4516D5-D045-4840-BA4D-34EF4684C6CB}
 		{AC3E127E-F157-404C-BCCC-CFF1BFF3A777} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 		{1B90F7DE-9E8D-4F2B-A417-23263925429A} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
+		{D9C49D8B-0162-4C6B-9CAD-FBF8E246CDC9} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DBFC70D6-49A2-40A1-AB08-5D9504AB7112}

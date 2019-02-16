@@ -23,6 +23,9 @@
     <None Remove="ManifestTestFiles\SampleManifest.xml" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="TestFiles\ManifestAspNetCoreProject.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="ManifestTestFiles\CurrentAspNetCoreReference.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
