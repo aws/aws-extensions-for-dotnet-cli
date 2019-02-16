@@ -16,7 +16,7 @@ using Amazon.Lambda.Model;
 using Amazon.S3;
 using Amazon.S3.Model;
 using System.Threading.Tasks;
-
+using System.Xml.XPath;
 using Environment = System.Environment;
 
 namespace Amazon.Lambda.Tools
@@ -717,6 +717,71 @@ namespace Amazon.Lambda.Tools
             {
             }
             return description.Substring(0, maxDescriptionLength);
+        }
+        
+        public static (bool shouldDelete, string packageManifest) ConvertManifestToSdkManifest(string packageManifest)
+        {
+            var content = File.ReadAllText(packageManifest);
+
+            var (updated, updatedContent) = ConvertManifestContentToSdkManifest(content);
+
+            if (!updated)
+            {
+                return (false, packageManifest);
+            }
+
+            var newPath = Path.GetTempFileName();
+            File.WriteAllText(newPath, updatedContent);
+            return (true, newPath);
+
         }        
+
+        public static (bool updated, string updatedContent) ConvertManifestContentToSdkManifest(string packageManifestContent)
+        {
+            var originalDoc = XDocument.Parse(packageManifestContent);
+
+            var attr = originalDoc.Root.Attribute("Sdk");
+            if (string.Equals(attr?.Value, "Microsoft.NET.Sdk", StringComparison.OrdinalIgnoreCase))
+                return (false, packageManifestContent);
+
+            
+            var root = new XElement("Project");
+            root.SetAttributeValue("Sdk", "Microsoft.NET.Sdk");
+
+            var itemGroup = new XElement("ItemGroup");
+            root.Add(itemGroup);
+            
+            // These were added to make sure the ASP.NET Core dependencies are filter if any of the packages
+            // depend on them.
+            // See issue for more info: https://github.com/dotnet/cli/issues/10784
+            var aspNerCorePackageReference = new XElement("PackageReference");
+            aspNerCorePackageReference.SetAttributeValue("Include", "Microsoft.AspNetCore.App");
+            itemGroup.Add(aspNerCorePackageReference);
+            
+            var aspNerCoreUpdatePackageReference = new XElement("PackageReference");
+            aspNerCoreUpdatePackageReference.SetAttributeValue("Update", "Microsoft.NETCore.App");
+            aspNerCoreUpdatePackageReference.SetAttributeValue("Publish", "false");
+            itemGroup.Add(aspNerCoreUpdatePackageReference);
+
+            foreach (var packageReference in originalDoc.XPathSelectElements("//ItemGroup/PackageReference"))
+            {
+                var packageName = packageReference.Attribute("Include")?.Value;
+                var version = packageReference.Attribute("Version")?.Value;
+
+                if (string.Equals(packageName, "Microsoft.AspNetCore.App", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(packageName, "Microsoft.AspNetCore.All", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                
+                var newRef = new XElement("PackageReference");
+                newRef.SetAttributeValue("Include", packageName);
+                newRef.SetAttributeValue("Version", version);
+                itemGroup.Add(newRef);
+            }
+            
+            var updatedDoc = new XDocument(root);
+            var updatedContent = updatedDoc.ToString();
+            
+            return (true, updatedContent);
+        }                
     }
 }

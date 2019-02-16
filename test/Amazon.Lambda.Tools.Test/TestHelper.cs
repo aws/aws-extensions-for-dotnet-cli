@@ -72,5 +72,23 @@ namespace Amazon.Lambda.Tools.Test
 
             return null;
         }
+
+        public static async Task<string> GetOutputParameter(IAmazonCloudFormation cfClient, string stackName, string outputName)
+        {
+            var response = await cfClient.DescribeStacksAsync(new DescribeStacksRequest()
+            {
+                StackName = stackName
+            });
+
+            foreach (var output in response.Stacks[0].Outputs)
+            {
+                if (string.Equals(output.OutputKey, outputName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return output.OutputValue;
+                }
+            }
+
+            return null;
+        }        
     }
 }
