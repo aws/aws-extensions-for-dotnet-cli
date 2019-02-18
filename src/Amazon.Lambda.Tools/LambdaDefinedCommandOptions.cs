@@ -133,7 +133,7 @@ namespace Amazon.Lambda.Tools
                 ShortSwitch = "-od",
                 Switch = "--opt-directory",
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
-                Description = "The directory under the /opt directory the contents of the layer will be placed. If not set a directory name will be generated."
+                Description = $"The directory under the /opt directory the contents of the layer will be placed. If not set a directory name /opt/{LambdaConstants.DEFAULT_LAYER_OPT_DIRECTORY}/."
             };
         public static readonly CommandOption ARGUMENT_DEADLETTER_TARGET_ARN =
             new CommandOption
