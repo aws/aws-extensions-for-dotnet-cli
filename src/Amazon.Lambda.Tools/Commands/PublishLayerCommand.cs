@@ -306,8 +306,8 @@ namespace Amazon.Lambda.Tools.Commands
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_LAYER_NAME.ConfigFileKey, this.GetStringValueOrDefault(this.LayerName, LambdaDefinedCommandOptions.ARGUMENT_LAYER_NAME, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_LAYER_TYPE.ConfigFileKey, this.GetStringValueOrDefault(this.LayerType, LambdaDefinedCommandOptions.ARGUMENT_LAYER_TYPE, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_LAYER_LICENSE_INFO.ConfigFileKey, this.GetStringValueOrDefault(this.LayerLicenseInfo, LambdaDefinedCommandOptions.ARGUMENT_LAYER_LICENSE_INFO, false));
-            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_MANIFEST.ConfigFileKey, this.GetStringValueOrDefault(this.LayerType, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_MANIFEST, false));
-            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_ENABLE_PACKAGE_OPTIMIZATION.ConfigFileKey, this.GetStringValueOrDefault(this.PackageManifest, LambdaDefinedCommandOptions.ARGUMENT_ENABLE_PACKAGE_OPTIMIZATION, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_MANIFEST.ConfigFileKey, this.GetStringValueOrDefault(this.PackageManifest, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_MANIFEST, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_ENABLE_PACKAGE_OPTIMIZATION.ConfigFileKey, this.GetBoolValueOrDefault(this.EnablePackageOptimization, LambdaDefinedCommandOptions.ARGUMENT_ENABLE_PACKAGE_OPTIMIZATION, false));
         }
 
         class CreateLayerZipFileResult
