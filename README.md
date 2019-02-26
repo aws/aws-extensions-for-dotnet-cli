@@ -1,4 +1,4 @@
-# AWS Extensions for .NET CLI ![Build Status](https://codebuild.us-east-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiMWdDdVRndE96VXVCMHU0WnI1YWNGYUE1MW9iMnhhVThIYlVBNEQzMXNJdkxnT1o3cmlrL2lXKzVLZHZjZWdjRlFWV0JSbWpMNE9ZVnQ2czJNTExpMVc0PSIsIml2UGFyYW1ldGVyU3BlYyI6IlMzdlh6ZUk0SWNVZkcwOFUiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=master)
+# AWS Extensions for .NET CLI
 
 This repository contains AWS tool extensions to the .NET CLI. These tool extensions are focused on building 
 .NET Core and ASP.NET Core applications and deploying them to AWS services. Many of these deployment 
