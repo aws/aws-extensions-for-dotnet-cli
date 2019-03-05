@@ -62,7 +62,9 @@ namespace Amazon.Lambda.Tools
             ServerlessTemplateUnknownActionForLocalPath,
             WaitingForStackError,
 
-            FailedToFindZipProgram
+            FailedToFindZipProgram,
+            FailedToDetectSdkVersion,
+            LayerNetSdkVersionMismatch
         }
 
         public LambdaToolsException(string message, LambdaErrorCode code) : base(message, code.ToString(), null)

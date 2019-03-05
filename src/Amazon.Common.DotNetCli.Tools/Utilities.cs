@@ -569,5 +569,47 @@ namespace Amazon.Common.DotNetCli.Tools
         {
             return GENERIC_ASSUME_ROLE_POLICY.Replace("{ASSUME_ROLE_PRINCIPAL}", assumeRolePrincipal);
         }
+
+        public static (int Exitcode, string Stdout) ExecuteShellCommand(string workingDirectory, string process, string arguments)
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = process,
+                Arguments = arguments,
+                WorkingDirectory = workingDirectory,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+
+            StringBuilder capturedOutput = new StringBuilder();
+            var handler = (DataReceivedEventHandler)((o, e) =>
+            {
+                if (string.IsNullOrEmpty(e.Data))
+                    return;
+                capturedOutput.AppendLine(e.Data);
+            });            
+            
+            using (var proc = new Process())
+            {
+                proc.StartInfo = startInfo;
+                proc.Start();
+
+                if (startInfo.RedirectStandardOutput)
+                {
+                    proc.ErrorDataReceived += handler;
+                    proc.OutputDataReceived += handler;
+                    proc.BeginOutputReadLine();
+                    proc.BeginErrorReadLine();
+
+                    proc.EnableRaisingEvents = true;
+                }
+
+                proc.WaitForExit();
+                return (proc.ExitCode, capturedOutput.ToString());
+            }            
+        }
     }
 }

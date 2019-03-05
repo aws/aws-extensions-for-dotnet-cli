@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
+using System.Runtime.CompilerServices;
 using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
 
@@ -750,6 +750,27 @@ namespace Amazon.Lambda.Tools
 
             var itemGroup = new XElement("ItemGroup");
             root.Add(itemGroup);
+
+
+            Version dotnetSdkVersion;
+            try
+            {
+                dotnetSdkVersion = new Version(Amazon.Common.DotNetCli.Tools.DotNetCLIWrapper.GetSdkVersion());
+            }
+            catch (Exception e)
+            {
+                throw new LambdaToolsException("Error detecting .NET SDK version: \n\t" + e.Message, LambdaToolsException.LambdaErrorCode.FailedToDetectSdkVersion, e );
+            }
+
+            if (dotnetSdkVersion < LambdaConstants.MINIMUM_DOTNET_SDK_VERSION_FOR_ASPNET_LAYERS)
+            {
+                throw new LambdaToolsException($"To create a runtime package store layer for an ASP.NET Core project " +
+                                               $"version {LambdaConstants.MINIMUM_DOTNET_SDK_VERSION_FOR_ASPNET_LAYERS} " + 
+                                               "or above of the .NET Core SDK must be installed. " +
+                                               "If a 2.1.X SDK is used then the \"dotnet store\" command will include all " +
+                                               "of the ASP.NET Core dependencies that are already available in Lambda.",
+                                                LambdaToolsException.LambdaErrorCode.LayerNetSdkVersionMismatch);
+            }
             
             // These were added to make sure the ASP.NET Core dependencies are filter if any of the packages
             // depend on them.
