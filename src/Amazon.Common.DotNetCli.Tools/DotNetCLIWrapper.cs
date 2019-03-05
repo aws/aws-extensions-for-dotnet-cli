@@ -119,5 +119,47 @@ namespace Amazon.Common.DotNetCli.Tools
 
             return 0;
         }
+
+        public static string GetSdkVersion()
+        {
+            var dotnetCLI = FindExecutableInPath("dotnet.exe");
+            if (dotnetCLI == null)
+                dotnetCLI = FindExecutableInPath("dotnet");
+            if (string.IsNullOrEmpty(dotnetCLI))
+                throw new Exception("Failed to locate dotnet CLI executable. Make sure the dotnet CLI is installed in the environment PATH.");
+
+            var results = Utilities.ExecuteShellCommand(null, dotnetCLI, "--list-sdks");
+            if(results.Exitcode != 0)
+                throw new Exception("Command \"dotnet --list-sdks\" failed, captured output: \n" + results.Stdout);
+            
+
+            var maxSdkVersion = ParseListSdkOutput(results.Stdout);
+            if (string.IsNullOrEmpty(maxSdkVersion))
+            {
+                throw new Exception("Failed to parse latest SDK version from captured output:\n" + results.Stdout);                
+            }
+
+            return maxSdkVersion;
+        }
+
+        public static string ParseListSdkOutput(string listSdkOutput)
+        {
+            var outputLines = listSdkOutput.Split('\n');
+            for (int i = outputLines.Length - 1; i >= 0; i--)
+            {
+                var line = outputLines[i].Trim();
+                if (string.IsNullOrEmpty(line))
+                    continue;
+
+                var tokens = line.Split(' ');
+                if (tokens.Length != 2)
+                    continue;
+
+                var version = tokens[0];
+                return version;
+            }
+
+            return null;
+        }
     }
 }
