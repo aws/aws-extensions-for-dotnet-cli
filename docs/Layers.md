@@ -102,7 +102,7 @@ To solve these challenges for .NET Core the AWS .NET tooling uses .NET Core's
 **[Runtime package stores](https://docs.microsoft.com/en-us/dotnet/core/deploying/runtime-store)** feature.
 
 Runtime package stores were added to .NET Core 2.0. In fact .NET Core 2.0 used the default runtime package 
-store to distribute the ASP.NET Core 2.0 packages.
+store to distribute the ASP<span>.NET Core 2.0 packages.
 
 Custom runtime package stores can be created using the `dotnet store` command which the **publish-layer** 
 command relies on.
