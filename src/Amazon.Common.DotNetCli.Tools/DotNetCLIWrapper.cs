@@ -120,7 +120,7 @@ namespace Amazon.Common.DotNetCli.Tools
             return 0;
         }
 
-        public static string GetSdkVersion()
+        public static Version GetSdkVersion()
         {
             var dotnetCLI = FindExecutableInPath("dotnet.exe");
             if (dotnetCLI == null)
@@ -134,7 +134,7 @@ namespace Amazon.Common.DotNetCli.Tools
             
 
             var maxSdkVersion = ParseListSdkOutput(results.Stdout);
-            if (string.IsNullOrEmpty(maxSdkVersion))
+            if (maxSdkVersion == null)
             {
                 throw new Exception("Failed to parse latest SDK version from captured output:\n" + results.Stdout);                
             }
@@ -142,7 +142,7 @@ namespace Amazon.Common.DotNetCli.Tools
             return maxSdkVersion;
         }
 
-        public static string ParseListSdkOutput(string listSdkOutput)
+        public static Version ParseListSdkOutput(string listSdkOutput)
         {
             var outputLines = listSdkOutput.Split('\n');
             for (int i = outputLines.Length - 1; i >= 0; i--)
@@ -152,11 +152,14 @@ namespace Amazon.Common.DotNetCli.Tools
                     continue;
 
                 var tokens = line.Split(' ');
-                if (tokens.Length != 2)
+                // There should be at least 2 tokens, the version and the path to the SDK. There might be more then token if the path to the SDK contained spaces.
+                if (tokens.Length < 2)
                     continue;
 
-                var version = tokens[0];
-                return version;
+                if(Version.TryParse(tokens[0], out var version))
+                {
+                    return version;
+                }
             }
 
             return null;

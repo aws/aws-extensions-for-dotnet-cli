@@ -755,7 +755,7 @@ namespace Amazon.Lambda.Tools
             Version dotnetSdkVersion;
             try
             {
-                dotnetSdkVersion = new Version(Amazon.Common.DotNetCli.Tools.DotNetCLIWrapper.GetSdkVersion());
+                dotnetSdkVersion = Amazon.Common.DotNetCli.Tools.DotNetCLIWrapper.GetSdkVersion();
             }
             catch (Exception e)
             {

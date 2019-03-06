@@ -35,7 +35,7 @@ namespace Amazon.Common.DotNetCli.Tools.Test
 ";
 
             var sdkVersion = Amazon.Common.DotNetCli.Tools.DotNetCLIWrapper.ParseListSdkOutput(EXAMPLE_OUTPUT);
-            Assert.Equal("2.2.100", sdkVersion);
+            Assert.Equal(new Version("2.2.100"), sdkVersion);
         }
 
         string FindDotnetProcess()
