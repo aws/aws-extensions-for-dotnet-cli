@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 
 using Xunit;
@@ -93,6 +94,51 @@ namespace Amazon.Lambda.Tools.Test
 
                 var payload = new StreamReader(response.Payload).ReadToEnd();
                 Assert.Equal("\"HELLO WORLD\"", payload);
+            }
+            finally
+            {
+                if (created)
+                {
+                    await command.LambdaClient.DeleteFunctionAsync(command.FunctionName);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task RunDeployCommandWithCustomConfigAndProjectLocation()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location));
+            var command = new DeployFunctionCommand(new ConsoleToolLogger(), fullPath, 
+                new string[] {"--config-file", "custom-config.json", "--project-location", "../../../../../testapps/TestFunction" });
+            command.FunctionName = "test-function-" + DateTime.Now.Ticks;
+            command.Handler = "TestFunction::TestFunction.Function::ToUpper";
+            command.Timeout = 10;
+            command.Role = this._roleArn;
+            command.Configuration = "Release";
+            command.TargetFramework = "netcoreapp1.0";
+            command.Runtime = "dotnetcore1.0";
+            command.DisableInteractive = true;
+
+            var created = await command.ExecuteAsync();
+            try
+            {
+                Assert.True(created);
+
+                var invokeRequest = new InvokeRequest
+                {
+                    FunctionName = command.FunctionName,
+                    LogType = LogType.Tail,
+                    Payload = "\"hello world\""
+                };
+                var response = await command.LambdaClient.InvokeAsync(invokeRequest);
+
+                var payload = new StreamReader(response.Payload).ReadToEnd();
+                Assert.Equal("\"HELLO WORLD\"", payload);
+
+                var log = UTF8Encoding.UTF8.GetString(Convert.FromBase64String(response.LogResult));
+                Assert.Contains("Memory Size: 320 MB", log);
             }
             finally
             {
