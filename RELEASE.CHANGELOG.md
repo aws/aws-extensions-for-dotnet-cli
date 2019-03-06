@@ -1,3 +1,12 @@
+### Release 2019-03-06
+* **Amazon.Lambda.Tools (3.1.3)**
+    * Changes to get this tool ready for the upcoming ability to use a custom .NET Core runtimes. 
+Follow [#405](https://github.com/aws/aws-lambda-dotnet/issues/405) GitHub issue for the upcoming **Amazon.Lambda.RuntimeSupport** library.
+        * Zipping the deployment bundle on Windows was switch to use a new Go executable to 
+allow setting linux file permisisons. The Go executable is distributed with this tool so this change should be transparent to users.
+    * Fixed issue with config files specified with the `--config-file` not being found when the `--project-location` 
+switch was used.
+
 ### Release 2019-01-04
 * **Amazon.Lambda.Tools (3.1.2)**
     * Fixed issue with failed deployments when CloudFormation template was greater then 50,000 .
