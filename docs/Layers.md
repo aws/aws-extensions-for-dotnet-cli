@@ -54,7 +54,7 @@ Executing publish command
 ```
 
 To use the layer with the **deploy-serverless** command set the layers property in the serverless.template.
-```
+```json
   "Resources" : {
 
     "TheFunction" : {
