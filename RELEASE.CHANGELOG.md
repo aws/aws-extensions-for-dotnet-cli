@@ -1,3 +1,16 @@
+### Release 2019-03-07
+* **Amazon.ElasticBeanstalk.Tools (3.1.0)**
+  * Pull request [#55](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/55) add **package** command to package an application as a zip file to later be deployed to Beanstalk. Thanks [Anthony Abate](https://github.com/abbotware)
+  * Pull Request [#57](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/57) allows string parameters to point to environment variables. Thanks [Anthony Abate](https://github.com/abbotware)
+    * For example the in the following **aws-beanstalk-tools-defaults.json** file the Beanstalk application name will come from the EB_APP 
+   environment variable and the environment name will come from EB_ENV.
+```json
+{                                                                                 
+    "application" : "$(EN_APP)",                                                        
+    "environment" : "$(EB_ENV)"
+}                                                                                 
+```
+
 ### Release 2019-03-06
 * **Amazon.Lambda.Tools (3.1.3)**
     * Changes to get this tool ready for the upcoming ability to use a custom .NET Core runtimes. 
@@ -15,7 +28,7 @@ switch was used.
 ### Release 2018-11-19
 * **Amazon.Lambda.Tools (3.1.1)**
     * Fix issue looking for Lambda runtime from CloudFormation template when runtime specified in the Globals section.
-* **Amazon.ElasticBeanstalk.Tools (3.0.0)**
+* **Amazon.ElasticBeanstalk.Tools (3.0.1)**
     * Pull request [#43](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/43), fixing issue with wrong directory separater when creating zip file. Thanks [bartoszsiekanski](https://github.com/bartoszsiekanski)
 
 ### Release 2018-10-12
