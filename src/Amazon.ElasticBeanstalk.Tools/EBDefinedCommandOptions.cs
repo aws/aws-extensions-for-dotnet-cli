@@ -7,7 +7,7 @@ namespace Amazon.ElasticBeanstalk.Tools
 {
     public class EBDefinedCommandOptions
     {
-        public static readonly CommandOption ARGUMENT_EB_PACKAGE =
+        public static readonly CommandOption ARGUMENT_INPUT_PACKAGE =
             new CommandOption
             {
                 Name = "Package",

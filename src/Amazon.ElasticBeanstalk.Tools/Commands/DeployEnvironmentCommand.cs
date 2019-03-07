@@ -41,6 +41,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             EBDefinedCommandOptions.ARGUMENT_ENABLE_XRAY,
             EBDefinedCommandOptions.ARGUMENT_INSTANCE_PROFILE,
             EBDefinedCommandOptions.ARGUMENT_SERVICE_ROLE,
+            EBDefinedCommandOptions.ARGUMENT_INPUT_PACKAGE,
 
             EBDefinedCommandOptions.ARGUMENT_WAIT_FOR_UPDATE
         });
@@ -63,12 +64,17 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             base.ParseCommandArguments(values);
 
             this.DeployEnvironmentOptions.ParseCommandArguments(values);
+
+            Tuple<CommandOption, CommandOptionValue> tuple;
+            if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_INPUT_PACKAGE.Switch)) != null)
+                this.Package = tuple.Item2.StringValue;
+
         }
 
 
         protected override async Task<bool> PerformActionAsync()
         {
-            string package = this.GetStringValueOrDefault(this.Package, EBDefinedCommandOptions.ARGUMENT_EB_PACKAGE, false);
+            string package = this.GetStringValueOrDefault(this.Package, EBDefinedCommandOptions.ARGUMENT_INPUT_PACKAGE, false);
             string application = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Application, EBDefinedCommandOptions.ARGUMENT_EB_APPLICATION, true);
             string versionLabel = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.VersionLabel, EBDefinedCommandOptions.ARGUMENT_EB_VERSION_LABEL, false) ?? DateTime.Now.Ticks.ToString();
             string environment = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Environment, EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT, true);
