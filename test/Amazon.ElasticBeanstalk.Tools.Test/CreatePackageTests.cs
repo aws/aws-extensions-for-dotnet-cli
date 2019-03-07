@@ -20,8 +20,10 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
         public async Task NoIISSettings()
         {
             var outputPackage = Path.GetTempFileName();
-            var packageCommand = new CreatePackageCommand(new ConsoleToolLogger(), this.TestBeanstalkWebAppPath, new string[] { "--output-package", outputPackage });
+            var packageCommand = new PackageCommand(new ConsoleToolLogger(), TestUtilities.TestBeanstalkWebAppPath, new string[] { "--output-package", outputPackage });
+            packageCommand.DisableInteractive = true;
             await packageCommand.ExecuteAsync();
+            Assert.NotNull(packageCommand.LastToolsException);
 
             var manifest = ReadManifestFromPackage(outputPackage);
             var appInManifest = manifest["deployments"]["aspNetCoreWeb"][0];
@@ -37,8 +39,9 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
         public async Task ExplicitIISSettings()
         {
             var outputPackage = Path.GetTempFileName();
-            var packageCommand = new CreatePackageCommand(new ConsoleToolLogger(), this.TestBeanstalkWebAppPath, 
+            var packageCommand = new PackageCommand(new ConsoleToolLogger(), TestUtilities.TestBeanstalkWebAppPath, 
                 new string[] { "--output-package", outputPackage, "--iis-website", "The WebSite", "--app-path", "/child" });
+            packageCommand.DisableInteractive = true;
             await packageCommand.ExecuteAsync();
 
             var manifest = ReadManifestFromPackage(outputPackage);
@@ -49,6 +52,32 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
             Assert.Equal(".", appInManifestParameters["appBundle"].ToString());
             Assert.Equal("/child", appInManifestParameters["iisPath"].ToString());
             Assert.Equal("The WebSite", appInManifestParameters["iisWebSite"].ToString());
+        }
+
+        [Fact]
+        public async Task ExpandEnvironmentVariable()
+        {
+            const string envName = "EB_OUTPUT_PACKAGE";
+            var outputPackage = Path.GetTempFileName();
+            Environment.SetEnvironmentVariable(envName, outputPackage);
+            try
+            {
+                var packageCommand = new PackageCommand(new ConsoleToolLogger(), TestUtilities.TestBeanstalkWebAppPath, new string[] { "--config-file", "env-eb-config.json" });
+                await packageCommand.ExecuteAsync();
+
+                var manifest = ReadManifestFromPackage(outputPackage);
+                var appInManifest = manifest["deployments"]["aspNetCoreWeb"][0];
+                Assert.NotNull(appInManifest);
+
+                var appInManifestParameters = appInManifest["parameters"];
+                Assert.Equal(".", appInManifestParameters["appBundle"].ToString());
+                Assert.Equal("/", appInManifestParameters["iisPath"].ToString());
+                Assert.Equal("Default Web Site", appInManifestParameters["iisWebSite"].ToString());
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(envName, null);
+            }
         }
 
 
@@ -69,15 +98,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
         }
 
 
-        public string TestBeanstalkWebAppPath
-        {
-            get
-            {
-                var assembly = this.GetType().GetTypeInfo().Assembly;
 
-                var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestBeanstalkWebApp");
-                return fullPath;
-            }
-        }
     }
 }

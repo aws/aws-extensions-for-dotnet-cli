@@ -9,10 +9,10 @@ using ThirdParty.Json.LitJson;
 
 namespace Amazon.ElasticBeanstalk.Tools.Commands
 {
-    public class CreatePackageCommand : EBBaseCommand
+    public class PackageCommand : EBBaseCommand
     {
-        public const string COMMAND_NAME = "create-package";
-        public const string COMMAND_DESCRIPTION = "Package the application to a zip file to be deployed later";
+        public const string COMMAND_NAME = "package";
+        public const string COMMAND_DESCRIPTION = "Package the application to a zip file to be deployed later to an Elastic Beanstalk environment";
 
         public static readonly IList<CommandOption> CommandOptions = BuildLineOptions(new List<CommandOption>
         {
@@ -29,7 +29,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
         public DeployEnvironmentProperties DeployEnvironmentOptions { get; } = new DeployEnvironmentProperties();
 
-        public CreatePackageCommand(IToolLogger logger, string workingDirectory, string[] args)
+        public PackageCommand(IToolLogger logger, string workingDirectory, string[] args)
             : base(logger, workingDirectory, CommandOptions, args)
         {
         }

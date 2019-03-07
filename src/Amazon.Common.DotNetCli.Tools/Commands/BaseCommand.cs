@@ -131,8 +131,8 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_CONFIG_FILE.Switch)) != null)
             {
                 this.ConfigFile = tuple.Item2.StringValue;
-                var fullConfigPath = Path.GetFullPath(
-                    string.IsNullOrEmpty(this.ProjectLocation) ? this.ConfigFile : Path.Combine(this.ProjectLocation, this.ConfigFile));
+
+                var fullConfigPath = Path.Combine(Utilities.DetermineProjectLocation(this.WorkingDirectory, this.ProjectLocation), this.ConfigFile);
                 if (!File.Exists(fullConfigPath))
                 {
                     throw new ToolsException($"Config file {fullConfigPath} can not be found.", ToolsException.CommonErrorCode.MissingConfigFile);

@@ -15,7 +15,7 @@ namespace Amazon.ElasticBeanstalk.Tools
                 new List<ICommandInfo>()
                 {
                     new GroupHeaderInfo("Commands to deploy to Amazon Elastic Beanstalk:"),
-                    new CommandInfo<CreatePackageCommand>(CreatePackageCommand.COMMAND_NAME, CreatePackageCommand.COMMAND_DESCRIPTION, CreatePackageCommand.CommandOptions),
+                    new CommandInfo<PackageCommand>(PackageCommand.COMMAND_NAME, PackageCommand.COMMAND_DESCRIPTION, PackageCommand.CommandOptions),
                     new CommandInfo<DeployEnvironmentCommand>(DeployEnvironmentCommand.COMMAND_NAME, DeployEnvironmentCommand.COMMAND_DESCRIPTION, DeployEnvironmentCommand.CommandOptions),
                     new CommandInfo<ListEnvironmentsCommand>(ListEnvironmentsCommand.COMMAND_NAME, ListEnvironmentsCommand.COMMAND_DESCRIPTION, ListEnvironmentsCommand.CommandOptions),
                     new CommandInfo<DeleteEnvironmentCommand>(DeleteEnvironmentCommand.COMMAND_NAME, DeleteEnvironmentCommand.COMMAND_DESCRIPTION, DeleteEnvironmentCommand.CommandOptions),
