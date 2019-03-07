@@ -45,20 +45,9 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             EBDefinedCommandOptions.ARGUMENT_WAIT_FOR_UPDATE
         });
 
-        DeployEnvironmentProperties _deployAppProperties;
-        public DeployEnvironmentProperties DeployEnvironmentOptions
-        {
-            get
-            {
-                if (this._deployAppProperties == null)
-                {
-                    this._deployAppProperties = new DeployEnvironmentProperties();
-                }
+        public string Package { get; set; }
 
-                return this._deployAppProperties;
-            }
-            set { this._deployAppProperties = value; }
-        }
+        public DeployEnvironmentProperties DeployEnvironmentOptions { get; } = new DeployEnvironmentProperties();
 
         public DeployEnvironmentCommand(IToolLogger logger, string workingDirectory, string[] args)
             : base(logger, workingDirectory, CommandOptions, args)
@@ -79,68 +68,70 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
-            this.EnsureInProjectDirectory();
-
-            var projectLocation = Utilities.DetermineProjectLocation(this.WorkingDirectory,
-                this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false));
-
-            string configuration = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false) ?? "Release";
-            string targetFramework = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
-            string publishOptions = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.PublishOptions, CommonDefinedCommandOptions.ARGUMENT_PUBLISH_OPTIONS, false);
-
-            if (string.IsNullOrEmpty(targetFramework))
-            {
-                targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation);
-                if (string.IsNullOrEmpty(targetFramework))
-                {
-                    targetFramework = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
-                }
-            }
-
-                string application = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Application, EBDefinedCommandOptions.ARGUMENT_EB_APPLICATION, true);
-                string environment = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Environment, EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT, true);
-                string versionLabel = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.VersionLabel, EBDefinedCommandOptions.ARGUMENT_EB_VERSION_LABEL, false) ?? DateTime.Now.Ticks.ToString();
+            string package = this.GetStringValueOrDefault(this.Package, EBDefinedCommandOptions.ARGUMENT_EB_PACKAGE, false);
+            string application = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Application, EBDefinedCommandOptions.ARGUMENT_EB_APPLICATION, true);
+            string versionLabel = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.VersionLabel, EBDefinedCommandOptions.ARGUMENT_EB_VERSION_LABEL, false) ?? DateTime.Now.Ticks.ToString();
+            string environment = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Environment, EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT, true);
 
             bool doesApplicationExist = await DoesApplicationExist(application);
             bool doesEnvironmentExist = doesApplicationExist ? await DoesEnvironmentExist(application, environment) : false;
 
-            if(!doesApplicationExist)
+            string zipArchivePath = null;
+
+            if (string.IsNullOrEmpty(package))
             {
-                try
+                this.EnsureInProjectDirectory();
+
+                var projectLocation = Utilities.DetermineProjectLocation(this.WorkingDirectory,
+                    this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false));
+
+                string configuration = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false) ?? "Release";
+                string targetFramework = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
+                string publishOptions = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.PublishOptions, CommonDefinedCommandOptions.ARGUMENT_PUBLISH_OPTIONS, false);
+
+                if (string.IsNullOrEmpty(targetFramework))
                 {
-                    this.Logger?.WriteLine("Creating new Elastic Beanstalk Application");
-                    await this.EBClient.CreateApplicationAsync(new CreateApplicationRequest
+                    targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation);
+                    if (string.IsNullOrEmpty(targetFramework))
                     {
-                        ApplicationName = application
-                    });
+                        targetFramework = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
+                    }
                 }
-                catch(Exception e)
+
+                await CreateEBApplicationIfNotExist(application, doesApplicationExist);
+
+                var dotnetCli = new DotNetCLIWrapper(this.Logger, projectLocation);
+
+                var publishLocation = Utilities.DeterminePublishLocation(null, projectLocation, configuration, targetFramework);
+                this.Logger?.WriteLine("Determine publish location: " + publishLocation);
+
+
+                this.Logger?.WriteLine("Executing publish command");
+                if (dotnetCli.Publish(projectLocation, publishLocation, targetFramework, configuration, publishOptions) != 0)
                 {
-                    throw new ElasticBeanstalkExceptions("Error creating Elastic Beanstalk application: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedCreateApplication);
+                    throw new ElasticBeanstalkExceptions("Error executing \"dotnet publish\"", ElasticBeanstalkExceptions.CommonErrorCode.DotnetPublishFailed);
                 }
+
+                EBUtilities.SetupAWSDeploymentManifest(this.Logger, this, this.DeployEnvironmentOptions, publishLocation);
+
+                zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, new DirectoryInfo(projectLocation).Name + "-" + DateTime.Now.Ticks + ".zip");
+
+                this.Logger?.WriteLine("Zipping up publish folder");
+                Utilities.ZipDirectory(this.Logger, publishLocation, zipArchivePath);
+                this.Logger?.WriteLine("Zip archive created: " + zipArchivePath);
             }
-
-
-
-            var dotnetCli = new DotNetCLIWrapper(this.Logger, projectLocation);
-
-            var publishLocation = Utilities.DeterminePublishLocation(null,  projectLocation, configuration, targetFramework);
-            this.Logger?.WriteLine("Determine publish location: " + publishLocation);
-
-
-            this.Logger?.WriteLine("Executing publish command");
-            if (dotnetCli.Publish(projectLocation, publishLocation, targetFramework, configuration, publishOptions) != 0)
+            else
             {
-                throw new ElasticBeanstalkExceptions("Error executing \"dotnet publish\"", ElasticBeanstalkExceptions.CommonErrorCode.DotnetPublishFailed);
+                await CreateEBApplicationIfNotExist(application, doesApplicationExist);
+
+                if (!File.Exists(package))
+                    throw new ElasticBeanstalkExceptions($"Package {package} does not exist", ElasticBeanstalkExceptions.EBCode.InvalidPackage);
+                if (!string.Equals(Path.GetExtension(package), ".zip", StringComparison.OrdinalIgnoreCase))
+                    throw new ElasticBeanstalkExceptions($"Package {package} must be a zip file", ElasticBeanstalkExceptions.EBCode.InvalidPackage);
+
+                this.Logger?.WriteLine($"Skipping compilation and using precompiled package {package}");
+                zipArchivePath = package;
             }
-
-            SetupAWSDeploymentManifest(publishLocation);
-
-            var zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, new DirectoryInfo(projectLocation).Name + "-" + DateTime.Now.Ticks + ".zip");
-
-            this.Logger?.WriteLine("Zipping up publish folder");
-            Utilities.ZipDirectory(this.Logger, publishLocation, zipArchivePath);
-            this.Logger?.WriteLine("Zip archive created: " + zipArchivePath);
 
             S3Location s3Loc;
             try
@@ -220,6 +211,25 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             }
 
             return true;
+        }
+
+        private async Task CreateEBApplicationIfNotExist(string application, bool doesApplicationExist)
+        {
+            if (!doesApplicationExist)
+            {
+                try
+                {
+                    this.Logger?.WriteLine("Creating new Elastic Beanstalk Application");
+                    await this.EBClient.CreateApplicationAsync(new CreateApplicationRequest
+                    {
+                        ApplicationName = application
+                    });
+                }
+                catch (Exception e)
+                {
+                    throw new ElasticBeanstalkExceptions("Error creating Elastic Beanstalk application: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedCreateApplication);
+                }
+            }
         }
 
         private List<Tag> ConvertToTagsCollection()
@@ -503,77 +513,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 return DateTime.Now;
 
             return response.Events[0].EventDate;
-        }
-
-        private void SetupAWSDeploymentManifest(string publishLocation)
-        {
-            var iisAppPath = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.UrlPath, EBDefinedCommandOptions.ARGUMENT_APP_PATH, false) ?? "/";
-            var iisWebSite = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.IISWebSite, EBDefinedCommandOptions.ARGUMENT_IIS_WEBSITE, false) ?? "Default Web Site";
-
-
-            var pathToManifest = Path.Combine(publishLocation, "aws-windows-deployment-manifest.json");
-            string manifest;
-            if (File.Exists(pathToManifest))
-            {
-                this.Logger?.WriteLine("Updating existing deployment manifest");
-
-                Func<string, JsonData, JsonData> getOrCreateNode = (name, node) =>
-                {
-                    JsonData child = node[name] as JsonData;
-                    if (child == null)
-                    {
-                        child = new JsonData();
-                        node[name] = child;
-                    }
-                    return child;
-                };
-
-                JsonData root = JsonMapper.ToObject(File.ReadAllText(pathToManifest));
-                if (root["manifestVersion"] == null || !root["manifestVersion"].IsInt)
-                {
-                    root["manifestVersion"] = 1;
-                }
-
-                JsonData deploymentNode = getOrCreateNode("deployments", root);
-
-                JsonData aspNetCoreWebNode = getOrCreateNode("aspNetCoreWeb", deploymentNode);
-
-                JsonData appNode;
-                if (aspNetCoreWebNode.GetJsonType() == JsonType.None || aspNetCoreWebNode.Count == 0)
-                {
-                    appNode = new JsonData();
-                    aspNetCoreWebNode.Add(appNode);
-                }
-                else
-                    appNode = aspNetCoreWebNode[0];
-
-
-                if (appNode["name"] == null || !appNode["name"].IsString || string.IsNullOrEmpty((string)appNode["name"]))
-                {
-                    appNode["name"] = "app";
-                }
-
-                JsonData parametersNode = getOrCreateNode("parameters", appNode);
-                parametersNode["appBundle"] = ".";
-                parametersNode["iisPath"] = iisAppPath;
-                parametersNode["iisWebSite"] = iisWebSite;
-
-                manifest = root.ToJson();
-            }
-            else
-            {
-                this.Logger?.WriteLine("Creating deployment manifest");
-
-                manifest = EBConstants.DEFAULT_MANIFEST.Replace("{iisPath}", iisAppPath).Replace("{iisWebSite}", iisWebSite);
-
-                if (File.Exists(pathToManifest))
-                    File.Delete(pathToManifest);
-            }
-
-            this.Logger?.WriteLine("\tIIS App Path: " + iisAppPath);
-            this.Logger?.WriteLine("\tIIS Web Site: " + iisWebSite);
-
-            File.WriteAllText(pathToManifest, manifest);
         }
 
         private async Task<S3Location> UploadDeploymentPackageAsync(string application, string versionLabel, string deploymentPackage)

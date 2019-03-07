@@ -282,12 +282,15 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
         {
             if (!string.IsNullOrEmpty(propertyValue))
             {
-                return propertyValue;
+                var expanded = Utilities.ReplaceEnvironmentVariables(propertyValue);
+                return expanded;
             }
             else if (!string.IsNullOrEmpty(DefaultConfig[option.Switch] as string))
             {
                 var configDefault = DefaultConfig[option.Switch] as string;
-                return configDefault;
+                var expanded = Utilities.ReplaceEnvironmentVariables(configDefault);
+
+                return expanded;
             }
             else if(DefaultConfig[option.Switch] is int)
             {
