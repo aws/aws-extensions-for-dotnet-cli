@@ -76,6 +76,8 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             bool doesApplicationExist = await DoesApplicationExist(application);
             bool doesEnvironmentExist = doesApplicationExist ? await DoesEnvironmentExist(application, environment) : false;
 
+            await CreateEBApplicationIfNotExist(application, doesApplicationExist);
+
             string zipArchivePath = null;
 
             if (string.IsNullOrEmpty(package))
@@ -97,8 +99,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                         targetFramework = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
                     }
                 }
-
-                await CreateEBApplicationIfNotExist(application, doesApplicationExist);
 
                 var dotnetCli = new DotNetCLIWrapper(this.Logger, projectLocation);
 
@@ -122,8 +122,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             }
             else
             {
-                await CreateEBApplicationIfNotExist(application, doesApplicationExist);
-
                 if (!File.Exists(package))
                     throw new ElasticBeanstalkExceptions($"Package {package} does not exist", ElasticBeanstalkExceptions.EBCode.InvalidPackage);
                 if (!string.Equals(Path.GetExtension(package), ".zip", StringComparison.OrdinalIgnoreCase))

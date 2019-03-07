@@ -16,16 +16,16 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
         public static readonly IList<CommandOption> CommandOptions = BuildLineOptions(new List<CommandOption>
         {
-            CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION,
             CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION,
             CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK,
             CommonDefinedCommandOptions.ARGUMENT_PUBLISH_OPTIONS,
 
             EBDefinedCommandOptions.ARGUMENT_APP_PATH,
             EBDefinedCommandOptions.ARGUMENT_IIS_WEBSITE,
+            EBDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE
         });
 
-        public string Package { get; set; }
+        public string OutputPackageFileName { get; set; }
 
         public DeployEnvironmentProperties DeployEnvironmentOptions { get; } = new DeployEnvironmentProperties();
 
@@ -43,6 +43,11 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             base.ParseCommandArguments(values);
 
             this.DeployEnvironmentOptions.ParseCommandArguments(values);
+
+            Tuple<CommandOption, CommandOptionValue> tuple;
+            if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE.Switch)) != null)
+                this.OutputPackageFileName = tuple.Item2.StringValue;
+
         }
 
 
@@ -80,7 +85,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
             EBUtilities.SetupAWSDeploymentManifest(this.Logger, this, this.DeployEnvironmentOptions, publishLocation);
 
-            string package = this.GetStringValueOrDefault(this.Package, EBDefinedCommandOptions.ARGUMENT_EB_PACKAGE, false);
+            string package = this.GetStringValueOrDefault(this.OutputPackageFileName, EBDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE, false);
             string zipArchivePath  = null;
 
             if (!string.IsNullOrWhiteSpace(package))
@@ -102,6 +107,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
         protected override void SaveConfigFile(JsonData data)
         {
             this.DeployEnvironmentOptions.PersistSettings(this, data);
+            data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE.ConfigFileKey, this.GetStringValueOrDefault(this.OutputPackageFileName, EBDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE, false));
         }
     }
 }

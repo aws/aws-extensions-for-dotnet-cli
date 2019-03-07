@@ -154,5 +154,14 @@ namespace Amazon.ElasticBeanstalk.Tools
                 ValueType = CommandOption.CommandOptionValueType.KeyValuePairs,
                 Description = "Additional options for the environment. Format is <option-namespace>,<option-name>=<option-value>;..."
             };
+        public static readonly CommandOption ARGUMENT_OUTPUT_PACKAGE =
+            new CommandOption
+            {
+                Name = "The output zip file name",
+                ShortSwitch = "-o",
+                Switch = "--output-package",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "The zip file containing the application will be packaged into."
+            };
     }
 }

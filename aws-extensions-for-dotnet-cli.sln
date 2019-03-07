@@ -59,6 +59,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServerlessWithYamlFunction"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NativeDependencyExample2", "testapps\FlattenDependencyTestProjects\NativeDependencyExample2\NativeDependencyExample2.csproj", "{846348DD-9034-4C36-8342-955B1BAA42C5}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amazon.ElasticBeanstalk.Tools.Test", "test\Amazon.ElasticBeanstalk.Tools.Test\Amazon.ElasticBeanstalk.Tools.Test.csproj", "{5CCBF935-1EF1-4D7A-ABC6-46EA3BDF3496}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestBeanstalkWebApp", "testapps\TestBeanstalkWebApp\TestBeanstalkWebApp.csproj", "{465DC6ED-4EE7-4FCE-8211-02E69BF37F54}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -141,6 +145,14 @@ Global
 		{846348DD-9034-4C36-8342-955B1BAA42C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{846348DD-9034-4C36-8342-955B1BAA42C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{846348DD-9034-4C36-8342-955B1BAA42C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5CCBF935-1EF1-4D7A-ABC6-46EA3BDF3496}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5CCBF935-1EF1-4D7A-ABC6-46EA3BDF3496}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5CCBF935-1EF1-4D7A-ABC6-46EA3BDF3496}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5CCBF935-1EF1-4D7A-ABC6-46EA3BDF3496}.Release|Any CPU.Build.0 = Release|Any CPU
+		{465DC6ED-4EE7-4FCE-8211-02E69BF37F54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{465DC6ED-4EE7-4FCE-8211-02E69BF37F54}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{465DC6ED-4EE7-4FCE-8211-02E69BF37F54}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{465DC6ED-4EE7-4FCE-8211-02E69BF37F54}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -168,6 +180,8 @@ Global
 		{0A47A38F-EFB5-4DCF-9CEC-5F6FBC8D5EC6} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 		{BB4BD9D9-D307-4F81-A89E-833DA688629B} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 		{846348DD-9034-4C36-8342-955B1BAA42C5} = {9F4516D5-D045-4840-BA4D-34EF4684C6CB}
+		{5CCBF935-1EF1-4D7A-ABC6-46EA3BDF3496} = {BB0A8314-3127-4159-8B6A-64F97FEF9474}
+		{465DC6ED-4EE7-4FCE-8211-02E69BF37F54} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DBFC70D6-49A2-40A1-AB08-5D9504AB7112}
