@@ -127,10 +127,14 @@ namespace Amazon.Lambda.Tools.Commands
                 // Release will be the default configuration if nothing set.
                 string configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false);
 
-                string targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
+                var targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
+                if (string.IsNullOrEmpty(targetFramework))
+                {
+                    targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation));
+                }
                 string msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
 
-                ValidateTargetFrameworkAndLambdaRuntime();
+                ValidateTargetFrameworkAndLambdaRuntime(targetFramework);
 
                 bool disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
                 string publishLocation;
@@ -289,11 +293,10 @@ namespace Amazon.Lambda.Tools.Commands
             return true;
         }
 
-        private void ValidateTargetFrameworkAndLambdaRuntime()
+        private void ValidateTargetFrameworkAndLambdaRuntime(string targetFramework)
         {
             string runtimeName = this.GetStringValueOrDefault(this.Runtime, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME, true);
-            string frameworkName = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
-            LambdaUtilities.ValidateTargetFrameworkAndLambdaRuntime(runtimeName, frameworkName);
+            LambdaUtilities.ValidateTargetFrameworkAndLambdaRuntime(runtimeName, targetFramework);
         }
 
         protected override void SaveConfigFile(JsonData data)

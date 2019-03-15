@@ -117,7 +117,6 @@ namespace Amazon.Lambda.Tools.Test
             command.Timeout = 10;
             command.Role = this._roleArn;
             command.Configuration = "Release";
-            command.TargetFramework = "netcoreapp1.0";
             command.Runtime = "dotnetcore1.0";
             command.DisableInteractive = true;
 
@@ -160,7 +159,6 @@ namespace Amazon.Lambda.Tools.Test
             var packageCommand = new PackageCommand(new ConsoleToolLogger(), fullPath, new string[0]);
             packageCommand.OutputPackageFileName = packageZip;
             packageCommand.Configuration = "Release";
-            packageCommand.TargetFramework = "netcoreapp1.0";
 
             await packageCommand.ExecuteAsync();
 

@@ -149,14 +149,29 @@ namespace Amazon.Common.DotNetCli.Tools
 
         public static string LookupTargetFrameworkFromProjectFile(string projectLocation)
         {
-            var files = Directory.GetFiles(projectLocation, "*.csproj", SearchOption.TopDirectoryOnly);
-            if (files.Length != 1)
-                return null;
+            var projectFile = FindProjectFileInDirectory(projectLocation);
 
-            var xdoc = XDocument.Load(files[0]);
+            var xdoc = XDocument.Load(projectFile);
 
             var element = xdoc.XPathSelectElement("//PropertyGroup/TargetFramework");
             return element?.Value;
+        }
+
+        public static string FindProjectFileInDirectory(string directory)
+        {
+            if (File.Exists(directory))
+                return directory;
+            
+            foreach (var ext in new [] { "*.csproj", "*.fsproj", "*.vbproj" })
+            {
+                var files = Directory.GetFiles(directory, ext, SearchOption.TopDirectoryOnly);
+                if (files.Length == 1)
+                {
+                    return files[0];
+                }
+            }
+
+            return null;
         }
 
         /// <summary>

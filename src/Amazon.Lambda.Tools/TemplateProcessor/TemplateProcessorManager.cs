@@ -200,7 +200,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             var outputPackage = GenerateOutputZipFilename(field);
             command.OutputPackageFileName = outputPackage;
             command.TargetFramework =
-                LambdaUtilities.DetermineTargetFrameworkFromLambdaRuntime(field.Resource.LambdaRuntime);
+                LambdaUtilities.DetermineTargetFrameworkFromLambdaRuntime(field.Resource.LambdaRuntime, location);
 
             // If the project is in the same directory as the CloudFormation template then use any parameters
             // there were specified on the command to build the project.
