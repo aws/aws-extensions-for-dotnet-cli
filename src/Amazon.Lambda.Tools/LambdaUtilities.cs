@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using ThirdParty.Json.LitJson;
 using System.Xml.Linq;
+using System.Xml.Linq;
 using Amazon.Common.DotNetCli.Tools;
 
 namespace Amazon.Lambda.Tools
@@ -25,13 +26,14 @@ namespace Amazon.Lambda.Tools
             {Amazon.Lambda.Runtime.Dotnetcore10.Value, "netcoreapp1.0"}
         };
 
-        public static string DetermineTargetFrameworkFromLambdaRuntime(string lambdaRuntime)
+        public static string DetermineTargetFrameworkFromLambdaRuntime(string lambdaRuntime, string projectLocation)
         {
             string runtime;
             if (_lambdaRuntimeToDotnetFramework.TryGetValue(lambdaRuntime, out runtime))
                 return runtime;
 
-            return null;
+            var framework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation);
+            return framework;
         }
         
         /// <summary>
