@@ -47,7 +47,7 @@ namespace Amazon.Lambda.Tools
             string projectLocation, string configuration, string targetFramework, string msbuildParameters, bool disableVersionCheck,
             out string publishLocation, ref string zipArchivePath)
         {
-            LogDotNetCore20DeprecationMessageIfNecessary(logger, targetFramework);
+            LogDeprecationMessagesIfNecessary(logger, targetFramework);
 
             if (string.IsNullOrEmpty(configuration))
                 configuration = LambdaConstants.DEFAULT_BUILD_CONFIGURATION;
@@ -664,7 +664,7 @@ namespace Amazon.Lambda.Tools
             }
         }
 
-        internal static void LogDotNetCore20DeprecationMessageIfNecessary(IToolLogger logger, string targetFramework)
+        internal static void LogDeprecationMessagesIfNecessary(IToolLogger logger, string targetFramework)
         {
             if (targetFramework == "netcoreapp2.0" && logger != null)
             {
