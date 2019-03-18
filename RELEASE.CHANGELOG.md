@@ -1,3 +1,8 @@
+### Release 2019-03-18
+* **Amazon.Lambda.Tools (3.1.4)**
+    * Make `--framework` switch optional. If it is not set then the project file will be inspected to determine framework.
+	* Add deprecation warning message when using .NET Core 2.0 Lambda runtime.
+
 ### Release 2019-03-07
 * **Amazon.ElasticBeanstalk.Tools (3.1.0)**
   * Pull request [#55](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/55) add **package** command to package an application as a zip file to later be deployed to Beanstalk. Thanks [Anthony Abate](https://github.com/abbotware)
