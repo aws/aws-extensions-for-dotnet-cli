@@ -212,7 +212,8 @@ namespace Amazon.Lambda.Tools.Commands
             {
                 optDirectory = LambdaConstants.DEFAULT_LAYER_OPT_DIRECTORY;
             }
-            var storeOutputDirectory = Path.Combine(Path.GetTempPath(), tempDirectoryName, optDirectory);
+            var tempRootPath = Path.Combine(Path.GetTempPath(), tempDirectoryName);
+            var storeOutputDirectory = Path.Combine(tempRootPath, optDirectory);
 
             {
                 var (shouldDelete, manifestToUse) = LambdaUtilities.ConvertManifestToSdkManifest(packageManifest);
@@ -248,7 +249,7 @@ namespace Amazon.Lambda.Tools.Commands
             {
                 File.Delete(zipPath);
             }
-            LambdaPackager.BundleDirectory(zipPath, Directory.GetParent(storeOutputDirectory).FullName, false, this.Logger);
+            LambdaPackager.BundleDirectory(zipPath, tempRootPath, false, this.Logger);
 
             var result = new CreateLayerZipFileResult
             {
@@ -275,7 +276,7 @@ namespace Amazon.Lambda.Tools.Commands
         {
             var manifestDescription = new LayerDescriptionManifest(LayerDescriptionManifest.ManifestType.RuntimePackageStore);
             
-            manifestDescription.Dir = new DirectoryInfo(directory).Name;
+            manifestDescription.Dir = directory;
             manifestDescription.Buc = s3Bucket;
             manifestDescription.Key = s3Key;
             manifestDescription.Op = enableOptimization ? LayerDescriptionManifest.OptimizedState.Optimized : LayerDescriptionManifest.OptimizedState.NoOptimized;

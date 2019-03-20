@@ -15,7 +15,7 @@ namespace Amazon.Lambda.Tools
         public const string LAYER_TYPE_RUNTIME_PACKAGE_STORE_DISPLAY_NAME = ".NET Runtime Package Store";
         public const string LAYER_TYPE_RUNTIME_PACKAGE_STORE = "runtime-package-store";
         public const string LAYER_TYPE_ALLOWED_VALUES = LAYER_TYPE_RUNTIME_PACKAGE_STORE;
-        public const string DEFAULT_LAYER_OPT_DIRECTORY = "runtime-package-store";
+        public const string DEFAULT_LAYER_OPT_DIRECTORY = "dotnetcore/store";
         public static readonly Version MINIMUM_DOTNET_SDK_VERSION_FOR_ASPNET_LAYERS = new Version("2.2.100");
 
         public const string ENV_DOTNET_LAMBDA_CLI_LOCAL_MANIFEST_OVERRIDE = "DOTNET_LAMBDA_CLI_LOCAL_MANIFEST_OVERRIDE";

@@ -95,6 +95,9 @@ namespace Amazon.Lambda.Tools.Test
         }
 
         [Fact]
+        // This test behaves different depending on the OS the test is running on which means 
+        // all code paths are not always being tested. Future work is needed to figure out how to 
+        // mock the underlying calls to the dotnet CLI.
         public async Task AttemptToCreateAnOptmizedLayer()
         {
             var logger = new TestToolLogger(_testOutputHelper);

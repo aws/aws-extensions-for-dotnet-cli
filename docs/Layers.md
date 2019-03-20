@@ -133,7 +133,7 @@ The manifest is a msbuild project file like a csproj file of a Lambda Function p
 When the manifest is read all NuGet packages listed in **PackageReference** elements along with their dependencies will be copied to the store.
 
 The manifest can be set for the **publish-layer** command with the `--package-manifest` switch. If the
-switch is not set then the command will look for a csproj of fsproj in the current directory.
+switch is not set then the command will look for a csproj or fsproj in the current directory.
 
 
 #### Store Output Manifest
@@ -257,9 +257,10 @@ To use layers the `--function-layers` switch must be set when executing the pack
 store manifest can be passed to the `dotnet publish` command which will filter 
 out the NuGet packages from the layer.
 
-The **DOTNET_SHARED_STORE** must be set with whatever tool/process is deploying the 
-deployment bundle. The package command will output the value **DOTNET_SHARED_STORE**
-must be set to. By default **DOTNET_SHARED_STORE** will be to `/opt/runtime-package-store/`
+The DOTNET_SHARED_STORE environment variable must be set for the lambda function with
+whatever tool/process is deploying the deployment bundle.
+The package command will output the value **DOTNET_SHARED_STORE**
+must be set to. By default **DOTNET_SHARED_STORE** will be to `/opt/dotnetcore/store/`
 
 #### Can I create a common layer to share with multiple projects?
 

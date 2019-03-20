@@ -40,7 +40,7 @@ namespace Amazon.Lambda.Tools.Commands
         /// and the service clients have been copied over. In that case there is no reason
         /// to look for a region or aws credentials.
         /// </summary>
-        public bool DisableRegionCheck { get; set; }
+        public bool DisableRegionAndCredentialsCheck { get; set; }
 
         
         /// <summary>
@@ -109,7 +109,7 @@ namespace Amazon.Lambda.Tools.Commands
             LayerPackageInfo layerPackageInfo = null;
             if (layerVersionArns != null)
             {
-                if (!this.DisableRegionCheck)
+                if (!this.DisableRegionAndCredentialsCheck)
                 {
                     // Region and credentials are only required if using layers. This is new behavior so do a preemptive check when there are layers to
                     // see if region and credentials are set. If they are not set give a specific error message about region and credentials required

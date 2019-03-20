@@ -487,7 +487,7 @@ namespace Amazon.Lambda.Tools.Test
             {
                 if (disposing)
                 {
-                    AmazonS3Util.DeleteS3BucketWithObjectsAsync(this.S3Client, this.Bucket).Wait();
+                    AmazonS3Util.DeleteS3BucketWithObjectsAsync(this.S3Client, this.Bucket).GetAwaiter().GetResult();
 
                     this.S3Client.Dispose();
                 }

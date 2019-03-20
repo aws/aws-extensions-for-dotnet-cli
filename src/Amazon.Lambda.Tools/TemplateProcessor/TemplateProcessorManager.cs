@@ -211,7 +211,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             command.S3Client = this.OriginatingCommand?.S3Client;
             command.IAMClient = this.OriginatingCommand?.IAMClient;
             command.CloudFormationClient = this.OriginatingCommand?.CloudFormationClient;
-            command.DisableRegionCheck = true;
+            command.DisableRegionAndCredentialsCheck = true;
 
             var outputPackage = GenerateOutputZipFilename(field);
             command.OutputPackageFileName = outputPackage;
