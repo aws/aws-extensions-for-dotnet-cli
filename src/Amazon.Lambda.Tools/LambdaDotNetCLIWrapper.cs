@@ -101,7 +101,7 @@ namespace Amazon.Lambda.Tools
                     arguments.Append($" -r {LambdaConstants.RUNTIME_HIERARCHY_STARTING_POINT}");
 
                     if (msbuildParameters == null ||
-                        !msbuildParameters.Contains("--self-contained", StringComparison.InvariantCultureIgnoreCase))
+                        msbuildParameters.IndexOf("--self-contained", StringComparison.InvariantCultureIgnoreCase) == -1)
                     {
                         arguments.Append(" --self-contained false ");
                     }

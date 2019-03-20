@@ -138,7 +138,7 @@ namespace Amazon.Lambda.Tools
                 }
             }
 #else
-                BundleWithBuildLambdaZip(BuildLambdaZipCliPath, zipArchivePath, sourceDirectory, flattenRuntime, logger);
+            BundleWithBuildLambdaZip(zipArchivePath, sourceDirectory, flattenRuntime, logger);
 #endif            
         }
 
