@@ -15,7 +15,7 @@ namespace Amazon.Lambda.Tools.Commands
     public class DeleteLayerVersionCommand : LambdaBaseCommand
     {
         public const string COMMAND_NAME = "delete-layer-version";
-        public const string COMMAND_DESCRIPTION = "Command to deletes a version of a Layer";
+        public const string COMMAND_DESCRIPTION = "Command to delete a version of a Layer";
         public const string COMMAND_ARGUMENTS = "<LAYER-VERSION-ARN> The arn of the Layer version to delete";
 
 

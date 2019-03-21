@@ -66,8 +66,7 @@ namespace Amazon.Lambda.Tools.Commands
             ListLayerVersionsResponse response = null;
             do
             {
-                if (response != null)
-                    request.Marker = response.NextMarker;
+                request.Marker = response?.NextMarker;
 
                 try
                 {

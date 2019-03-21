@@ -152,7 +152,7 @@ namespace Amazon.Common.DotNetCli.Tools
                     continue;
 
                 var tokens = line.Split(' ');
-                // There should be at least 2 tokens, the version and the path to the SDK. There might be more then token if the path to the SDK contained spaces.
+                // There should be at least 2 tokens, the version and the path to the SDK. There might be more than token if the path to the SDK contained spaces.
                 if (tokens.Length < 2)
                     continue;
 

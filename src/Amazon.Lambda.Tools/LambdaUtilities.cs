@@ -630,8 +630,8 @@ namespace Amazon.Lambda.Tools
                     var p = ParseLayerVersionArn(arn);
                     var getLayerResponse = await lambdaClient.GetLayerVersionAsync(new GetLayerVersionRequest { LayerName = p.name, VersionNumber = p.versionNumber });
 
-                    var manifest = AttemptToParseLayerDescriptionManifest(getLayerResponse.Description);
-                    if (manifest == null)
+                    LayerDescriptionManifest manifest;
+                    if (!LambdaUtilities.AttemptToParseLayerDescriptionManifest(getLayerResponse.Description, out manifest))
                     {
                         logger.WriteLine($"... {arn}: Skipped, does not contain a layer description manifest");
                         continue;
@@ -665,18 +665,20 @@ namespace Amazon.Lambda.Tools
             return info;
         }
 
-        internal static LayerDescriptionManifest AttemptToParseLayerDescriptionManifest(string json)
+        internal static bool AttemptToParseLayerDescriptionManifest(string json, out LayerDescriptionManifest manifest)
         {
+            manifest = null;
             if (string.IsNullOrEmpty(json) || json[0] != '{')
-                return null;
+                return false;
 
             try
             {
-                return JsonMapper.ToObject<LayerDescriptionManifest>(json);
+                manifest = JsonMapper.ToObject<LayerDescriptionManifest>(json);
+                return true;
             }
             catch
             {
-                return null;
+                return false;
             }
         }
 
@@ -704,13 +706,17 @@ namespace Amazon.Lambda.Tools
                 return "";
             try
             {
-                var manifest = AttemptToParseLayerDescriptionManifest(description);
-                if (manifest?.Nlt == LayerDescriptionManifest.ManifestType.RuntimePackageStore)
+                LayerDescriptionManifest manifest;
+                var parsed = AttemptToParseLayerDescriptionManifest(description, out manifest);
+                if(parsed)
                 {
-                    if(manifest.Op == LayerDescriptionManifest.OptimizedState.Optimized)
-                        return LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE_DISPLAY_NAME + " (Optimized)";
+                    if (manifest?.Nlt == LayerDescriptionManifest.ManifestType.RuntimePackageStore)
+                    {
+                        if (manifest.Op == LayerDescriptionManifest.OptimizedState.Optimized)
+                            return LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE_DISPLAY_NAME + " (Optimized)";
 
-                    return LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE_DISPLAY_NAME;
+                        return LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE_DISPLAY_NAME;
+                    }
                 }
             }
             catch (Exception)

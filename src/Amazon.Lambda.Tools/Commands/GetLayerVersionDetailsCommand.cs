@@ -78,9 +78,9 @@ namespace Amazon.Lambda.Tools.Commands
                 this.Logger.WriteLine("Created:".PadRight(PAD_SIZE) + DateTime.Parse(response.CreatedDate).ToString("g"));
                 this.Logger.WriteLine("License Info:".PadRight(PAD_SIZE) + response.LicenseInfo);
                 this.Logger.WriteLine("Compatible Runtimes:".PadRight(PAD_SIZE) + string.Join(", ", response.CompatibleRuntimes.ToArray()));
-                
-                var manifest = TryParseManifest(response.Description);
-                if (manifest == null)
+
+                LayerDescriptionManifest manifest;
+                if (!LambdaUtilities.AttemptToParseLayerDescriptionManifest(response.Description, out manifest))
                 {
                     this.Logger.WriteLine("Description:".PadRight(PAD_SIZE) + response.Description);
                 }
@@ -104,20 +104,6 @@ namespace Amazon.Lambda.Tools.Commands
             }
 
             return true;
-        }
-
-        private LayerDescriptionManifest TryParseManifest(string description)
-        {
-            try
-            {
-                var manifest = JsonMapper.ToObject<LayerDescriptionManifest>(description);
-                return manifest;
-            }
-            catch (Exception)
-            {
-            }
-
-            return null;
         }
 
         private async Task GetRuntimePackageManifest(LayerDescriptionManifest manifest)
