@@ -311,7 +311,7 @@ layer functionality.
 
 #### How do I see what packages are in a runtime package store layer?
 
-The `get-layer-version` command will give the full details for a layer version. If the layer version is
+The `dotnet lambda get-layer-version` command will give the full details for a layer version. If the layer version is
 a runtime package store layer the command will also display the manifest for the runtime package store.
 
 For example:
