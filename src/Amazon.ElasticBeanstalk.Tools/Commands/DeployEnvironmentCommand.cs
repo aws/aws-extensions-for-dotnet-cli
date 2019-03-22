@@ -456,7 +456,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             {
                 ApplicationName = applicationName,
                 EnvironmentName = environmentName,
-                StartTime = startingEventDate
+                StartTimeUtc = startingEventDate
             };
 
             var success = true;
@@ -472,7 +472,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
                 environment = responseEnvironments.Environments[0];
 
-                requestEvents.StartTime = lastPrintedEventDate;
+                requestEvents.StartTimeUtc = lastPrintedEventDate;
                 var responseEvents = await this.EBClient.DescribeEventsAsync(requestEvents);
                 if(responseEvents.Events.Count > 0)
                 {

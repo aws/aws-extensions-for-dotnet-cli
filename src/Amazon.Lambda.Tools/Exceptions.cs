@@ -41,6 +41,18 @@ namespace Amazon.Lambda.Tools
             LambdaUpdateFunctionConfiguration,
             LambdaPublishFunction,
             LambdaTaggingFunction,
+            LambdaPublishLayerVersion,
+            LambdaListLayers,
+            LambdaListLayerVersions,
+            LambdaGetLayerVersionDetails,
+            LambdaDeleteLayerVersion,
+            ParseLayerVersionArnFail,
+
+            UnknownLayerType,
+            StoreCommandError,
+            FailedToFindArtifactZip,
+            LayerPackageManifestNotFound,
+            UnsupportedOptimizationPlatform,
 
             ServerlessTemplateNotFound,
             ServerlessTemplateParseError,
@@ -50,7 +62,9 @@ namespace Amazon.Lambda.Tools
             ServerlessTemplateUnknownActionForLocalPath,
             WaitingForStackError,
 
-            FailedToFindZipProgram
+            FailedToFindZipProgram,
+            FailedToDetectSdkVersion,
+            LayerNetSdkVersionMismatch
         }
 
         public LambdaToolsException(string message, LambdaErrorCode code) : base(message, code.ToString(), null)

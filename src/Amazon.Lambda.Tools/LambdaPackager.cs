@@ -44,7 +44,8 @@ namespace Amazon.Lambda.Tools
         /// <param name="publishLocation"></param>
         /// <param name="zipArchivePath"></param>
         public static bool CreateApplicationBundle(LambdaToolsDefaults defaults, IToolLogger logger, string workingDirectory, 
-            string projectLocation, string configuration, string targetFramework, string msbuildParameters, bool disableVersionCheck,
+            string projectLocation, string configuration, string targetFramework, string msbuildParameters,
+            bool disableVersionCheck, LayerPackageInfo layerPackageInfo,
             out string publishLocation, ref string zipArchivePath)
         {
             LogDeprecationMessagesIfNecessary(logger, targetFramework);
@@ -52,21 +53,36 @@ namespace Amazon.Lambda.Tools
             if (string.IsNullOrEmpty(configuration))
                 configuration = LambdaConstants.DEFAULT_BUILD_CONFIGURATION;
             
-            string lambdaRuntimePackageStoreManifestContent = null;
             var computedProjectLocation = Utilities.DetermineProjectLocation(workingDirectory, projectLocation);
 
-            var packageStoreManifest = LambdaUtilities.LoadPackageStoreManifest(logger, targetFramework);
+            var lambdaRuntimePackageStoreManifestContent = LambdaUtilities.LoadPackageStoreManifest(logger, targetFramework);
 
             if (!disableVersionCheck)
             {
-                LambdaUtilities.ValidateMicrosoftAspNetCoreAllReferenceFromProjectPath(logger, targetFramework, packageStoreManifest, computedProjectLocation);
+                LambdaUtilities.ValidateMicrosoftAspNetCoreAllReferenceFromProjectPath(logger, targetFramework, lambdaRuntimePackageStoreManifestContent, computedProjectLocation);
+            }
+
+            var publishManifestPath = new List<string>();
+            if(!string.IsNullOrEmpty(lambdaRuntimePackageStoreManifestContent))
+            {
+                var tempFile = Path.GetTempFileName();
+                File.WriteAllText(tempFile, lambdaRuntimePackageStoreManifestContent);
+                publishManifestPath.Add(tempFile);
+            }
+
+            if(layerPackageInfo != null)
+            {
+                foreach (var info in layerPackageInfo.Items)
+                {
+                    publishManifestPath.Add(info.ManifestPath);
+                }
             }
 
             var cli = new LambdaDotNetCLIWrapper(logger, workingDirectory);
 
             publishLocation = Utilities.DeterminePublishLocation(workingDirectory, projectLocation, configuration, targetFramework);
             logger?.WriteLine("Executing publish command");
-            if (cli.Publish(defaults, projectLocation, publishLocation, targetFramework, configuration, msbuildParameters, lambdaRuntimePackageStoreManifestContent) != 0)
+            if (cli.Publish(defaults, projectLocation, publishLocation, targetFramework, configuration, msbuildParameters, publishManifestPath) != 0)
                 return false;
 
             var buildLocation = Utilities.DetermineBuildLocation(workingDirectory, projectLocation, configuration, targetFramework);
@@ -619,6 +635,8 @@ namespace Amazon.Lambda.Tools
         /// <param name="logger">Logger instance.</param>
         private static void BundleWithZipCLI(string zipCLI, string zipArchivePath, string rootDirectory, IDictionary<string, string> includedFiles, IToolLogger logger)
         {
+            EnsureBootstrapLinuxLineEndings(rootDirectory, includedFiles);
+            
             var args = new StringBuilder("\"" + zipArchivePath + "\"");
 
             foreach (var kvp in includedFiles)

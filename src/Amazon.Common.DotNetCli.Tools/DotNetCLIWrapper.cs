@@ -119,5 +119,50 @@ namespace Amazon.Common.DotNetCli.Tools
 
             return 0;
         }
+
+        public static Version GetSdkVersion()
+        {
+            var dotnetCLI = FindExecutableInPath("dotnet.exe");
+            if (dotnetCLI == null)
+                dotnetCLI = FindExecutableInPath("dotnet");
+            if (string.IsNullOrEmpty(dotnetCLI))
+                throw new Exception("Failed to locate dotnet CLI executable. Make sure the dotnet CLI is installed in the environment PATH.");
+
+            var results = Utilities.ExecuteShellCommand(null, dotnetCLI, "--list-sdks");
+            if(results.Exitcode != 0)
+                throw new Exception("Command \"dotnet --list-sdks\" failed, captured output: \n" + results.Stdout);
+            
+
+            var maxSdkVersion = ParseListSdkOutput(results.Stdout);
+            if (maxSdkVersion == null)
+            {
+                throw new Exception("Failed to parse latest SDK version from captured output:\n" + results.Stdout);                
+            }
+
+            return maxSdkVersion;
+        }
+
+        public static Version ParseListSdkOutput(string listSdkOutput)
+        {
+            var outputLines = listSdkOutput.Split('\n');
+            for (int i = outputLines.Length - 1; i >= 0; i--)
+            {
+                var line = outputLines[i].Trim();
+                if (string.IsNullOrEmpty(line))
+                    continue;
+
+                var tokens = line.Split(' ');
+                // There should be at least 2 tokens, the version and the path to the SDK. There might be more than 2 tokens if the path to the SDK contained spaces.
+                if (tokens.Length < 2)
+                    continue;
+
+                if(Version.TryParse(tokens[0], out var version))
+                {
+                    return version;
+                }
+            }
+
+            return null;
+        }
     }
 }

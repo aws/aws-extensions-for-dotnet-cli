@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Amazon.Lambda.Tools.Commands;
 using ThirdParty.Json.LitJson;
 using YamlDotNet.RepresentationModel;
 
@@ -46,9 +47,22 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         string LambdaRuntime { get; }
         
         /// <summary>
+        /// Gets the list of layers specified if this is a Lambda function.
+        /// </summary>
+        /// <returns></returns>
+        string[] LambdaLayers { get; }        
+        
+        /// <summary>
         /// The list of fields that can be updated.
         /// </summary>
         IList<IUpdateResourceField> Fields { get; }
+
+        /// <summary>
+        /// Sets an environment variable for the resource.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        void SetEnvironmentVariable(string key, string value);
     }
 
     /// <summary>
@@ -98,7 +112,13 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// <returns></returns>
         string GetValueFromRoot(params string[] keyPath);
 
-
+        /// <summary>
+        /// Gets the values for a list starting from the root document.
+        /// </summary>
+        /// <param name="keyPath"></param>
+        /// <returns></returns>
+        string[] GetValueListFromRoot(params string[] keyPath);
+        
         /// <summary>
         /// Gets value in datasource.
         /// </summary>
@@ -112,5 +132,13 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// <param name="value"></param>
         /// <param name="keyPath"></param>
         void SetValue(string value, params string[] keyPath);
+        
+        /// <summary>
+        /// Gets the values for a list property.
+        /// </summary>
+        /// <param name="keyPath"></param>
+        /// <returns></returns>
+        string[] GetValueList(params string[] keyPath);
+        
     }
 }

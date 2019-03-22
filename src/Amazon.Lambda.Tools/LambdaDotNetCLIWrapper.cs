@@ -22,8 +22,114 @@ namespace Amazon.Lambda.Tools
             this._workingDirectory = workingDirectory;
         }
 
+
         /// <summary>
-        /// Generates deployment manifest for staged content
+        /// Execute the dotnet store command on the provided package manifest
+        /// </summary>
+        /// <param name="defaults"></param>
+        /// <param name="projectLocation"></param>
+        /// <param name="outputLocation"></param>
+        /// <param name="targetFramework"></param>
+        /// <param name="packageManifest"></param>
+        /// <param name="enableOptimization"></param>
+        /// <returns></returns>
+        public int Store(LambdaToolsDefaults defaults, string projectLocation, string outputLocation, string targetFramework, string packageManifest, bool enableOptimization)
+        {
+            if (outputLocation == null)
+                throw new ArgumentNullException(nameof(outputLocation));
+
+            if (Directory.Exists(outputLocation))
+            {
+                try
+                {
+                    Directory.Delete(outputLocation, true);
+                    _logger?.WriteLine("Deleted previous publish folder");
+                }
+                catch (Exception e)
+                {
+                    _logger?.WriteLine($"Warning unable to delete previous publish folder: {e.Message}");
+                }
+            }
+
+
+            var dotnetCLI = FindExecutableInPath("dotnet.exe");
+            if (dotnetCLI == null)
+                dotnetCLI = FindExecutableInPath("dotnet");
+            if (string.IsNullOrEmpty(dotnetCLI))
+                throw new Exception("Failed to locate dotnet CLI executable. Make sure the dotnet CLI is installed in the environment PATH.");
+
+            var fullProjectLocation = this._workingDirectory;
+            if (!string.IsNullOrEmpty(projectLocation))
+            {
+                fullProjectLocation = Utilities.DetermineProjectLocation(this._workingDirectory, projectLocation);
+            }
+
+            var fullPackageManifest = Path.Combine(fullProjectLocation, packageManifest);
+
+            _logger?.WriteLine($"... invoking 'dotnet store' for manifest {fullPackageManifest} into output directory {outputLocation}");
+
+
+            StringBuilder arguments = new StringBuilder("store");
+            if (!string.IsNullOrEmpty(outputLocation))
+            {
+                arguments.Append($" --output \"{outputLocation}\"");
+            }
+
+            if (!string.IsNullOrEmpty(targetFramework))
+            {
+                arguments.Append($" --framework \"{targetFramework}\"");
+            }
+
+            arguments.Append($" --manifest \"{fullPackageManifest}\"");
+            arguments.Append($" --runtime {LambdaConstants.RUNTIME_HIERARCHY_STARTING_POINT}");
+
+            if(!enableOptimization)
+            {
+                arguments.Append(" --skip-optimization");
+            }
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = dotnetCLI,
+                Arguments = arguments.ToString(),
+                WorkingDirectory = this._workingDirectory,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            var handler = (DataReceivedEventHandler)((o, e) =>
+            {
+                if (string.IsNullOrEmpty(e.Data))
+                    return;
+                _logger?.WriteLine("... store: " + e.Data);
+            });
+
+            int exitCode;
+            using (var proc = new Process())
+            {
+                proc.StartInfo = psi;
+                proc.Start();
+
+
+                proc.ErrorDataReceived += handler;
+                proc.OutputDataReceived += handler;
+                proc.BeginOutputReadLine();
+                proc.BeginErrorReadLine();
+
+                proc.EnableRaisingEvents = true;
+
+                proc.WaitForExit();
+
+                exitCode = proc.ExitCode;
+            }
+
+            return exitCode;
+        }
+
+        /// <summary>
+        /// Executes the dotnet publish command for the provided project
         /// </summary>
         /// <param name="defaults"></param>
         /// <param name="projectLocation"></param>
@@ -32,7 +138,7 @@ namespace Amazon.Lambda.Tools
         /// <param name="configuration"></param>
         /// <param name="msbuildParameters"></param>
         /// <param name="deploymentTargetPackageStoreManifestContent"></param>
-        public int Publish(LambdaToolsDefaults defaults, string projectLocation, string outputLocation, string targetFramework, string configuration, string msbuildParameters, string deploymentTargetPackageStoreManifestContent)
+        public int Publish(LambdaToolsDefaults defaults, string projectLocation, string outputLocation, string targetFramework, string configuration, string msbuildParameters, IList<string> publishManifests)
         {
             if(outputLocation == null)
                 throw new ArgumentNullException(nameof(outputLocation));
@@ -89,7 +195,6 @@ namespace Amazon.Lambda.Tools
                 arguments.Append($" {msbuildParameters}");
             }
 
-            string manifestPath = null;
             if (!string.Equals("netcoreapp1.0", targetFramework, StringComparison.OrdinalIgnoreCase))
             {
                 arguments.Append(" /p:GenerateRuntimeConfigurationFiles=true");
@@ -116,12 +221,12 @@ namespace Amazon.Lambda.Tools
 
                 // If we have a manifest of packages already deploy in target deployment environment then write it to disk and add the 
                 // command line switch
-                if(!string.IsNullOrEmpty(deploymentTargetPackageStoreManifestContent))
+                if(publishManifests != null && publishManifests.Count > 0)
                 {
-                    manifestPath = Path.GetTempFileName();
-                    File.WriteAllText(manifestPath, deploymentTargetPackageStoreManifestContent);
-
-                    arguments.Append($" --manifest \"{manifestPath}\"");
+                    foreach(var manifest in publishManifests)
+                    {
+                        arguments.Append($" --manifest \"{manifest}\"");
+                    }                    
                 }
             }
 
@@ -160,12 +265,6 @@ namespace Amazon.Lambda.Tools
                 proc.WaitForExit();
 
                 exitCode = proc.ExitCode;
-            }
-
-            // If we wrote a temporary manifest file then clean it up after dotnet publish has executed.
-            if(manifestPath != null && File.Exists(manifestPath))
-            {
-                File.Delete(manifestPath);
             }
 
             if (exitCode == 0)

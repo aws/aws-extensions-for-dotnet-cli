@@ -6,9 +6,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Amazon.Common.DotNetCli.Tools;
+using Amazon.Common.DotNetCli.Tools.Commands;
+using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Transfer;
 using Newtonsoft.Json.Schema;
+using Amazon.Lambda.Tools.Commands;
 
 namespace Amazon.Lambda.Tools.TemplateProcessor
 {    
@@ -33,15 +36,21 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         string S3Prefix { get; }
         
         /// <summary>
+        /// The command that initiated the template processor
+        /// </summary>
+        public LambdaBaseCommand OriginatingCommand { get; }
+                
+        /// <summary>
         /// Options to use when a local path is pointing to the current directory. This is needed to maintain backwards compatibility
         /// with the original version of the deploy-serverless and package-ci commands.
         /// </summary>
         DefaultLocationOption DefaultOptions { get; }
 
-        public TemplateProcessorManager(IToolLogger logger, IAmazonS3 s3Client, string s3Bucket, string s3Prefix, DefaultLocationOption defaultOptions)
+        public TemplateProcessorManager(LambdaBaseCommand originatingCommand, string s3Bucket, string s3Prefix, DefaultLocationOption defaultOptions)
         {
-            this.Logger = logger;
-            this.S3Client = s3Client;
+            this.OriginatingCommand = originatingCommand;
+            this.Logger = originatingCommand.Logger;
+            this.S3Client = originatingCommand.S3Client;
             this.S3Bucket = s3Bucket;
             this.S3Prefix = s3Prefix;
             this.DefaultOptions = defaultOptions;
@@ -197,10 +206,19 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         private async Task<string> PackageDotnetProjectAsync(IUpdateResourceField field, string location)
         {
             var command = new Commands.PackageCommand(this.Logger, location, null);
+
+            command.LambdaClient = this.OriginatingCommand?.LambdaClient;
+            command.S3Client = this.OriginatingCommand?.S3Client;
+            command.IAMClient = this.OriginatingCommand?.IAMClient;
+            command.CloudFormationClient = this.OriginatingCommand?.CloudFormationClient;
+            command.DisableRegionAndCredentialsCheck = true;
+
             var outputPackage = GenerateOutputZipFilename(field);
             command.OutputPackageFileName = outputPackage;
             command.TargetFramework =
                 LambdaUtilities.DetermineTargetFrameworkFromLambdaRuntime(field.Resource.LambdaRuntime, location);
+
+            command.LayerVersionArns = field.Resource.LambdaLayers;
 
             // If the project is in the same directory as the CloudFormation template then use any parameters
             // there were specified on the command to build the project.
@@ -213,7 +231,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 command.DisableVersionCheck = this.DefaultOptions.DisableVersionCheck;
                 command.MSBuildParameters = this.DefaultOptions.MSBuildParameters;
             }
-            
+                        
             if(!await command.ExecuteAsync())
             {
                 var message = $"Error packaging up project in {location} for CloudFormation resource {field.Resource.Name}";
@@ -221,6 +239,11 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                     message += $": {command.LastToolsException.Message}";
 
                 throw new LambdaToolsException(message, ToolsException.CommonErrorCode.DotnetPublishFailed);
+            }
+
+            if (!string.IsNullOrEmpty(command.NewDotnetSharedStoreValue))
+            {
+                field.Resource.SetEnvironmentVariable(LambdaConstants.ENV_DOTNET_SHARED_STORE, command.NewDotnetSharedStoreValue);
             }
 
             return outputPackage;

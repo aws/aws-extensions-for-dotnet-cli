@@ -9,13 +9,13 @@
     <PackageId>Amazon.Lambda.Tools</PackageId>
     <PackageTags>AWS;Amazon;Lambda</PackageTags>
     <PackAsTool>true</PackAsTool>
-	  <ToolCommandName>dotnet-lambda</ToolCommandName>
-	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	<ToolCommandName>dotnet-lambda</ToolCommandName>
+	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Company>Amazon.com, Inc</Company>
     <Copyright>Copyright 2009-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
     <Product>AWS Lambda Tools for .NET CLI</Product>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <Version>3.1.4</Version>
+    <Version>3.2.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Resources\build-lambda-zip.exe">
@@ -33,11 +33,10 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
     <PackageReference Include="System.Runtime.Loader" Version="4.0.0" />
-    <PackageReference Include="AWSSDK.CloudFormation" Version="3.3.11.15" />
-    <PackageReference Include="AWSSDK.Lambda" Version="3.3.16.5" />
-    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.7.11" />
-    <PackageReference Include="AWSSDK.SecurityToken" Version="3.3.4.18" />
-    <PackageReference Include="AWSSDK.S3" Version="3.3.24.3" />
+    <PackageReference Include="AWSSDK.CloudFormation" Version="3.3.13" />
+    <PackageReference Include="AWSSDK.Lambda" Version="3.3.19" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.8.1" />
+    <PackageReference Include="AWSSDK.S3" Version="3.3.30" />
     <PackageReference Include="YamlDotNet.Signed" Version="5.2.1" />
   </ItemGroup>
   <PropertyGroup>

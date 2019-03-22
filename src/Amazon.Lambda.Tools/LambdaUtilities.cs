@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
+using System.Runtime.CompilerServices;
 using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
 
@@ -12,6 +12,13 @@ using ThirdParty.Json.LitJson;
 using System.Xml.Linq;
 using System.Xml.Linq;
 using Amazon.Common.DotNetCli.Tools;
+
+using Amazon.Lambda.Model;
+using Amazon.S3;
+using Amazon.S3.Model;
+using System.Threading.Tasks;
+using System.Xml.XPath;
+using Environment = System.Environment;
 
 namespace Amazon.Lambda.Tools
 {
@@ -28,14 +35,23 @@ namespace Amazon.Lambda.Tools
 
         public static string DetermineTargetFrameworkFromLambdaRuntime(string lambdaRuntime, string projectLocation)
         {
-            string runtime;
-            if (_lambdaRuntimeToDotnetFramework.TryGetValue(lambdaRuntime, out runtime))
-                return runtime;
+            string framework;
+            if (_lambdaRuntimeToDotnetFramework.TryGetValue(lambdaRuntime, out framework))
+                return framework;
 
-            var framework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation);
+            framework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation);
             return framework;
         }
-        
+
+        public static string DetermineLambdaRuntimeFromTargetFramework(string targetFramework)
+        {
+            var kvp = _lambdaRuntimeToDotnetFramework.FirstOrDefault(x => string.Equals(x.Value, targetFramework, StringComparison.OrdinalIgnoreCase));
+            if (string.IsNullOrEmpty(kvp.Key))
+                return null;
+
+            return kvp.Key;
+        }
+
         /// <summary>
         /// Make sure nobody is trying to deploy a function based on a higher .NET Core framework than the Lambda runtime knows about.
         /// </summary>
@@ -85,7 +101,7 @@ namespace Amazon.Lambda.Tools
             string manifestFilename = null;
             if (string.Equals("netcoreapp2.0", targetFramework, StringComparison.OrdinalIgnoreCase))
                 manifestFilename = "LambdaPackageStoreManifest.xml";
-            else if (string.Equals("netcoreapp2.0", targetFramework, StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals("netcoreapp2.1", targetFramework, StringComparison.OrdinalIgnoreCase))
                 manifestFilename = "LambdaPackageStoreManifest-v2.1.xml";
 
             if (manifestFilename == null)
@@ -601,5 +617,200 @@ namespace Amazon.Lambda.Tools
                 return null;
             }
         }
+
+        public static async Task<LayerPackageInfo> LoadLayerPackageInfos(IToolLogger logger, IAmazonLambda lambdaClient, IAmazonS3 s3Client, IEnumerable<string> layerVersionArns)
+        {
+            var info = new LayerPackageInfo();
+            if (layerVersionArns == null || !layerVersionArns.Any())
+                return info;
+
+            logger.WriteLine("Inspecting Lambda layers for runtime package store manifests");
+            foreach(var arn in layerVersionArns)
+            {
+                try
+                {
+                    var p = ParseLayerVersionArn(arn);
+                    var getLayerResponse = await lambdaClient.GetLayerVersionAsync(new GetLayerVersionRequest { LayerName = p.name, VersionNumber = p.versionNumber });
+
+                    LayerDescriptionManifest manifest;
+                    if (!LambdaUtilities.AttemptToParseLayerDescriptionManifest(getLayerResponse.Description, out manifest))
+                    {
+                        logger.WriteLine($"... {arn}: Skipped, does not contain a layer description manifest");
+                        continue;
+                    }
+                    if (manifest.Nlt != LayerDescriptionManifest.ManifestType.RuntimePackageStore)
+                    {
+                        logger.WriteLine($"... {arn}: Skipped, layer is of type {manifest.Nlt.ToString()}, not {LayerDescriptionManifest.ManifestType.RuntimePackageStore}");
+                        continue;
+                    }
+
+                    string filePath = Path.GetTempFileName();
+                    using (var getResponse = await s3Client.GetObjectAsync(manifest.Buc, manifest.Key))
+                    using (var reader = new StreamReader(getResponse.ResponseStream))
+                    {
+                        await getResponse.WriteResponseStreamToFileAsync(filePath, false, default(System.Threading.CancellationToken));
+                    }
+
+                    logger.WriteLine($"... {arn}: Downloaded package manifest for runtime package store layer");
+                    info.Items.Add(new LayerPackageInfo.LayerPackageInfoItem
+                    {
+                        Directory = manifest.Dir,
+                        ManifestPath = filePath
+                    });
+                }
+                catch(Exception e)
+                {
+                    logger.WriteLine($"... {arn}: Skipped, error inspecting layer. {e.Message}");
+                }
+            }
+
+            return info;
+        }
+
+        internal static bool AttemptToParseLayerDescriptionManifest(string json, out LayerDescriptionManifest manifest)
+        {
+            manifest = null;
+            if (string.IsNullOrEmpty(json) || json[0] != '{')
+                return false;
+
+            try
+            {
+                manifest = JsonMapper.ToObject<LayerDescriptionManifest>(json);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        internal static (string name, long versionNumber) ParseLayerVersionArn(string layerVersionArn)
+        {
+            try
+            {
+                int pos = layerVersionArn.LastIndexOf(':');
+
+                var number = long.Parse(layerVersionArn.Substring(pos + 1));
+                var arn = layerVersionArn.Substring(0, pos);
+
+                return (arn, number);
+            }
+            catch (Exception)
+            {
+                throw new LambdaToolsException("Error parsing layer version arn into layer name and version number",
+                    LambdaToolsException.LambdaErrorCode.ParseLayerVersionArnFail);
+            }
+        }
+        
+        internal static string DetermineListDisplayLayerDescription(string description, int maxDescriptionLength)
+        {
+            if (string.IsNullOrWhiteSpace(description))
+                return "";
+            try
+            {
+                LayerDescriptionManifest manifest;
+                var parsed = AttemptToParseLayerDescriptionManifest(description, out manifest);
+                if(parsed)
+                {
+                    if (manifest?.Nlt == LayerDescriptionManifest.ManifestType.RuntimePackageStore)
+                    {
+                        if (manifest.Op == LayerDescriptionManifest.OptimizedState.Optimized)
+                            return LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE_DISPLAY_NAME + " (Optimized)";
+
+                        return LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE_DISPLAY_NAME;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+            return description.Substring(0, maxDescriptionLength);
+        }
+        
+        public static (bool shouldDelete, string packageManifest) ConvertManifestToSdkManifest(string packageManifest)
+        {
+            var content = File.ReadAllText(packageManifest);
+
+            var (updated, updatedContent) = ConvertManifestContentToSdkManifest(content);
+
+            if (!updated)
+            {
+                return (false, packageManifest);
+            }
+
+            var newPath = Path.GetTempFileName();
+            File.WriteAllText(newPath, updatedContent);
+            return (true, newPath);
+
+        }        
+
+        public static (bool updated, string updatedContent) ConvertManifestContentToSdkManifest(string packageManifestContent)
+        {
+            var originalDoc = XDocument.Parse(packageManifestContent);
+
+            var attr = originalDoc.Root.Attribute("Sdk");
+            if (string.Equals(attr?.Value, "Microsoft.NET.Sdk", StringComparison.OrdinalIgnoreCase))
+                return (false, packageManifestContent);
+
+            
+            var root = new XElement("Project");
+            root.SetAttributeValue("Sdk", "Microsoft.NET.Sdk");
+
+            var itemGroup = new XElement("ItemGroup");
+            root.Add(itemGroup);
+
+
+            Version dotnetSdkVersion;
+            try
+            {
+                dotnetSdkVersion = Amazon.Common.DotNetCli.Tools.DotNetCLIWrapper.GetSdkVersion();
+            }
+            catch (Exception e)
+            {
+                throw new LambdaToolsException("Error detecting .NET SDK version: \n\t" + e.Message, LambdaToolsException.LambdaErrorCode.FailedToDetectSdkVersion, e );
+            }
+
+            if (dotnetSdkVersion < LambdaConstants.MINIMUM_DOTNET_SDK_VERSION_FOR_ASPNET_LAYERS)
+            {
+                throw new LambdaToolsException($"To create a runtime package store layer for an ASP.NET Core project " +
+                                               $"version {LambdaConstants.MINIMUM_DOTNET_SDK_VERSION_FOR_ASPNET_LAYERS} " + 
+                                               "or above of the .NET Core SDK must be installed. " +
+                                               "If a 2.1.X SDK is used then the \"dotnet store\" command will include all " +
+                                               "of the ASP.NET Core dependencies that are already available in Lambda.",
+                                                LambdaToolsException.LambdaErrorCode.LayerNetSdkVersionMismatch);
+            }
+            
+            // These were added to make sure the ASP.NET Core dependencies are filter if any of the packages
+            // depend on them.
+            // See issue for more info: https://github.com/dotnet/cli/issues/10784
+            var aspNerCorePackageReference = new XElement("PackageReference");
+            aspNerCorePackageReference.SetAttributeValue("Include", "Microsoft.AspNetCore.App");
+            itemGroup.Add(aspNerCorePackageReference);
+            
+            var aspNerCoreUpdatePackageReference = new XElement("PackageReference");
+            aspNerCoreUpdatePackageReference.SetAttributeValue("Update", "Microsoft.NETCore.App");
+            aspNerCoreUpdatePackageReference.SetAttributeValue("Publish", "false");
+            itemGroup.Add(aspNerCoreUpdatePackageReference);
+
+            foreach (var packageReference in originalDoc.XPathSelectElements("//ItemGroup/PackageReference"))
+            {
+                var packageName = packageReference.Attribute("Include")?.Value;
+                var version = packageReference.Attribute("Version")?.Value;
+
+                if (string.Equals(packageName, "Microsoft.AspNetCore.App", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(packageName, "Microsoft.AspNetCore.All", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                
+                var newRef = new XElement("PackageReference");
+                newRef.SetAttributeValue("Include", packageName);
+                newRef.SetAttributeValue("Version", version);
+                itemGroup.Add(newRef);
+            }
+            
+            var updatedDoc = new XDocument(root);
+            var updatedContent = updatedDoc.ToString();
+            
+            return (true, updatedContent);
+        }                
     }
 }

@@ -84,12 +84,17 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 return GetValue(this.Root, keyPath);
             }
 
+            public string[] GetValueListFromRoot(params string[] keyPath)
+            {
+                return GetValueList(this.Root, keyPath);
+            }
+            
             public string GetValue(params string[] keyPath)
             {
                 return GetValue(this.Properties, keyPath);
             }
 
-            private string GetValue(YamlNode node, params string[] keyPath)
+            private static string GetValue(YamlNode node, params string[] keyPath)
             {
                 foreach (var key in keyPath)
                 {
@@ -108,8 +113,43 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                     return ((YamlScalarNode)node).Value;
                 }
 
-                return null;
+                return null;                
             }
+            
+            public string[] GetValueList(params string[] keyPath)
+            {
+                return GetValueList(this.Properties, keyPath);
+            }
+
+            private static string[] GetValueList(YamlNode node, params string[] keyPath)
+            {
+                foreach (var key in keyPath)
+                {
+                    if (node == null || !(node is YamlMappingNode))
+                        return null;
+
+                    var mappingNode = ((YamlMappingNode)node);
+                    if (!mappingNode.Children.ContainsKey(key))
+                        return null;
+
+                    node = mappingNode.Children[key];
+                }
+
+                var sequenceNode = node as YamlSequenceNode;
+                if (sequenceNode == null || sequenceNode.Children.Count == 0)
+                {
+                    return null;
+                }
+                
+                var values = new string[sequenceNode.Children.Count];
+
+                for (var i = 0; i < sequenceNode.Children.Count; i++)
+                {
+                    values[i] = sequenceNode.Children[i]?.ToString();
+                }
+
+                return values;
+            }            
 
             public void SetValue(string value, params string[] keyPath)
             {

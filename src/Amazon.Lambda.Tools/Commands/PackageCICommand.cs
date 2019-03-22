@@ -127,7 +127,7 @@ namespace Amazon.Lambda.Tools.Commands
                 DisableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault()
             };
             
-            var templateProcessor = new TemplateProcessorManager(this.Logger, this.S3Client, s3Bucket, s3Prefix, options);
+            var templateProcessor = new TemplateProcessorManager(this, s3Bucket, s3Prefix, options);
             templateBody = await templateProcessor.TransformTemplateAsync(templatePath, templateBody);            
             
             this.Logger.WriteLine($"Writing updated template: {outputTemplatePath}");
@@ -138,7 +138,6 @@ namespace Amazon.Lambda.Tools.Commands
         
         protected override void SaveConfigFile(JsonData data)
         {
-            data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION.ConfigFileKey, this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false));    
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION.ConfigFileKey, this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false));    
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK.ConfigFileKey, this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false));    
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS.ConfigFileKey, this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false));    

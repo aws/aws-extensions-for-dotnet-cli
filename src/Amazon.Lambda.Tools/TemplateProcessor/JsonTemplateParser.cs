@@ -74,13 +74,18 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             {
                 return GetValue(this.Root, keyPath);
             }
+            
+            public string[] GetValueListFromRoot(params string[] keyPath)
+            {
+                return GetValueList(this.Root, keyPath);
+            }
 
             public string GetValue(params string[] keyPath)
             {
                 return GetValue(this.Properties, keyPath);
             }
 
-            private string GetValue(JsonData node, params string[] keyPath)
+            private static string GetValue(JsonData node, params string[] keyPath)
             {
                 foreach (var key in keyPath)
                 {
@@ -92,6 +97,33 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
 
                 return node?.ToString();
             }
+            
+            public string[] GetValueList(params string[] keyPath)
+            {
+                return GetValueList(this.Properties, keyPath);
+            }
+
+            private static string[] GetValueList(JsonData node, params string[] keyPath)
+            {
+                foreach (var key in keyPath)
+                {
+                    if (node == null)
+                        return null;
+
+                    node = node[key];
+                }
+
+                if (node == null || !node.IsArray || node.Count == 0)
+                    return null;
+
+                var values = new string[node.Count];
+                for (var i = 0; i < values.Length; i++)
+                {
+                    values[i] = node[i]?.ToString();
+                }
+                
+                return values;
+            }            
 
             public void SetValue(string value, params string[] keyPath)
             {

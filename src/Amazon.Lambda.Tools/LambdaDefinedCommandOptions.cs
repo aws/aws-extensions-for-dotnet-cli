@@ -117,6 +117,24 @@ namespace Amazon.Lambda.Tools
                 ValueType = CommandOption.CommandOptionValueType.CommaDelimitedList,
                 Description = "Comma delimited list of security group ids if your function references resources in a VPC"
             };
+        public static readonly CommandOption ARGUMENT_FUNCTION_LAYERS =
+            new CommandOption
+            {
+                Name = "Function Layers",
+                ShortSwitch = "-fl",
+                Switch = "--function-layers",
+                ValueType = CommandOption.CommandOptionValueType.CommaDelimitedList,
+                Description = "Comma delimited list of Lambda layer version arns"
+            };
+        public static readonly CommandOption ARGUMENT_OPT_DIRECTORY =
+            new CommandOption
+            {
+                Name = "Opt Directory",
+                ShortSwitch = "-od",
+                Switch = "--opt-directory",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = $"The directory under the /opt directory the contents of the layer will be placed. If not set a directory name /opt/{LambdaConstants.DEFAULT_LAYER_OPT_DIRECTORY}/."
+            };
         public static readonly CommandOption ARGUMENT_DEADLETTER_TARGET_ARN =
             new CommandOption
             {
@@ -292,6 +310,56 @@ namespace Amazon.Lambda.Tools
                 Description = "Obsolete: as of version 3.0.0.0 defaults are always applied."
             };
 
+        public static readonly CommandOption ARGUMENT_LAYER_NAME =
+            new CommandOption
+            {
+                Name = "Layer Name",
+                Switch = "--layer-name",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "AWS Lambda layer name"
+            };
+        public static readonly CommandOption ARGUMENT_LAYER_VERSION_ARN =
+            new CommandOption
+            {
+                Name = "Layer Version Arn",
+                Switch = "--layer-version-arn",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "AWS Lambda layer version arn"
+            };
+        public static readonly CommandOption ARGUMENT_LAYER_TYPE =
+            new CommandOption
+            {
+                Name = "Layer Type",
+                Switch = "--layer-type",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = $"The type of layer to publish. Valid values are: {LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE}"
+            };
 
+        public static readonly CommandOption ARGUMENT_LAYER_LICENSE_INFO =
+            new CommandOption
+            {
+                Name = "Layer License Info",
+                Switch = "--layer-license-info",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = $"License info to set on the Lambda layer"
+            };
+
+        public static readonly CommandOption ARGUMENT_PACKAGE_MANIFEST =
+            new CommandOption
+            {
+                Name = "Package Manifest",
+                Switch = "--package-manifest",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = $"Package manifest for a \"{LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE}\" layer that indicates the NuGet packages to add to the layer."
+            };
+
+        public static readonly CommandOption ARGUMENT_ENABLE_PACKAGE_OPTIMIZATION =
+            new CommandOption
+            {
+                Name = "Enable Package Optimization",
+                Switch = "--enable-package-optimization",
+                ValueType = CommandOption.CommandOptionValueType.BoolValue,
+                Description = "If true the packages will be pre-jitted to improve cold start performance. This must done on an Amazon Linux environment."
+            };
     }
 }
