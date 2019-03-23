@@ -16,14 +16,14 @@ namespace Amazon.Lambda.Tools.Test
         public void CheckIfWebProject()
         {
             var originalContent = "<Project Sdk=\"Microsoft.NET.Sdk.Web\"></Project>";
-            var (shouldDelete, updatedContent) = LambdaUtilities.ConvertManifestContentToSdkManifest(originalContent);
-            Assert.True(shouldDelete);
-            Assert.False(object.ReferenceEquals(originalContent, updatedContent));
+            var result = LambdaUtilities.ConvertManifestContentToSdkManifest(originalContent);
+            Assert.True(result.Updated);
+            Assert.False(object.ReferenceEquals(originalContent, result.UpdatedContent));
 
             originalContent = "<Project Sdk=\"Microsoft.NET.Sdk\"></Project>";
-            (shouldDelete, updatedContent) = LambdaUtilities.ConvertManifestContentToSdkManifest("<Project Sdk=\"Microsoft.NET.Sdk\"></Project>");
-            Assert.False(shouldDelete);
-            Assert.True(object.ReferenceEquals(originalContent, updatedContent));
+            result = LambdaUtilities.ConvertManifestContentToSdkManifest("<Project Sdk=\"Microsoft.NET.Sdk\"></Project>");
+            Assert.False(result.Updated);
+            Assert.True(object.ReferenceEquals(originalContent, result.UpdatedContent));
         }
 
         [Fact]
@@ -31,11 +31,11 @@ namespace Amazon.Lambda.Tools.Test
         {
             var testManifest = File.ReadAllText("./TestFiles/ManifestAspNetCoreProject.xml");
             
-            var (shouldDelete, updatedContent) = LambdaUtilities.ConvertManifestContentToSdkManifest(testManifest);
-            Assert.True(shouldDelete);   
-            Assert.False(object.ReferenceEquals(testManifest, updatedContent));
+            var result = LambdaUtilities.ConvertManifestContentToSdkManifest(testManifest);
+            Assert.True(result.Updated);   
+            Assert.False(object.ReferenceEquals(testManifest, result.UpdatedContent));
 
-            var xmlDoc = XDocument.Parse(updatedContent);
+            var xmlDoc = XDocument.Parse(result.UpdatedContent);
 
             Assert.Equal("Microsoft.NET.Sdk", xmlDoc.Root.Attribute("Sdk")?.Value);
 

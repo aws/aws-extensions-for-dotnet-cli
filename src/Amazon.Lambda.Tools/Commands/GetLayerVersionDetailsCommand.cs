@@ -59,12 +59,12 @@ namespace Amazon.Lambda.Tools.Commands
             var layerVersionArn = this.GetStringValueOrDefault(this.LayerVersionArn,
                 LambdaDefinedCommandOptions.ARGUMENT_LAYER_VERSION_ARN, true);
 
-            var (layerName, versionNumber) = LambdaUtilities.ParseLayerVersionArn(layerVersionArn);
+            var result = LambdaUtilities.ParseLayerVersionArn(layerVersionArn);
 
             var getRequest = new GetLayerVersionRequest
             {
-                LayerName = layerName,
-                VersionNumber = versionNumber
+                LayerName = result.Name,
+                VersionNumber = result.VersionNumber
             };
 
 

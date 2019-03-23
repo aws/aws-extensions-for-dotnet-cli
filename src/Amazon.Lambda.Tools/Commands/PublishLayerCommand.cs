@@ -216,20 +216,20 @@ namespace Amazon.Lambda.Tools.Commands
             var storeOutputDirectory = Path.Combine(tempRootPath, optDirectory);
 
             {
-                var (shouldDelete, manifestToUse) = LambdaUtilities.ConvertManifestToSdkManifest(packageManifest);
-                if (shouldDelete)
+                var convertResult = LambdaUtilities.ConvertManifestToSdkManifest(packageManifest);
+                if (convertResult.ShouldDelete)
                 {
                     this.Logger?.WriteLine("Converted ASP.NET Core project file to temporary package manifest file.");
                 }
                 var cliWrapper = new LambdaDotNetCLIWrapper(this.Logger, this.WorkingDirectory);
-                if(cliWrapper.Store(this.DefaultConfig, projectLocation, storeOutputDirectory, targetFramework, manifestToUse, enableOptimization) != 0)
+                if(cliWrapper.Store(this.DefaultConfig, projectLocation, storeOutputDirectory, targetFramework, convertResult.PackageManifest, enableOptimization) != 0)
                 {
                     throw new LambdaToolsException($"Error executing the 'dotnet store' command", LambdaToolsException.LambdaErrorCode.StoreCommandError);
                 }
 
-                if (shouldDelete)
+                if (convertResult.ShouldDelete)
                 {
-                    File.Delete(manifestToUse);
+                    File.Delete(convertResult.PackageManifest);
                 }
             }
 

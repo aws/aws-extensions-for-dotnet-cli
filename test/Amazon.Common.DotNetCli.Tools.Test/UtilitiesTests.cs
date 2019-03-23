@@ -12,7 +12,7 @@ namespace Amazon.Common.DotNetCli.Tools.Test
         public void TestExecuteShellCommandSuccess()
         {
             var result = Utilities.ExecuteShellCommand(null, FindDotnetProcess(), "--info");
-            Assert.Equal(0, result.Exitcode);
+            Assert.Equal(0, result.ExitCode);
             Assert.Contains(".NET Core SDKs installed", result.Stdout);
         }
         
@@ -20,7 +20,7 @@ namespace Amazon.Common.DotNetCli.Tools.Test
         public void TestExecuteShellCommandFail()
         {
             var result = Utilities.ExecuteShellCommand(null, FindDotnetProcess(), "DoesnotExist.dll");
-            Assert.Equal(1, result.Exitcode);
+            Assert.Equal(1, result.ExitCode);
         }
 
         [Fact]

@@ -642,7 +642,18 @@ namespace Amazon.Common.DotNetCli.Tools
             return GENERIC_ASSUME_ROLE_POLICY.Replace("{ASSUME_ROLE_PRINCIPAL}", assumeRolePrincipal);
         }
 
-        public static (int Exitcode, string Stdout) ExecuteShellCommand(string workingDirectory, string process, string arguments)
+        public class ExecuteShellCommandResult
+        {
+            public int ExitCode { get; }
+            public string Stdout { get; }
+
+            public ExecuteShellCommandResult(int exitCode, string stdout)
+            {
+                this.ExitCode = exitCode;
+                this.Stdout = stdout;
+            }
+        }
+        public static ExecuteShellCommandResult ExecuteShellCommand(string workingDirectory, string process, string arguments)
         {
             var startInfo = new ProcessStartInfo
             {
@@ -680,7 +691,7 @@ namespace Amazon.Common.DotNetCli.Tools
                 }
 
                 proc.WaitForExit();
-                return (proc.ExitCode, capturedOutput.ToString());
+                return new ExecuteShellCommandResult(proc.ExitCode, capturedOutput.ToString());
             }            
         }
     }

@@ -10,7 +10,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using ThirdParty.Json.LitJson;
 using System.Xml.Linq;
-using System.Xml.Linq;
 using Amazon.Common.DotNetCli.Tools;
 
 using Amazon.Lambda.Model;
@@ -630,7 +629,7 @@ namespace Amazon.Lambda.Tools
                 try
                 {
                     var p = ParseLayerVersionArn(arn);
-                    var getLayerResponse = await lambdaClient.GetLayerVersionAsync(new GetLayerVersionRequest { LayerName = p.name, VersionNumber = p.versionNumber });
+                    var getLayerResponse = await lambdaClient.GetLayerVersionAsync(new GetLayerVersionRequest { LayerName = p.Name, VersionNumber = p.VersionNumber });
 
                     LayerDescriptionManifest manifest;
                     if (!LambdaUtilities.AttemptToParseLayerDescriptionManifest(getLayerResponse.Description, out manifest))
@@ -684,7 +683,18 @@ namespace Amazon.Lambda.Tools
             }
         }
 
-        internal static (string name, long versionNumber) ParseLayerVersionArn(string layerVersionArn)
+        internal class ParseLayerVersionArnResult
+        {
+            internal string Name { get; }
+            internal long VersionNumber { get; }
+
+            internal ParseLayerVersionArnResult(string name, long versionNumber)
+            {
+                this.Name = name;
+                this.VersionNumber = versionNumber;
+            }
+        }
+        internal static ParseLayerVersionArnResult ParseLayerVersionArn(string layerVersionArn)
         {
             try
             {
@@ -693,7 +703,7 @@ namespace Amazon.Lambda.Tools
                 var number = long.Parse(layerVersionArn.Substring(pos + 1));
                 var arn = layerVersionArn.Substring(0, pos);
 
-                return (arn, number);
+                return new ParseLayerVersionArnResult(arn, number);
             }
             catch (Exception)
             {
@@ -727,30 +737,55 @@ namespace Amazon.Lambda.Tools
             return description.Substring(0, maxDescriptionLength);
         }
         
-        public static (bool shouldDelete, string packageManifest) ConvertManifestToSdkManifest(string packageManifest)
+
+        public class ConvertManifestToSdkManifestResult
+        {
+            public bool ShouldDelete { get; }
+            public string PackageManifest { get; }
+
+            public ConvertManifestToSdkManifestResult(bool shouldDelete, string packageManifest)
+            {
+                this.ShouldDelete = shouldDelete;
+                this.PackageManifest = packageManifest;
+            }
+        }
+
+        public static ConvertManifestToSdkManifestResult ConvertManifestToSdkManifest(string packageManifest)
         {
             var content = File.ReadAllText(packageManifest);
 
-            var (updated, updatedContent) = ConvertManifestContentToSdkManifest(content);
+            var result = ConvertManifestContentToSdkManifest(content);
 
-            if (!updated)
+            if (!result.Updated)
             {
-                return (false, packageManifest);
+                return new ConvertManifestToSdkManifestResult(false, packageManifest);
             }
 
             var newPath = Path.GetTempFileName();
-            File.WriteAllText(newPath, updatedContent);
-            return (true, newPath);
+            File.WriteAllText(newPath, result.UpdatedContent);
+            return new ConvertManifestToSdkManifestResult(true, newPath);
 
-        }        
+        }
 
-        public static (bool updated, string updatedContent) ConvertManifestContentToSdkManifest(string packageManifestContent)
+        public class ConvertManifestContentToSdkManifestResult
+        {
+            public bool Updated { get; }
+            public string UpdatedContent { get; }
+
+            public ConvertManifestContentToSdkManifestResult(bool updated, string updatedContent)
+            {
+                this.Updated = updated;
+                this.UpdatedContent = updatedContent;
+            }
+        }
+
+        public static ConvertManifestContentToSdkManifestResult ConvertManifestContentToSdkManifest(string packageManifestContent)
         {
             var originalDoc = XDocument.Parse(packageManifestContent);
 
             var attr = originalDoc.Root.Attribute("Sdk");
             if (string.Equals(attr?.Value, "Microsoft.NET.Sdk", StringComparison.OrdinalIgnoreCase))
-                return (false, packageManifestContent);
+                return new ConvertManifestContentToSdkManifestResult(false, packageManifestContent);
 
             
             var root = new XElement("Project");
@@ -810,7 +845,7 @@ namespace Amazon.Lambda.Tools
             var updatedDoc = new XDocument(root);
             var updatedContent = updatedDoc.ToString();
             
-            return (true, updatedContent);
+            return new ConvertManifestContentToSdkManifestResult(true, updatedContent);
         }                
     }
 }

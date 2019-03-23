@@ -129,7 +129,7 @@ namespace Amazon.Common.DotNetCli.Tools
                 throw new Exception("Failed to locate dotnet CLI executable. Make sure the dotnet CLI is installed in the environment PATH.");
 
             var results = Utilities.ExecuteShellCommand(null, dotnetCLI, "--list-sdks");
-            if(results.Exitcode != 0)
+            if(results.ExitCode != 0)
                 throw new Exception("Command \"dotnet --list-sdks\" failed, captured output: \n" + results.Stdout);
             
 

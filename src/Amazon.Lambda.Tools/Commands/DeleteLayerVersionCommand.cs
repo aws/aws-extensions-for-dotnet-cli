@@ -59,12 +59,12 @@ namespace Amazon.Lambda.Tools.Commands
             var layerVersionArn = this.GetStringValueOrDefault(this.LayerVersionArn,
                 LambdaDefinedCommandOptions.ARGUMENT_LAYER_VERSION_ARN, true);
 
-            var (layerName, versionNumber) = LambdaUtilities.ParseLayerVersionArn(layerVersionArn);
+            var results = LambdaUtilities.ParseLayerVersionArn(layerVersionArn);
 
             var deleteRequest = new DeleteLayerVersionRequest
             {
-                LayerName = layerName,
-                VersionNumber = versionNumber
+                LayerName = results.Name,
+                VersionNumber = results.VersionNumber
             };
 
 
@@ -77,7 +77,7 @@ namespace Amazon.Lambda.Tools.Commands
                 throw new LambdaToolsException("Error deleting Lambda layer version: " + e.Message, LambdaToolsException.LambdaErrorCode.LambdaDeleteLayerVersion, e);
             }
 
-            this.Logger?.WriteLine($"Deleted version {versionNumber} for layer {layerName}");
+            this.Logger?.WriteLine($"Deleted version {results.VersionNumber} for layer {results.Name}");
 
             return true;
         }
