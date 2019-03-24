@@ -283,23 +283,29 @@ namespace Amazon.Lambda.Tools.Test
                 {
                     Assert.True(created);
 
-                    var lambdaFunctionName =
-                        await TestHelper.GetPhysicalCloudFormationResourceId(_testFixture.CFClient, command.StackName, "TheFunction");
-                    
-                    await ValidateInvokeAsync(lambdaFunctionName, "\"hello\"", "\"HELLO\"");
-
-                    var getConfigResponse = await this._testFixture.LambdaClient.GetFunctionConfigurationAsync(new GetFunctionConfigurationRequest { FunctionName = lambdaFunctionName });
-                    Assert.NotNull(getConfigResponse.Layers.FirstOrDefault(x => string.Equals(x.Arn, publishLayerCommand.NewLayerVersionArn)));
-                    
-                    var getCodeResponse = await this._testFixture.LambdaClient.GetFunctionAsync(lambdaFunctionName);
-                    using (var client = new HttpClient())
+                    Func<string, Task> testFunctionAsync = async (functionName) =>
                     {
-                        var data = await client.GetByteArrayAsync(getCodeResponse.Code.Location);
-                        var zipArchive = new ZipArchive(new MemoryStream(data), ZipArchiveMode.Read);
+                        var lambdaFunctionName =
+                            await TestHelper.GetPhysicalCloudFormationResourceId(_testFixture.CFClient, command.StackName, functionName);
 
-                        Assert.NotNull(zipArchive.GetEntry("TestLayerServerless.dll"));
-                        Assert.Null(zipArchive.GetEntry("Amazon.Lambda.Core.dll"));
-                    }
+                        await ValidateInvokeAsync(lambdaFunctionName, "\"hello\"", "\"HELLO\"");
+
+                        var getConfigResponse = await this._testFixture.LambdaClient.GetFunctionConfigurationAsync(new GetFunctionConfigurationRequest { FunctionName = lambdaFunctionName });
+                        Assert.NotNull(getConfigResponse.Layers.FirstOrDefault(x => string.Equals(x.Arn, publishLayerCommand.NewLayerVersionArn)));
+
+                        var getCodeResponse = await this._testFixture.LambdaClient.GetFunctionAsync(lambdaFunctionName);
+                        using (var client = new HttpClient())
+                        {
+                            var data = await client.GetByteArrayAsync(getCodeResponse.Code.Location);
+                            var zipArchive = new ZipArchive(new MemoryStream(data), ZipArchiveMode.Read);
+
+                            Assert.NotNull(zipArchive.GetEntry("TestLayerServerless.dll"));
+                            Assert.Null(zipArchive.GetEntry("Amazon.Lambda.Core.dll"));
+                        }
+                    };
+
+                    await testFunctionAsync("TheFunction");
+                    await testFunctionAsync("TheSecondFunctionSameSource");
                 }
                 finally
                 {

@@ -19,6 +19,23 @@
         "Events": {
         }
       }
+    },
+
+    "TheSecondFunctionSameSource" : {
+      "Type" : "AWS::Serverless::Function",
+      "Description" : "Add second function using the same source to make sure DOTNET_SHARED_STORE env is set even though not rebuilt",
+      "Properties": {
+        "Handler": "TestLayerServerless::TestLayerServerless.Functions::ToUpper",
+        "Runtime": "dotnetcore2.1",
+        "CodeUri": "",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [ "AWSLambdaBasicExecutionRole" ],
+        "Layers" : [ "LAYER_ARN_PLACEHOLDER" ],
+        "Events": {
+        }
+      }
     }
 
   },

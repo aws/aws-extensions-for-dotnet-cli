@@ -73,7 +73,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             
             // Maintain a cache of local paths to S3 Keys so if the same local path is referred to for
             // multiple Lambda functions it is only built and uploaded once.
-            var cacheOfLocalPathsToS3Keys = new Dictionary<string, string>();
+            var cacheOfLocalPathsToS3Keys = new Dictionary<string, UpdateResourceResults>();
             
             var parser = CreateTemplateParser(templateBody);
 
@@ -86,22 +86,26 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                     var localPath = field.GetLocalPath();
                     if (localPath == null)
                         continue;
-                    
-                    string s3Key;
-                    if (!cacheOfLocalPathsToS3Keys.TryGetValue(localPath, out s3Key))
+
+                    UpdateResourceResults updateResults;
+                    if (!cacheOfLocalPathsToS3Keys.TryGetValue(localPath, out updateResults))
                     {
                         this.Logger?.WriteLine(
                             $"Initiate packaging of {field.GetLocalPath()} for resource {updatableResource.Name}");
-                        s3Key = await ProcessUpdatableResourceAsync(templateDirectory, field);
-                        cacheOfLocalPathsToS3Keys[localPath] = s3Key;
+                        updateResults = await ProcessUpdatableResourceAsync(templateDirectory, field);
+                        cacheOfLocalPathsToS3Keys[localPath] = updateResults;
                     }
                     else
                     {
                         this.Logger?.WriteLine(
-                            $"Using previous upload artifact s3://{this.S3Bucket}/{s3Key} for resource {updatableResource.Name}");
+                            $"Using previous upload artifact s3://{this.S3Bucket}/{updateResults.S3Key} for resource {updatableResource.Name}");
                     }
 
-                    field.SetS3Location(this.S3Bucket, s3Key);
+                    field.SetS3Location(this.S3Bucket, updateResults.S3Key);
+                    if(!string.IsNullOrEmpty(updateResults.DotnetShareStoreEnv))
+                    {
+                        field.Resource.SetEnvironmentVariable(LambdaConstants.ENV_DOTNET_SHARED_STORE, updateResults.DotnetShareStoreEnv);
+                    }
                 }
             }
 
@@ -118,26 +122,26 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// <param name="field"></param>
         /// <returns></returns>
         /// <exception cref="LambdaToolsException"></exception>
-        private async Task<string> ProcessUpdatableResourceAsync(string templateDirectory, IUpdateResourceField field)
+        private async Task<UpdateResourceResults> ProcessUpdatableResourceAsync(string templateDirectory, IUpdateResourceField field)
         {
+            UpdateResourceResults results;
             var localPath = field.GetLocalPath();
 
             if (!Path.IsPathRooted(localPath))
                 localPath = Path.Combine(templateDirectory, localPath);
 
             bool deleteArchiveAfterUploaded = false;
-            string zipArchivePath;
             if(File.Exists(localPath))
             {
                 if(field.IsCode && !string.Equals(Path.GetExtension(localPath), ".zip", StringComparison.OrdinalIgnoreCase))
                 {
                     this.Logger.WriteLine($"Creating zip archive for {localPath} file");
-                    zipArchivePath = GenerateOutputZipFilename(field);
-                    LambdaPackager.BundleFiles(zipArchivePath, Path.GetDirectoryName(localPath), new string[] { localPath }, this.Logger);
+                    results = new UpdateResourceResults { ZipArchivePath = GenerateOutputZipFilename(field) };
+                    LambdaPackager.BundleFiles(results.ZipArchivePath, Path.GetDirectoryName(localPath), new string[] { localPath }, this.Logger);
                 }
                 else
                 {
-                    zipArchivePath = localPath;
+                    results = new UpdateResourceResults { ZipArchivePath = localPath };
                 }
             }
             // If IsCode is false then the local path needs to point to a file and not a directory. When IsCode is true
@@ -154,18 +158,18 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             // then use it as the package source.
             else if (IsCurrentDirectory(field.GetLocalPath()) && !string.IsNullOrEmpty(this.DefaultOptions.Package))
             {
-                zipArchivePath = this.DefaultOptions.Package;
+                results = new UpdateResourceResults { ZipArchivePath = this.DefaultOptions.Package };
             }
             else if(field.IsCode)
             {
                 if (IsDotnetProjectDirectory(localPath))
                 {
-                    zipArchivePath = await PackageDotnetProjectAsync(field, localPath);
+                    results = await PackageDotnetProjectAsync(field, localPath);
                 }
                 else
                 {
-                    zipArchivePath = GenerateOutputZipFilename(field);
-                    LambdaPackager.BundleDirectory(zipArchivePath, localPath, false, this.Logger);                    
+                    results = new UpdateResourceResults { ZipArchivePath = GenerateOutputZipFilename(field) };
+                    LambdaPackager.BundleDirectory(results.ZipArchivePath, localPath, false, this.Logger);                    
                 }
                 deleteArchiveAfterUploaded = true;                    
             }
@@ -175,9 +179,10 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             }
 
             string s3Key;
-            using (var stream = File.OpenRead(zipArchivePath))
+            using (var stream = File.OpenRead(results.ZipArchivePath))
             {
-                s3Key = await Utilities.UploadToS3Async(this.Logger, this.S3Client, this.S3Bucket, this.S3Prefix, Path.GetFileName(zipArchivePath), stream);
+                s3Key = await Utilities.UploadToS3Async(this.Logger, this.S3Client, this.S3Bucket, this.S3Prefix, Path.GetFileName(results.ZipArchivePath), stream);
+                results.S3Key = s3Key;
             }
 
             // Now that the temp zip file is uploaded to S3 clean up by deleting the temp file.
@@ -185,15 +190,15 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             {
                 try
                 {
-                    File.Delete(zipArchivePath);
+                    File.Delete(results.ZipArchivePath);
                 }
                 catch (Exception e)
                 {
-                    this.Logger?.WriteLine($"Warning: Unable to delete temporary archive, {zipArchivePath}, after uploading to S3: {e.Message}");
+                    this.Logger?.WriteLine($"Warning: Unable to delete temporary archive, {results.ZipArchivePath}, after uploading to S3: {e.Message}");
                 }
             }
 
-            return s3Key;
+            return results;
         }
 
         /// <summary>
@@ -203,7 +208,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// <param name="location"></param>
         /// <returns></returns>
         /// <exception cref="LambdaToolsException"></exception>
-        private async Task<string> PackageDotnetProjectAsync(IUpdateResourceField field, string location)
+        private async Task<UpdateResourceResults> PackageDotnetProjectAsync(IUpdateResourceField field, string location)
         {
             var command = new Commands.PackageCommand(this.Logger, location, null);
 
@@ -241,12 +246,13 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 throw new LambdaToolsException(message, ToolsException.CommonErrorCode.DotnetPublishFailed);
             }
 
+            var results = new UpdateResourceResults() { ZipArchivePath = outputPackage };
             if (!string.IsNullOrEmpty(command.NewDotnetSharedStoreValue))
             {
-                field.Resource.SetEnvironmentVariable(LambdaConstants.ENV_DOTNET_SHARED_STORE, command.NewDotnetSharedStoreValue);
+                results.DotnetShareStoreEnv = command.NewDotnetSharedStoreValue;
             }
 
-            return outputPackage;
+            return results;
         }
 
         private static string GenerateOutputZipFilename(IUpdateResourceField field)
@@ -303,6 +309,13 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 default:
                     throw new LambdaToolsException("Unable to determine template file format", LambdaToolsException.LambdaErrorCode.ServerlessTemplateParseError);
             }
+        }
+
+        class UpdateResourceResults
+        {
+            public string ZipArchivePath { get; set; }
+            public string S3Key { get; set; }
+            public string DotnetShareStoreEnv { get; set; }
         }
     }
 }
