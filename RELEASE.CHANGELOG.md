@@ -1,3 +1,8 @@
+### Release 2019-03-25
+* **Amazon.Lambda.Tools (3.2.0)**
+    * Added support for using .NET Core runtime package stores as Lambda layers. For a full description checkout the [.NET Lambda Layer docs](https://github.com/aws/aws-extensions-for-dotnet-cli/blob/master/docs/Layers.md).
+    * Fixed issue with Windows line ending when deploy a Custom Runtime Lambda function.
+
 ### Release 2019-03-18
 * **Amazon.Lambda.Tools (3.1.4)**
     * Make `--framework` switch optional. If it is not set then the project file will be inspected to determine framework.
