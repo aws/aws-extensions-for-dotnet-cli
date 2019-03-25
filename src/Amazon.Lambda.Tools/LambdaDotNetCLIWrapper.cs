@@ -103,6 +103,14 @@ namespace Amazon.Lambda.Tools
             {
                 if (string.IsNullOrEmpty(e.Data))
                     return;
+                
+                // Skip outputting this warning message as it adds a lot of noise to the output and is not actionable.
+                // Full warning message being skipped: message NETSDK1062:
+                // Unable to use package assets cache due to I/O error. This can occur when the same project is built
+                // more than once in parallel. Performance may be degraded, but the build result will not be impacted.
+                if (e.Data.Contains("message NETSDK1062"))
+                    return;
+                
                 _logger?.WriteLine("... store: " + e.Data);
             });
 
