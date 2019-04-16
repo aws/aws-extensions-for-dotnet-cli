@@ -57,11 +57,6 @@ namespace Amazon.Lambda.Tools
 
             var lambdaRuntimePackageStoreManifestContent = LambdaUtilities.LoadPackageStoreManifest(logger, targetFramework);
 
-            if (!disableVersionCheck)
-            {
-                LambdaUtilities.ValidateMicrosoftAspNetCoreAllReferenceFromProjectPath(logger, targetFramework, lambdaRuntimePackageStoreManifestContent, computedProjectLocation);
-            }
-
             var publishManifestPath = new List<string>();
             if(!string.IsNullOrEmpty(lambdaRuntimePackageStoreManifestContent))
             {
