@@ -452,7 +452,7 @@ namespace Amazon.Lambda.Tools.Test
 
         public static IEnumerable<object[]> IgnoreResourceWithInlineCodeData()
         {
-            const string InclineCode = @"{ 'Fn::Join': ['', [
+            const string InlineCode = @"{ 'Fn::Join': ['', [
   'var response = require('cfn-response');',
   'exports.handler = function(event, context) {',
   '  var input = parseInt(event.ResourceProperties.Input);',
@@ -463,7 +463,7 @@ namespace Amazon.Lambda.Tools.Test
             var list = new List<object[]>();
             {
                 var codeData = new JsonData();
-                codeData["ZipFile"] = InclineCode;
+                codeData["ZipFile"] = InlineCode;
 
                 var rootData = new JsonData();
                 rootData["Code"] = codeData;
@@ -473,7 +473,7 @@ namespace Amazon.Lambda.Tools.Test
             }
             {
                 var codeData = new YamlMappingNode();
-                codeData.Children.Add("ZipFile", new YamlScalarNode(InclineCode));
+                codeData.Children.Add("ZipFile", new YamlScalarNode(InlineCode));
 
                 var rootData = new YamlMappingNode();
                 rootData.Children.Add("Code", codeData);
