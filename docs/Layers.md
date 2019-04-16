@@ -5,7 +5,7 @@ provide additional code and content to your Lambda function. A layer is a zip fi
 into the **/opt** directory in the Lambda compute environment.
 
 This document describes the specific use cases the **Amazon.Lambda.Tools** .NET Core global tool supports in 
-creating Layers and exposing them to your .NET Core Lambda function. **Currently this support is not included in the AWS Toolkit for Visual Studio**.
+creating Layers and exposing them to your .NET Core Lambda function.
 
 ## The Quick Tutorial
 
@@ -306,8 +306,9 @@ creating a layer with all 100+ NuGet packages of the AWS SDK for .NET when you a
 #### Can I use runtime package store layers with other tools besides Amazon.Lambda.Tools?
 
 Currently only **Amazon.Lambda.Tools** has the .NET specific logic to manage the artifact.xml file and DOTNET_SHARED_STORE environment variable.
-Eventually the version of Amazon.Lambda.Tools that ships with AWS Toolkit for Visual Studio will be updated to include the 
-layer functionality.
+Version **1.15.0.0 of the AWS Toolkit for Visual Studio** includes an updated version of Amazon.Lambda.Tools that supports layers. 
+Layers can be specified in either the `aws-lambda-tools-defaults.json` file or `serverless.template` and Visual Studio will
+use those layers when creating the deployment package.
 
 #### How do I see what packages are in a runtime package store layer?
 
