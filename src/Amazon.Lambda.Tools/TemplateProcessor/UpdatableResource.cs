@@ -90,7 +90,23 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
 
             public string Name => this.Field.Name;
 
-            public bool IsCode => this.Field.IsCode;
+            public bool IsCode
+            {
+                get
+                {
+                    if (!this.Field.IsCode)
+                    {
+                        return false;
+                    }
+                    if(!string.IsNullOrEmpty(this._resource.DataSource.GetValue("Code", "ZipFile")))
+                    {
+                        // The template contains embedded code.
+                        return false;
+                    }                     
+
+                    return true;
+                }
+            }
 
             public string GetLocalPath()
             {
