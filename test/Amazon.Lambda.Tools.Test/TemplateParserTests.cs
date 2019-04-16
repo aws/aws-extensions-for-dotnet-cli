@@ -440,7 +440,51 @@ namespace Amazon.Lambda.Tools.Test
 
             Assert.Null(resource.Fields[0].GetLocalPath());
         }
-        
+
+        [Theory]
+        [MemberData(nameof(IgnoreResourceWithInlineCodeData))]
+        public void IgnoreResourceWithInlineCode(IUpdatableResourceDataSource source)
+        {
+            var resource = new UpdatableResource("TestResource", UpdatableResourceDefinition.DEF_LAMBDA_FUNCTION, source);
+            Assert.False(resource.Fields[0].IsCode);
+        }
+
+
+        public static IEnumerable<object[]> IgnoreResourceWithInlineCodeData()
+        {
+            const string InlineCode = @"{ 'Fn::Join': ['', [
+  'var response = require('cfn-response');',
+  'exports.handler = function(event, context) {',
+  '  var input = parseInt(event.ResourceProperties.Input);',
+  '  var responseData = {Value: input * 5};',
+  '  response.send(event, context, response.SUCCESS, responseData);',
+  '};'
+]]}";
+            var list = new List<object[]>();
+            {
+                var codeData = new JsonData();
+                codeData["ZipFile"] = InlineCode;
+
+                var rootData = new JsonData();
+                rootData["Code"] = codeData;
+
+                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, rootData);
+                list.Add(new object[] { source });
+            }
+            {
+                var codeData = new YamlMappingNode();
+                codeData.Children.Add("ZipFile", new YamlScalarNode(InlineCode));
+
+                var rootData = new YamlMappingNode();
+                rootData.Children.Add("Code", codeData);
+
+                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(null, rootData);
+                list.Add(new object[] { source });
+            }
+
+            return list;
+        }
+
         [Theory]
         [InlineData("/home/infra.template")]
         public void CloudFormationStack_GetLocalPathAndEmptyS3Bucket(string localPath)
