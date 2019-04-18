@@ -1,3 +1,8 @@
+### Release 2019-04-18
+* **Amazon.Lambda.Tools (3.2.1)**
+	* Removed ASP.NET Core version check. This is no longer needed now that the .NET Core SDK no longer sets the runtime version to the latest patched version that is installed on the machine that is creating the deployment package.
+	* Fixed issue of not handling embedded node.js or python code in CloudFormation template.
+
 ### Release 2019-03-25
 * **Amazon.Lambda.Tools (3.2.0)**
     * Added support for using .NET Core runtime package stores as Lambda layers. For a full description checkout the [.NET Lambda Layer docs](https://github.com/aws/aws-extensions-for-dotnet-cli/blob/master/docs/Layers.md).
