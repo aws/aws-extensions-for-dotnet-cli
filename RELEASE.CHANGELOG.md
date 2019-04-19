@@ -1,3 +1,7 @@
+### Release 2019-04-19
+* **Amazon.Lambda.Tools (3.2.2)**
+    * Fixed issue with package not being able to installed on non-windows platforms.
+
 ### Release 2019-04-18
 * **Amazon.Lambda.Tools (3.2.1)**
 	* Removed ASP.NET Core version check. This is no longer needed now that the .NET Core SDK no longer sets the runtime version to the latest patched version that is installed on the machine that is creating the deployment package.
