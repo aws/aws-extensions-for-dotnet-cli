@@ -7,6 +7,7 @@ package main
 
 import (
 	"archive/zip"
+	"bufio"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -27,20 +28,37 @@ func main() {
 			Value: "",
 			Usage: "output file path for the zip. Defaults to the first input file name.",
 		},
+		cli.StringFlag{
+			Name:  "input, i",
+			Value: "",
+			Usage: "input file path for the list of files to zip.",
+		},
 	}
 
 	app.Action = func(c *cli.Context) error {
-		if !c.Args().Present() {
-			return errors.New("No input provided")
-		}
-
 		firstArg := c.Args().First()
 		outputZip := c.String("output")
 		if outputZip == "" {
 			outputZip = fmt.Sprintf("%s.zip", filepath.Base(firstArg))
 		}
 
-		if err := compressExeAndArgs(outputZip, c.Args()); err != nil {
+		inputTxt := c.String("input")
+		var files = c.Args()
+		if inputTxt != "" {
+			//Add any files from the input txt file to the files list
+			lines, err := loadInputFiles(inputTxt)
+			if err != nil {
+				return fmt.Errorf("Failed to load files to zip: %v", err)
+			}
+
+			files = append(files, lines...)
+		}
+
+		if len(files) == 0 {
+			return errors.New("No input files provided")
+		}
+
+		if err := compressExeAndArgs(outputZip, files); err != nil {
 			return fmt.Errorf("Failed to compress file: %v", err)
 		}
 		return nil
@@ -67,7 +85,7 @@ func writeExe(writer *zip.Writer, pathInZip string, data []byte) error {
 	return err
 }
 
-func compressExeAndArgs(outZipPath string, args []string) error {
+func compressExeAndArgs(outZipPath string, files []string) error {
 	zipFile, err := os.Create(outZipPath)
 	if err != nil {
 		return err
@@ -83,14 +101,13 @@ func compressExeAndArgs(outZipPath string, args []string) error {
 	zipWriter := zip.NewWriter(zipFile)
 	defer zipWriter.Close()
 
-
-	for _, arg := range args {
-		data, err := ioutil.ReadFile(arg)
+	for _, filename := range files {
+		data, err := ioutil.ReadFile(filename)
 		if err != nil {
 			return err
 		}
 
-		linuxName := strings.Replace(arg, "\\", "/", -1)
+		linuxName := strings.Replace(filename, "\\", "/", -1)
 		fmt.Println(linuxName)
 		err = writeExe(zipWriter, linuxName, data)
 		if err != nil {
@@ -98,4 +115,19 @@ func compressExeAndArgs(outZipPath string, args []string) error {
 		}
 	}
 	return err
+}
+
+func loadInputFiles(inputFilename string) ([]string, error) {
+	file, err := os.Open(inputFilename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	return lines, scanner.Err()
 }
