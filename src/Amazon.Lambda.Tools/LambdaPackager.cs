@@ -540,33 +540,38 @@ namespace Amazon.Lambda.Tools
                 logger?.WriteLine("... zipping: " + e.Data);
             });
 
-            using (var proc = new Process())
-            {
-                proc.StartInfo = psiZip;
-                proc.Start();
-
-                proc.ErrorDataReceived += handler;
-                proc.OutputDataReceived += handler;
-                proc.BeginOutputReadLine();
-                proc.BeginErrorReadLine();
-
-                proc.EnableRaisingEvents = true;
-                proc.WaitForExit();
-
-                if (proc.ExitCode == 0)
-                {
-                    logger?.WriteLine(string.Format("Created publish archive ({0}).", zipArchivePath));
-                }
-            }
-            
             try
             {
-                File.Delete(inputFilename);
+                using (var proc = new Process())
+                {
+                    proc.StartInfo = psiZip;
+                    proc.Start();
+
+                    proc.ErrorDataReceived += handler;
+                    proc.OutputDataReceived += handler;
+                    proc.BeginOutputReadLine();
+                    proc.BeginErrorReadLine();
+
+                    proc.EnableRaisingEvents = true;
+                    proc.WaitForExit();
+
+                    if (proc.ExitCode == 0)
+                    {
+                        logger?.WriteLine(string.Format("Created publish archive ({0}).", zipArchivePath));
+                    }
+                }
             }
-            catch (Exception e)
+            finally
             {
-                logger?.WriteLine($"Warning: Unable to delete temporary input file, {inputFilename}, after zipping files: {e.Message}");
-            }
+                try
+                {
+                    File.Delete(inputFilename);
+                }
+                catch (Exception e)
+                {
+                    logger?.WriteLine($"Warning: Unable to delete temporary input file, {inputFilename}, after zipping files: {e.Message}");
+                }
+            }                        
         }
 
         /// <summary>

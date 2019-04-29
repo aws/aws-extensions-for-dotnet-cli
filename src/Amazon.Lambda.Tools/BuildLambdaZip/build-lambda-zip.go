@@ -3,6 +3,10 @@
 // The .NET zip libraries do not allow you to do this so we're forced to do it in a language that supports it.
 // This repo includes a compiled version of this utility at /Resources/build-lambda-zip.exe; so you don't need to install Go to build this repo.
 // If you do need to update this utility you have to install Go and run 'dotnet msbuild -target:build-lambda-zip'.
+// When built with 'dotnet msbuild -target:build-lambda-zip' the owner of the built exe might be SYSTEM. If this occurs, depending on your
+// system setup, you may get access denied errors when building the aws-extensions-for-dotnet-cli. To fix this you can either
+// take ownership / change permissions on the build-lambda-zip.exe file or execute the contents of the build-lambda-zip target
+// directly.
 package main
 
 import (
@@ -36,12 +40,6 @@ func main() {
 	}
 
 	app.Action = func(c *cli.Context) error {
-		firstArg := c.Args().First()
-		outputZip := c.String("output")
-		if outputZip == "" {
-			outputZip = fmt.Sprintf("%s.zip", filepath.Base(firstArg))
-		}
-
 		inputTxt := c.String("input")
 		var files = c.Args()
 		if inputTxt != "" {
@@ -56,6 +54,11 @@ func main() {
 
 		if len(files) == 0 {
 			return errors.New("No input files provided")
+		}
+
+		outputZip := c.String("output")
+		if outputZip == "" {
+			outputZip = fmt.Sprintf("%s.zip", filepath.Base(files.First()))
 		}
 
 		if err := compressExeAndArgs(outputZip, files); err != nil {
