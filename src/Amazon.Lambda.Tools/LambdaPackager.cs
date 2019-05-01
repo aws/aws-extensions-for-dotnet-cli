@@ -502,20 +502,25 @@ namespace Amazon.Lambda.Tools
         /// <param name="includedFiles">Map of relative to absolute path of files to include in bundle.</param>
         /// <param name="logger">Logger instance.</param>
         private static void BundleWithBuildLambdaZip(string zipArchivePath, string rootDirectory, IDictionary<string, string> includedFiles, IToolLogger logger)
-        {
+        {               
             if (!File.Exists(BuildLambdaZipCliPath))
             {
                 throw new LambdaToolsException("Failed to find the \"build-lambda-zip\" utility. This program is required to maintain Linux file permissions in the zip archive.", LambdaToolsException.LambdaErrorCode.FailedToFindZipProgram);
             }
-
+            
             EnsureBootstrapLinuxLineEndings(rootDirectory, includedFiles);
-
-            var args = new StringBuilder("-o \"" + zipArchivePath + "\"");
-
-            foreach (var kvp in includedFiles)
-            {
-                args.AppendFormat(" \"{0}\"", kvp.Key);
+                        
+            //Write the files to disk to avoid the command line size limit when we have a large number of files to zip.            
+            var inputFilename = zipArchivePath + ".txt";
+            using(var writer = new StreamWriter(inputFilename))
+            {                            
+                foreach (var kvp in includedFiles)
+                {
+                    writer.WriteLine(kvp.Key);                    
+                }
             }
+
+            var args = new StringBuilder($"-o \"{zipArchivePath}\" -i \"{inputFilename}\"");
 
             var psiZip = new ProcessStartInfo
             {
@@ -535,24 +540,38 @@ namespace Amazon.Lambda.Tools
                 logger?.WriteLine("... zipping: " + e.Data);
             });
 
-            using (var proc = new Process())
+            try
             {
-                proc.StartInfo = psiZip;
-                proc.Start();
-
-                proc.ErrorDataReceived += handler;
-                proc.OutputDataReceived += handler;
-                proc.BeginOutputReadLine();
-                proc.BeginErrorReadLine();
-
-                proc.EnableRaisingEvents = true;
-                proc.WaitForExit();
-
-                if (proc.ExitCode == 0)
+                using (var proc = new Process())
                 {
-                    logger?.WriteLine(string.Format("Created publish archive ({0}).", zipArchivePath));
+                    proc.StartInfo = psiZip;
+                    proc.Start();
+
+                    proc.ErrorDataReceived += handler;
+                    proc.OutputDataReceived += handler;
+                    proc.BeginOutputReadLine();
+                    proc.BeginErrorReadLine();
+
+                    proc.EnableRaisingEvents = true;
+                    proc.WaitForExit();
+
+                    if (proc.ExitCode == 0)
+                    {
+                        logger?.WriteLine(string.Format("Created publish archive ({0}).", zipArchivePath));
+                    }
                 }
             }
+            finally
+            {
+                try
+                {
+                    File.Delete(inputFilename);
+                }
+                catch (Exception e)
+                {
+                    logger?.WriteLine($"Warning: Unable to delete temporary input file, {inputFilename}, after zipping files: {e.Message}");
+                }
+            }                        
         }
 
         /// <summary>
