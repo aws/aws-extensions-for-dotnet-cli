@@ -1,3 +1,7 @@
+### Release 2019-05-2
+* **Amazon.Lambda.Tools (3.2.3)**
+    * Fixed issue filename or extension is too long when passing a large number of file arguments to the zip utility.
+
 ### Release 2019-04-19
 * **Amazon.Lambda.Tools (3.2.2)**
     * Fixed issue with package not being able to installed on non-windows platforms.
