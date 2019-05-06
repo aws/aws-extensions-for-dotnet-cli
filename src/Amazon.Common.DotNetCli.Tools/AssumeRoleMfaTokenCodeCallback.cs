@@ -11,7 +11,7 @@ namespace Amazon.Common.DotNetCli.Tools
     /// </summary>
     internal class AssumeRoleMfaTokenCodeCallback 
     {
-        AssumeRoleAWSCredentialsOptions Options { get; set; }
+        private AssumeRoleAWSCredentialsOptions Options { get; set; }
 
         internal AssumeRoleMfaTokenCodeCallback(AssumeRoleAWSCredentialsOptions options)
         {
