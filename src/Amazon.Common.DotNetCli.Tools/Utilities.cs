@@ -713,8 +713,9 @@ namespace Amazon.Common.DotNetCli.Tools
                         Console.Write("\b \b");
                     }
                 }
+                // )i.Key > 31: Skip the initial ascii control characters like ESC and tab. The space character is 32.
                 // KeyChar == '\u0000' if the key pressed does not correspond to a printable character, e.g. F1, Pause-Break, etc
-                else if (i.KeyChar != '\u0000') 
+                else if ((int)i.Key > 31 && i.KeyChar != '\u0000') 
                 {
                     code.Append(i.KeyChar);
                     Console.Write("*");
