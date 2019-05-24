@@ -431,7 +431,7 @@ namespace Amazon.Lambda.Tools.Test
             var command = new PackageCICommand(logger, fullPath, new string[0]);
             command.Region = "us-west-2";
             command.Configuration = "Release";
-            command.TargetFramework = "netcoreapp2.0";
+            command.TargetFramework = "netcoreapp2.1";
             command.CloudFormationTemplate = "serverless.template";
             command.CloudFormationOutputTemplate = Path.Combine(Path.GetTempPath(),  "output-serverless.template");
             command.S3Bucket = "serverless-package-test-" + DateTime.Now.Ticks;
@@ -464,7 +464,7 @@ namespace Amazon.Lambda.Tools.Test
             var command = new DeployServerlessCommand(logger, fullPath, new string[0]);
             command.Region = "us-east-1";
             command.Configuration = "Release";
-            command.TargetFramework = "netcoreapp2.0";
+            command.TargetFramework = "netcoreapp2.1";
             command.CloudFormationTemplate = "large-serverless.template";
             command.StackName = "TestDeployLargeServerless-" + DateTime.Now.Ticks;
             command.S3Bucket = this._testFixture.Bucket;

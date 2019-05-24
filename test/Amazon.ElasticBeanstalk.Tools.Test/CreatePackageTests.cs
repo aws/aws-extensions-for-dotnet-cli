@@ -23,7 +23,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
             var packageCommand = new PackageCommand(new ConsoleToolLogger(), TestUtilities.TestBeanstalkWebAppPath, new string[] { "--output-package", outputPackage });
             packageCommand.DisableInteractive = true;
             await packageCommand.ExecuteAsync();
-            Assert.NotNull(packageCommand.LastToolsException);
+            Assert.Null(packageCommand.LastToolsException);
 
             var manifest = ReadManifestFromPackage(outputPackage);
             var appInManifest = manifest["deployments"]["aspNetCoreWeb"][0];
