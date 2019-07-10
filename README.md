@@ -13,7 +13,7 @@ command line in the Lambda function's project root directory.
 dotnet lambda deploy-function MyFunction
 ```
 
-The extension will prompt you for misssing required parameters. To disable the extension from prompting, set the 
+The extension will prompt you for missing required parameters. To disable the extension from prompting, set the 
 command line switch **--disable-interactive** to **true**.
 
 
@@ -66,7 +66,7 @@ The AWS Toolkit for Visual Studio before .NET Core 2.1 would look for the presen
 
 ## Supported AWS Services
 
-The following AWS services each have their own .NET CLI tool extension to make easy to deploy a .NET Core Application
+The following AWS services each have their own .NET CLI tool extension to make it easy to deploy a .NET Core Application
 to them.
 
 * [Amazon Elastic Container Service](#amazon-elastic-container-service-amazonecstools)
@@ -149,7 +149,7 @@ an Elastic Load Balancer so that each of the tasks in the services will be regis
 dotnet ecs deploy-task
 ```
 
-Deploys the .NET Core application as task on an ECS Cluster. This is good for batch processsing and similar jobs
+Deploys the .NET Core application as task on an ECS Cluster. This is good for batch processing and similar jobs
 where once the process identified in the dockerfile exits the ECS task should end.
 
 ##### Deploy Scheduled Task
