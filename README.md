@@ -114,7 +114,7 @@ is set to true to persist all of its settings in the defaults file.
 ### Amazon Elastic Container Service ([Amazon.ECS.Tools](https://www.nuget.org/packages/Amazon.ECS.Tools/))
 ---
 
-This tool extension takes care of builindg a Docker image from a .NET application and then deploying 
+This tool extension takes care of building a Docker image from a .NET application and then deploying 
 the Docker image to Amazon Elastic Container Service (**ECS**). The application must contain a **dockerfile** 
 instructing this tool and the Docker CLI which this tool uses to build the Docker image.
 
