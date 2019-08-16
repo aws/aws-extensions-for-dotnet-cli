@@ -1,4 +1,16 @@
-### Release 2019-05-2
+### Release 2019-08-16
+* **Amazon.Lambda.Tools (3.3.0)**
+  * Added MFA support
+  * Add runtime config setting to roll forward to major versions of .NET Core if 2.X is not installed.
+* **Amazon.ECS.Tools (3.1.0)**
+  * Added MFA support
+  * Add runtime config setting to roll forward to major versions of .NET Core if 2.X is not installed.
+* **Amazon.ElasticBeanstalk.Tools (3.2.0)**
+  * Added MFA support
+  * Add runtime config setting to roll forward to major versions of .NET Core if 2.X is not installed.
+
+
+### Release 2019-05-02
 * **Amazon.Lambda.Tools (3.2.3)**
     * Fixed issue filename or extension is too long when passing a large number of file arguments to the zip utility.
 
