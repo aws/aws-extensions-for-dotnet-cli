@@ -694,5 +694,34 @@ namespace Amazon.Common.DotNetCli.Tools
                 return new ExecuteShellCommandResult(proc.ExitCode, capturedOutput.ToString());
             }            
         }
+
+        public static string ReadSecretFromConsole()
+        {
+            var code = new StringBuilder();
+            while (true)
+            {
+                ConsoleKeyInfo i = Console.ReadKey(true);
+                if (i.Key == ConsoleKey.Enter)
+                {
+                    break;
+                }
+                else if (i.Key == ConsoleKey.Backspace)
+                {
+                    if (code.Length > 0)
+                    {
+                        code.Remove(code.Length - 1, 1);
+                        Console.Write("\b \b");
+                    }
+                }
+                // i.Key > 31: Skip the initial ascii control characters like ESC and tab. The space character is 32.
+                // KeyChar == '\u0000' if the key pressed does not correspond to a printable character, e.g. F1, Pause-Break, etc
+                else if ((int)i.Key > 31 && i.KeyChar != '\u0000') 
+                {
+                    code.Append(i.KeyChar);
+                    Console.Write("*");
+                }
+            }
+            return code.ToString().Trim();
+        }
     }
 }

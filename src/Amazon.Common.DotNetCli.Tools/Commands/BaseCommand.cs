@@ -191,12 +191,18 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
         /// </summary>
         public bool DisableInteractive { get; set; } = false;
 
+        private AWSCredentials _resolvedCredentials;
+
         protected AWSCredentials DetermineAWSCredentials()
         {
-            AWSCredentials credentials;
+            if(this._resolvedCredentials != null)
+            {
+                return this._resolvedCredentials;
+            }
+
             if (this.Credentials != null)
             {
-                credentials = this.Credentials;
+                this._resolvedCredentials = this.Credentials;
             }
             else
             {
@@ -213,28 +219,34 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
 
                     if(string.IsNullOrEmpty(awsSessionToken))
                     {
-                        credentials = new BasicAWSCredentials(awsAccessKeyId, awsSecretKey);
+                        this._resolvedCredentials = new BasicAWSCredentials(awsAccessKeyId, awsSecretKey);
                     }
                     else
                     {
-                        credentials = new SessionAWSCredentials(awsAccessKeyId, awsSecretKey, awsSessionToken);
+                        this._resolvedCredentials = new SessionAWSCredentials(awsAccessKeyId, awsSecretKey, awsSessionToken);
                     }
                 }
                 else if (!string.IsNullOrEmpty(profile))
                 {
                     var chain = new CredentialProfileStoreChain(this.ProfileLocation);
-                    if (!chain.TryGetAWSCredentials(profile, out credentials))
+                    if (!chain.TryGetAWSCredentials(profile, out this._resolvedCredentials))
                     {
-                        credentials = FallbackCredentialsFactory.GetCredentials();
+                        this._resolvedCredentials = FallbackCredentialsFactory.GetCredentials();
                     }
                 }
                 else
                 {
-                    credentials = FallbackCredentialsFactory.GetCredentials();
+                    this._resolvedCredentials = FallbackCredentialsFactory.GetCredentials();
+                }
+
+                if(this._resolvedCredentials is AssumeRoleAWSCredentials)
+                {
+                    var assumeOptions = ((AssumeRoleAWSCredentials)this._resolvedCredentials).Options;
+                    assumeOptions.MfaTokenCodeCallback = new AssumeRoleMfaTokenCodeCallback(assumeOptions).Execute;
                 }
             }
 
-            return credentials;
+            return this._resolvedCredentials;
         }
 
         public RegionEndpoint DetermineAWSRegion()
