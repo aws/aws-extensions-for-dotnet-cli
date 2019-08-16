@@ -10,7 +10,7 @@
 
   "region": "us-east-2",
   "configuration": "Release",
-  "framework": "netcoreapp1.0",
+  "framework": "netcoreapp2.1",
   "s3-prefix": "StateMachineDefinitionStringTest/",
   "template": "serverless.template",
   "template-parameters": "",
