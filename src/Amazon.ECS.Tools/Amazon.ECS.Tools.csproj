@@ -10,7 +10,7 @@
     <PackAsTool>true</PackAsTool>
 	<ToolCommandName>dotnet-ecs</ToolCommandName>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>3.0.0</Version>
+    <Version>3.1.0</Version>
     <AssemblyName>dotnet-ecs</AssemblyName>
     <Company>Amazon.com, Inc</Company>
     <Authors>Amazon Web Services</Authors>
