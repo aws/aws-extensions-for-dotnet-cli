@@ -170,7 +170,7 @@ namespace Amazon.Lambda.Tools.Commands
             {
                 this.NewDotnetSharedStoreValue = dotnetSharedStoreValue;
                 
-                this.Logger.WriteLine($"\nWarning: You must the {LambdaConstants.ENV_DOTNET_SHARED_STORE} environment variable when deploying the package. " +
+                this.Logger.WriteLine($"\nWarning: You must set the {LambdaConstants.ENV_DOTNET_SHARED_STORE} environment variable when deploying the package. " +
                                       "If not set the layers specified will not be located by the .NET Core runtime. The trailing '/' is required.");
                 this.Logger.WriteLine($"{LambdaConstants.ENV_DOTNET_SHARED_STORE}: {dotnetSharedStoreValue}");
             }
