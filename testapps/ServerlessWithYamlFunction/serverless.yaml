@@ -28,6 +28,10 @@ Resources:
           Properties:
             Path: "/"
             Method: GET
+
+  UploadsBucket:
+    Type: AWS::S3::Bucket
+
 Outputs:
   ApiURL:
     Description: API endpoint URL for Prod environment

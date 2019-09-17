@@ -531,7 +531,7 @@ namespace Amazon.Lambda.Tools
             }
         }
         
-        internal static string DetermineListDisplayLayerDescription(string description, int maxDescriptionLength)
+        public static string DetermineListDisplayLayerDescription(string description, int maxDescriptionLength)
         {
             if (string.IsNullOrWhiteSpace(description))
                 return "";
@@ -553,6 +553,12 @@ namespace Amazon.Lambda.Tools
             catch (Exception)
             {
             }
+
+            if (description.Length <= maxDescriptionLength)
+            {
+                return description;
+            }
+            
             return description.Substring(0, maxDescriptionLength);
         }
         
