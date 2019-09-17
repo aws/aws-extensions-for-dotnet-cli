@@ -22,5 +22,15 @@ namespace Amazon.Lambda.Tools.Test
         {
             Assert.Null(LambdaUtilities.DetermineLambdaRuntimeFromTargetFramework("not-real"));
         }
+
+        [Theory]
+        [InlineData("exactlength", "exactlength", 11)]
+        [InlineData("short", "short", 10)]
+        [InlineData("longlonglong", "longlong", 8)]
+        public void TestGettingLayerDescriptionForNonDotnetLayer(string fullLayer, string displayLayer, int maxLength)
+        {
+            var value = LambdaUtilities.DetermineListDisplayLayerDescription(fullLayer, maxLength);
+            Assert.Equal(displayLayer, value);
+        }
     }
 }
