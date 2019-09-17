@@ -47,6 +47,11 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             {
                 var resourceBody = (YamlMappingNode)resource.Value;
                 var type = (YamlScalarNode)resourceBody.Children[new YamlScalarNode("Type")];
+
+
+                if (!resourceBody.Children.ContainsKey("Properties"))
+                    continue;
+
                 var properties = (YamlMappingNode)resourceBody.Children[new YamlScalarNode("Properties")];
 
                 if (properties == null) continue;
