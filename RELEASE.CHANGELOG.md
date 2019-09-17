@@ -1,3 +1,8 @@
+### Release 2019-09-17
+* **Amazon.Lambda.Tools (3.3.0)**
+  * Fixed issue [#90](https://github.com/aws/aws-extensions-for-dotnet-cli/issues/90): Error parsing layer description while listing layers
+  * Fixed issue [#30](https://github.com/aws/aws-extensions-for-dotnet-cli/issues/30): Parsed yaml CloudFormaion template failure if there was no Properties node.
+  * Pull request [#89](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/89) Fixed typo warning how to set the DOTNET_SHARED_STORE environment varaible. Thanks [Oleg Kosmakov](https://github.com/kosmakoff)
 ### Release 2019-08-16
 * **Amazon.Lambda.Tools (3.3.0)**
   * Added MFA support
