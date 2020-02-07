@@ -216,11 +216,6 @@ Lists all of the current running environments along with the URL to access the e
 
 This tool extension deploys AWS Lambda .NET Core functions. 
 
-This tool extension was originally released with the
-.NET Core 1.0 Lambda release and the code for it is currently in the [aws-lambda-dotnet](https://github.com/aws/aws-lambda-dotnet/tree/master/Libraries/src/Amazon.Lambda.Tools)
-repository. The plan is to bring the project into this repository and use the same framework as the
-other tool extensions which will make it more consistent with the other tool extensions.
-
 #### Install
 
 To install the extension run the following command.
