@@ -65,7 +65,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
         protected override void SaveConfigFile(JsonData data)
         {
-            
         }
     }
 }

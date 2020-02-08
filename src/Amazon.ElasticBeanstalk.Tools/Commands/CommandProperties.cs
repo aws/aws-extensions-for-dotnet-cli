@@ -21,7 +21,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
         public Dictionary<string,string> Tags { get; set; }
         public Dictionary<string, string> AdditionalOptions { get; set; }
 
-
         public string SolutionStack { get; set; }
         public string EnvironmentType { get; set; }
         public string CNamePrefix { get; set; }
@@ -31,7 +30,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
         public string InstanceProfile { get; set; }
         public string ServiceRole { get; set; }
         public string VersionLabel { get; set; }
-
 
         internal void ParseCommandArguments(CommandOptions values)
         {
@@ -79,7 +77,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 this.EnableXRay = tuple.Item2.BoolValue;
         }
 
-
         internal void PersistSettings(EBBaseCommand command, JsonData data)
         {
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION.ConfigFileKey, command.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false));
@@ -104,7 +101,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
         }
     }
 
-
     public class DeleteEnvironmentProperties
     {
         public string Environment { get; set; }
@@ -114,7 +110,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT.Switch)) != null)
                 this.Environment = tuple.Item2.StringValue;
         }
-
 
         internal void PersistSettings(EBBaseCommand command, JsonData data)
         {

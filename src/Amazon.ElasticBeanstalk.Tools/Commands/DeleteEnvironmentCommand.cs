@@ -59,7 +59,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
-
             string environment = this.GetStringValueOrDefault(this.DeleteEnvironmentProperties.Environment, EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT, true);
             if (!this.ConfirmDeletion("Elastic Beanstalk environment " + environment))
                 return true;

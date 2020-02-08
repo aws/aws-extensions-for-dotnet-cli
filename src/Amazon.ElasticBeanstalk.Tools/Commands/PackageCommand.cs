@@ -47,9 +47,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             Tuple<CommandOption, CommandOptionValue> tuple;
             if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE.Switch)) != null)
                 this.OutputPackageFileName = tuple.Item2.StringValue;
-
         }
-
 
         protected override Task<bool> PerformActionAsync()
         {
@@ -75,7 +73,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
             var publishLocation = Utilities.DeterminePublishLocation(null,  projectLocation, configuration, targetFramework);
             this.Logger?.WriteLine("Determine publish location: " + publishLocation);
-
 
             this.Logger?.WriteLine("Executing publish command");
             if (dotnetCli.Publish(projectLocation, publishLocation, targetFramework, configuration, publishOptions) != 0)

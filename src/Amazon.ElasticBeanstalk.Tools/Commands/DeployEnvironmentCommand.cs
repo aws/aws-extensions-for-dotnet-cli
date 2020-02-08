@@ -68,7 +68,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             Tuple<CommandOption, CommandOptionValue> tuple;
             if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_INPUT_PACKAGE.Switch)) != null)
                 this.Package = tuple.Item2.StringValue;
-
         }
 
 
@@ -110,7 +109,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
                 var publishLocation = Utilities.DeterminePublishLocation(null, projectLocation, configuration, targetFramework);
                 this.Logger?.WriteLine("Determine publish location: " + publishLocation);
-
 
                 this.Logger?.WriteLine("Executing publish command");
                 if (dotnetCli.Publish(projectLocation, publishLocation, targetFramework, configuration, publishOptions) != 0)
@@ -185,7 +183,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                     this.Logger?.WriteLine("Update Complete");
                 else
                     throw new ElasticBeanstalkExceptions("Environment update failed", ElasticBeanstalkExceptions.EBCode.FailedEnvironmentUpdate);
-
             }
             else
             {
