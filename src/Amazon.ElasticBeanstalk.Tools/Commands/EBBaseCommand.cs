@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-
+using System.Threading.Tasks;
 using Amazon.Common.DotNetCli.Tools.Commands;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
-using System.Threading.Tasks;
 
 namespace Amazon.ElasticBeanstalk.Tools.Commands
 {

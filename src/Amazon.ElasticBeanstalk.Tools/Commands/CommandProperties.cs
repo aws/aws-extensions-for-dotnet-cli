@@ -1,8 +1,7 @@
-﻿using Amazon.Common.DotNetCli.Tools;
-using Amazon.Common.DotNetCli.Tools.Options;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using Amazon.Common.DotNetCli.Tools;
+using Amazon.Common.DotNetCli.Tools.Options;
 using ThirdParty.Json.LitJson;
 
 namespace Amazon.ElasticBeanstalk.Tools.Commands

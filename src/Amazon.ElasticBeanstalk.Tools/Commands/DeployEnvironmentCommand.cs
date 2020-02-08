@@ -1,13 +1,12 @@
-﻿using Amazon.Common.DotNetCli.Tools;
-using Amazon.Common.DotNetCli.Tools.Options;
-using Amazon.ElasticBeanstalk.Model;
-using Amazon.S3.Transfer;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Amazon.Common.DotNetCli.Tools;
+using Amazon.Common.DotNetCli.Tools.Options;
+using Amazon.ElasticBeanstalk.Model;
 using ThirdParty.Json.LitJson;
 
 namespace Amazon.ElasticBeanstalk.Tools.Commands

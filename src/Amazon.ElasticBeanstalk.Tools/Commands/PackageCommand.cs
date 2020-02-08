@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
 using ThirdParty.Json.LitJson;
