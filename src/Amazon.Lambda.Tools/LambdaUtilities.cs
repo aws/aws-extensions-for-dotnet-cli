@@ -27,6 +27,8 @@ namespace Amazon.Lambda.Tools
 
         static readonly IReadOnlyDictionary<string, string> _lambdaRuntimeToDotnetFramework = new Dictionary<string, string>()
         {
+            // Using string "dotnetcore3.1" instead of Runtime.Dotnetcore31 because the AWS SDK for .NET hasn't been updated yet with the new value.
+            {"dotnetcore3.1", "netcoreapp3.1"},
             {Amazon.Lambda.Runtime.Dotnetcore21.Value, "netcoreapp2.1"},
             {Amazon.Lambda.Runtime.Dotnetcore20.Value, "netcoreapp2.0"},
             {Amazon.Lambda.Runtime.Dotnetcore10.Value, "netcoreapp1.0"}
