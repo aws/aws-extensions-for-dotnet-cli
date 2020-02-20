@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.ElasticBeanstalk.Tools.Commands;
@@ -77,6 +78,29 @@ namespace Amazon.ElasticBeanstalk.Tools
             logger?.WriteLine("\tIIS Web Site: " + iisWebSite);
 
             File.WriteAllText(pathToManifest, manifest);
+        }
+
+        public static void SetupPackageForLinux(IToolLogger logger, EBBaseCommand command, DeployEnvironmentProperties options, string publishLocation)
+        {
+            // Setup Procfile
+            var runtimeFilePath = Directory.GetFiles(publishLocation, "*.runtimeconfig.json").FirstOrDefault();
+            var runtimeFileName = Path.GetFileName(runtimeFilePath);
+            var executingAssembly = runtimeFileName.Substring(0, runtimeFileName.Length - "runtimeconfig.json".Length - 1);
+            var procfilePath = Path.Combine(publishLocation, "Procfile");
+            File.WriteAllText(procfilePath, $"web: ./{executingAssembly}");
+
+
+            // Add config to make chmod +x the executing assembly
+            var configDirectory = Path.Combine(publishLocation, ".ebextensions");
+            if (!Directory.Exists(configDirectory))
+                Directory.CreateDirectory(configDirectory);
+
+            var configContent =
+$"container_commands:\n" +
+$"  01_set_file_permissions:\n" +
+$"     command: \"chmod +x {executingAssembly}\"\n";
+
+            File.WriteAllText(Path.Combine(configDirectory, "assembly-permissions.config"), configContent);
         }
     }
 }

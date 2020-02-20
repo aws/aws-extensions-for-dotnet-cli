@@ -80,7 +80,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             string environment = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Environment, EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT, true);
 
             bool doesApplicationExist = await DoesApplicationExist(application);
-            bool doesEnvironmentExist = doesApplicationExist ? await DoesEnvironmentExist(application, environment) : false;
+            var environmentCheckResults = doesApplicationExist ? await DoesEnvironmentExist(application, environment) : (Exists: false, IsWindows: false);
 
             await CreateEBApplicationIfNotExist(application, doesApplicationExist);
 
@@ -111,6 +111,11 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 var publishLocation = Utilities.DeterminePublishLocation(null, projectLocation, configuration, targetFramework);
                 this.Logger?.WriteLine("Determine publish location: " + publishLocation);
 
+                // This is temporary since the environment doesn't have .NET installed so publishing as a self contained publish
+                if(!environmentCheckResults.IsWindows)
+                {
+                    publishOptions += " --self-contained -r linux-x64";
+                }
 
                 this.Logger?.WriteLine("Executing publish command");
                 if (dotnetCli.Publish(projectLocation, publishLocation, targetFramework, configuration, publishOptions) != 0)
@@ -118,7 +123,14 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                     throw new ElasticBeanstalkExceptions("Error executing \"dotnet publish\"", ElasticBeanstalkExceptions.CommonErrorCode.DotnetPublishFailed);
                 }
 
-                EBUtilities.SetupAWSDeploymentManifest(this.Logger, this, this.DeployEnvironmentOptions, publishLocation);
+                if(environmentCheckResults.IsWindows)
+                {
+                    EBUtilities.SetupAWSDeploymentManifest(this.Logger, this, this.DeployEnvironmentOptions, publishLocation);
+                }
+                else
+                {
+                    EBUtilities.SetupPackageForLinux(this.Logger, this, this.DeployEnvironmentOptions, publishLocation);
+                }
 
                 zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, new DirectoryInfo(projectLocation).Name + "-" + DateTime.Now.Ticks + ".zip");
 
@@ -166,7 +178,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             var startingEventDate = await GetLatestEventDateAsync(application, environment);
 
             string environmentArn;
-            if(doesEnvironmentExist)
+            if(environmentCheckResults.Exists)
             {
                 environmentArn = await UpdateEnvironment(application, environment, versionLabel);
             }
@@ -192,7 +204,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 this.Logger?.WriteLine("Environment update initiated");
             }
 
-            if (doesEnvironmentExist)
+            if (environmentCheckResults.Exists)
             {
                 var tags = ConvertToTagsCollection();
                 if (tags != null && tags.Count > 0)
@@ -429,19 +441,20 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             return response.Applications.Count == 1;
         }
 
-        private async Task<bool> DoesEnvironmentExist(string applicationName, string environmentName)
+        private async Task<(bool Exists, bool IsWindows)> DoesEnvironmentExist(string applicationName, string environmentName)
         {
             var request = new DescribeEnvironmentsRequest { ApplicationName = applicationName };
             request.EnvironmentNames.Add(environmentName);
             var response = await this.EBClient.DescribeEnvironmentsAsync(request);
             if (response.Environments.Where(x => x.Status != EnvironmentStatus.Terminated && x.Status != EnvironmentStatus.Terminating).Count() != 1)
-                return false;
+                return (false, false);
 
             var environment = response.Environments[0];
             if (environment.Status == EnvironmentStatus.Terminated || environment.Status == EnvironmentStatus.Terminating)
-                return false;
+                return (false, false);
 
-            return true;
+            
+            return (true, environment.SolutionStackName.Contains("Windows"));
         }
 
         private async Task<bool> WaitForDeploymentCompletionAsync(string applicationName, string environmentName, DateTime startingEventDate)
