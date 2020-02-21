@@ -102,5 +102,10 @@ $"     command: \"chmod +x {executingAssembly}\"\n";
 
             File.WriteAllText(Path.Combine(configDirectory, "assembly-permissions.config"), configContent);
         }
+
+        public static bool IsSolutionStackWindows(string solutionStackName)
+        {
+            return solutionStackName.Contains("64bit Windows Server");
+        }
     }
 }
