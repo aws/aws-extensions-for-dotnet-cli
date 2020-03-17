@@ -78,11 +78,72 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             var allSolutionStacks = (await this.EBClient.ListAvailableSolutionStacksAsync()).SolutionStacks;
             foreach (var stack in allSolutionStacks.OrderByDescending(x => x))
             {
-                if (stack.Contains("Windows") || stack.Contains("Corretto 11"))
+                if (stack.StartsWith("64bit Windows Server") || (stack.StartsWith("64bit Amazon Linux 2") && stack.Contains("Corretto 11")))
                     solutionStacks.Add(stack);
             }
 
-            return solutionStacks;
+            return FilterSolutionStackToLatestVersion(solutionStacks);
         }
+
+        public static IList<string> FilterSolutionStackToLatestVersion(IList<string> allSolutionStacks)
+        {
+            SolutionStackNameProperties ParseSolutionStackName(string solutionStackName)
+            {
+                Version version = null;
+                var tokens = solutionStackName.Split(' ');
+                var familyName = new StringBuilder();
+                foreach(var token in tokens)
+                {
+                    if(token.StartsWith('v') && char.IsNumber(token[1]))
+                    {
+                        Version.TryParse(token.Substring(1), out version);
+                    }
+                    else
+                    {
+                        familyName.Append(token + " ");
+                    }
+                }
+
+                if(version == null)
+                {
+                    return new SolutionStackNameProperties { FamilyName = solutionStackName, FullName = solutionStackName };
+                }
+
+                return new SolutionStackNameProperties { FamilyName = familyName.ToString().TrimEnd(), FullName = solutionStackName, Version = version };
+            }
+
+            var latestVersions = new Dictionary<string, SolutionStackNameProperties>();
+            foreach(var solutionStackName in allSolutionStacks)
+            {
+                var properties = ParseSolutionStackName(solutionStackName);
+                if(properties.Version == null)
+                {
+                    latestVersions[properties.FamilyName] = properties;
+                }
+                else if(latestVersions.TryGetValue(properties.FamilyName, out var current))
+                {
+                    if(current.Version < properties.Version)
+                    {
+                        latestVersions[properties.FamilyName] = properties;
+                    }
+                }
+                else
+                {
+                    latestVersions[properties.FamilyName] = properties;
+                }
+            }
+
+            var filterList = latestVersions.Values.Select(x => x.FullName).OrderBy(x => x).ToList();
+
+            return filterList;
+        }
+
+        class SolutionStackNameProperties
+        { 
+            public string FamilyName { get; set; }
+            public string FullName { get; set; }
+            public Version Version { get; set; }
+        }
+
     }
 }
