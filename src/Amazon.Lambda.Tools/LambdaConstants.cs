@@ -33,7 +33,7 @@ namespace Amazon.Lambda.Tools
         // https://github.com/dotnet/corefx/blob/release/1.0.0/pkg/Microsoft.NETCore.Platforms/runtime.json
         internal const string RUNTIME_HIERARCHY = "netcore.runtime.hierarchy.json";
 
-        // The closest match to Amazon Linux
+        // The runtime identifier used for older Lambda runtimes running on Amazon Linux 1.
         internal const string LEGACY_RUNTIME_HIERARCHY_STARTING_POINT = "rhel.7.2-x64";
 
 
