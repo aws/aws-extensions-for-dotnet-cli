@@ -210,17 +210,35 @@ namespace Amazon.Lambda.Tools
             {
                 arguments.Append(" /p:GenerateRuntimeConfigurationFiles=true");
 
+                // Define an action to set the runtime and self-contained switches.
+                var applyRuntimeSwitchAction = (Action)(() =>
+                {
+                    if (msbuildParameters == null ||
+                        msbuildParameters.IndexOf("--runtime", StringComparison.InvariantCultureIgnoreCase) == -1)
+                    {
+                        arguments.Append($" --runtime {LambdaUtilities.DetermineRuntimeParameter(targetFramework)}");
+                    }
+
+                    if (msbuildParameters == null ||
+                        msbuildParameters.IndexOf("--self-contained", StringComparison.InvariantCultureIgnoreCase) == -1)
+                    {
+                        arguments.Append(" --self-contained false ");
+                    }
+
+                });
+
+                // This is here to not change existing behavior for the 2.0 and 2.1 runtimes. For those runtimes if
+                // cshtml files are being used we need to support that cshtml being compiled at runtime. In order to do that we
+                // need to not turn PreserveCompilationContext which provides reference assemblies to the runtime
+                // compilation and not set a runtime.
+                //
+                // If there are no cshtml then disable PreserveCompilationContext to reduce package size and continue
+                // to use the same runtime identifier that we used when those runtimes were launched.
                 if (new string[] { "netcoreapp2.0", "netcoreapp2.1" }.Contains(targetFramework))
                 {
                     if(Directory.GetFiles(fullProjectLocation, "*.cshtml", SearchOption.AllDirectories).Length == 0)
                     {
-                        arguments.Append($" -r {LambdaConstants.LEGACY_RUNTIME_HIERARCHY_STARTING_POINT}");
-
-                        if (msbuildParameters == null ||
-                            msbuildParameters.IndexOf("--self-contained", StringComparison.InvariantCultureIgnoreCase) == -1)
-                        {
-                            arguments.Append(" --self-contained false ");
-                        }
+                        applyRuntimeSwitchAction();
 
                         if (string.IsNullOrEmpty(msbuildParameters) ||
                             !msbuildParameters.Contains("PreserveCompilationContext"))
@@ -232,17 +250,7 @@ namespace Amazon.Lambda.Tools
                 }
                 else
                 {
-                    if (msbuildParameters == null ||
-                        msbuildParameters.IndexOf("--runtime", StringComparison.InvariantCultureIgnoreCase) == -1)
-                    {
-                        arguments.Append($" -r {LambdaUtilities.DetermineRuntimeParameter(targetFramework)}");
-                    }
-
-                    if (msbuildParameters == null ||
-                        msbuildParameters.IndexOf("--self-contained", StringComparison.InvariantCultureIgnoreCase) == -1)
-                    {
-                        arguments.Append(" --self-contained false ");
-                    }
+                    applyRuntimeSwitchAction();
                 }
 
                 // If we have a manifest of packages already deploy in target deployment environment then write it to disk and add the 
