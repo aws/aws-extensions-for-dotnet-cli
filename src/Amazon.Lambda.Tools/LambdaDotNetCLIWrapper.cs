@@ -5,6 +5,7 @@ using System.Text;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Amazon.Common.DotNetCli.Tools;
+using System.Linq;
 
 namespace Amazon.Lambda.Tools
 {
@@ -81,7 +82,9 @@ namespace Amazon.Lambda.Tools
             }
 
             arguments.Append($" --manifest \"{fullPackageManifest}\"");
-            arguments.Append($" --runtime {LambdaConstants.RUNTIME_HIERARCHY_STARTING_POINT}");
+
+
+            arguments.Append($" --runtime {LambdaUtilities.DetermineRuntimeParameter(targetFramework)}");
 
             if(!enableOptimization)
             {
@@ -207,23 +210,38 @@ namespace Amazon.Lambda.Tools
             {
                 arguments.Append(" /p:GenerateRuntimeConfigurationFiles=true");
 
-                // If you set the runtime to RUNTIME_HIERARCHY_STARTING_POINT it will trim out the Windows and Mac OS specific dependencies but Razor view precompilation
-                // will not run. So only do this packaging optimization if there are no Razor views.
-                if (Directory.GetFiles(fullProjectLocation, "*.cshtml", SearchOption.AllDirectories).Length == 0)
+                if (new string[] { "netcoreapp2.0", "netcoreapp2.1" }.Contains(targetFramework))
                 {
-                    arguments.Append($" -r {LambdaConstants.RUNTIME_HIERARCHY_STARTING_POINT}");
+                    if(Directory.GetFiles(fullProjectLocation, "*.cshtml", SearchOption.AllDirectories).Length == 0)
+                    {
+                        arguments.Append($" -r {LambdaConstants.LEGACY_RUNTIME_HIERARCHY_STARTING_POINT}");
+
+                        if (msbuildParameters == null ||
+                            msbuildParameters.IndexOf("--self-contained", StringComparison.InvariantCultureIgnoreCase) == -1)
+                        {
+                            arguments.Append(" --self-contained false ");
+                        }
+
+                        if (string.IsNullOrEmpty(msbuildParameters) ||
+                            !msbuildParameters.Contains("PreserveCompilationContext"))
+                        {
+                            _logger?.WriteLine("... Disabling compilation context to reduce package size. If compilation context is needed pass in the \"/p:PreserveCompilationContext=false\" switch.");
+                            arguments.Append(" /p:PreserveCompilationContext=false");
+                        }
+                    }
+                }
+                else
+                {
+                    if (msbuildParameters == null ||
+                        msbuildParameters.IndexOf("--runtime", StringComparison.InvariantCultureIgnoreCase) == -1)
+                    {
+                        arguments.Append($" -r {LambdaUtilities.DetermineRuntimeParameter(targetFramework)}");
+                    }
 
                     if (msbuildParameters == null ||
                         msbuildParameters.IndexOf("--self-contained", StringComparison.InvariantCultureIgnoreCase) == -1)
                     {
                         arguments.Append(" --self-contained false ");
-                    }
-
-                    if (string.IsNullOrEmpty(msbuildParameters) ||
-                        !msbuildParameters.Contains("PreserveCompilationContext"))
-                    {
-                        _logger?.WriteLine("... Disabling compilation context to reduce package size. If compilation context is needed pass in the \"/p:PreserveCompilationContext=false\" switch.");
-                        arguments.Append(" /p:PreserveCompilationContext=false");
                     }
                 }
 

@@ -34,7 +34,7 @@ namespace Amazon.Lambda.Tools
         internal const string RUNTIME_HIERARCHY = "netcore.runtime.hierarchy.json";
 
         // The closest match to Amazon Linux
-        internal const string RUNTIME_HIERARCHY_STARTING_POINT = "rhel.7.2-x64";
+        internal const string LEGACY_RUNTIME_HIERARCHY_STARTING_POINT = "rhel.7.2-x64";
 
 
         public const string AWS_LAMBDA_MANAGED_POLICY_PREFIX = "AWSLambda";
