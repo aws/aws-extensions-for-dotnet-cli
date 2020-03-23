@@ -5,6 +5,7 @@ using System.Text;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Amazon.Common.DotNetCli.Tools;
+using System.Linq;
 
 namespace Amazon.Lambda.Tools
 {
@@ -81,7 +82,9 @@ namespace Amazon.Lambda.Tools
             }
 
             arguments.Append($" --manifest \"{fullPackageManifest}\"");
-            arguments.Append($" --runtime {LambdaConstants.RUNTIME_HIERARCHY_STARTING_POINT}");
+
+
+            arguments.Append($" --runtime {LambdaUtilities.DetermineRuntimeParameter(targetFramework)}");
 
             if(!enableOptimization)
             {
@@ -207,11 +210,14 @@ namespace Amazon.Lambda.Tools
             {
                 arguments.Append(" /p:GenerateRuntimeConfigurationFiles=true");
 
-                // If you set the runtime to RUNTIME_HIERARCHY_STARTING_POINT it will trim out the Windows and Mac OS specific dependencies but Razor view precompilation
-                // will not run. So only do this packaging optimization if there are no Razor views.
-                if (Directory.GetFiles(fullProjectLocation, "*.cshtml", SearchOption.AllDirectories).Length == 0)
+                // Define an action to set the runtime and self-contained switches.
+                var applyRuntimeSwitchAction = (Action)(() =>
                 {
-                    arguments.Append($" -r {LambdaConstants.RUNTIME_HIERARCHY_STARTING_POINT}");
+                    if (msbuildParameters == null ||
+                        msbuildParameters.IndexOf("--runtime", StringComparison.InvariantCultureIgnoreCase) == -1)
+                    {
+                        arguments.Append($" --runtime {LambdaUtilities.DetermineRuntimeParameter(targetFramework)}");
+                    }
 
                     if (msbuildParameters == null ||
                         msbuildParameters.IndexOf("--self-contained", StringComparison.InvariantCultureIgnoreCase) == -1)
@@ -219,12 +225,32 @@ namespace Amazon.Lambda.Tools
                         arguments.Append(" --self-contained false ");
                     }
 
-                    if (string.IsNullOrEmpty(msbuildParameters) ||
-                        !msbuildParameters.Contains("PreserveCompilationContext"))
+                });
+
+                // This is here to not change existing behavior for the 2.0 and 2.1 runtimes. For those runtimes if
+                // cshtml files are being used we need to support that cshtml being compiled at runtime. In order to do that we
+                // need to not turn PreserveCompilationContext which provides reference assemblies to the runtime
+                // compilation and not set a runtime.
+                //
+                // If there are no cshtml then disable PreserveCompilationContext to reduce package size and continue
+                // to use the same runtime identifier that we used when those runtimes were launched.
+                if (new string[] { "netcoreapp2.0", "netcoreapp2.1" }.Contains(targetFramework))
+                {
+                    if(Directory.GetFiles(fullProjectLocation, "*.cshtml", SearchOption.AllDirectories).Length == 0)
                     {
-                        _logger?.WriteLine("... Disabling compilation context to reduce package size. If compilation context is needed pass in the \"/p:PreserveCompilationContext=false\" switch.");
-                        arguments.Append(" /p:PreserveCompilationContext=false");
+                        applyRuntimeSwitchAction();
+
+                        if (string.IsNullOrEmpty(msbuildParameters) ||
+                            !msbuildParameters.Contains("PreserveCompilationContext"))
+                        {
+                            _logger?.WriteLine("... Disabling compilation context to reduce package size. If compilation context is needed pass in the \"/p:PreserveCompilationContext=false\" switch.");
+                            arguments.Append(" /p:PreserveCompilationContext=false");
+                        }
                     }
+                }
+                else
+                {
+                    applyRuntimeSwitchAction();
                 }
 
                 // If we have a manifest of packages already deploy in target deployment environment then write it to disk and add the 

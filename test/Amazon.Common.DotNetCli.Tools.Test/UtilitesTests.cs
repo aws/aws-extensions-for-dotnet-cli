@@ -11,7 +11,7 @@ namespace Amazon.Common.DotNetCli.Tools.Test
     public class UtilitesTests
     {
         [Theory]
-        [InlineData("../../../../../testapps/TestFunction", "netcoreapp1.0")]
+        [InlineData("../../../../../testapps/TestFunction", "netcoreapp2.1")]
         [InlineData("../../../../../testapps/ServerlessWithYamlFunction", "netcoreapp2.1")]
         [InlineData("../../../../../testapps/TestBeanstalkWebApp", "netcoreapp2.1")]
         public void CheckFramework(string projectPath, string expectedFramework)
