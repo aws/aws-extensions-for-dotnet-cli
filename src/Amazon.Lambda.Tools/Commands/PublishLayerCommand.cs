@@ -154,6 +154,14 @@ namespace Amazon.Lambda.Tools.Commands
             var projectLocation = this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false);
             var enableOptimization = this.GetBoolValueOrDefault(this.EnablePackageOptimization, LambdaDefinedCommandOptions.ARGUMENT_ENABLE_PACKAGE_OPTIMIZATION, false).GetValueOrDefault();
 
+            if(string.Equals(targetFramework, "netcoreapp3.1"))
+            {
+                var message = "Publishing runtime package store layers targeting .NET Core 3.1 is currently disabled due to an issue with the dotnet cli's 'store' command " +
+                              "used to create the runtime package store. For further information see the following GitHub issue.\n" +
+                              "https://github.com/dotnet/sdk/issues/10973";
+                throw new LambdaToolsException(message, LambdaToolsException.LambdaErrorCode.DisabledSupportForNET31Layers);
+            }
+
 #if NETCORE
             if (enableOptimization)
             {
