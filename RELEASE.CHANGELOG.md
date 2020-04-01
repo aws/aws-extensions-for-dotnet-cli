@@ -1,3 +1,10 @@
+### Release 2020-03-31
+* **Amazon.Lambda.Tools (4.0.0)**
+  * Added support to deploy to .NET Core 3.1 Lambda runtime
+  * Switch RID to linux-x64 when packaging runtimes on Amazon Linux 2. Currently that is only .NET Core 3.1.
+  * If `--runtime` is set by the user via `--msbuild-parameters` switch then Amazon.Lambda.Tools will not set the `--runtime` switch itself when calling `dotnet package`.
+  * Disable creating of Lambda layers for .NET Core 3.1 due to an issue in `dotnet store` command. Read here on the issue. https://github.com/dotnet/sdk/issues/10973
+
 ### Release 2019-09-17
 * **Amazon.Lambda.Tools (3.3.0)**
   * Fixed issue [#90](https://github.com/aws/aws-extensions-for-dotnet-cli/issues/90): Error parsing layer description while listing layers
