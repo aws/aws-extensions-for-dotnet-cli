@@ -53,6 +53,42 @@ opensource-codeofconduct@amazon.com with any additional questions or comments.
 ## Security issue notifications
 If you discover a potential security issue in this project we ask that you notify AWS/Amazon Security via our [vulnerability reporting page](http://aws.amazon.com/security/vulnerability-reporting/). Please do **not** create a public github issue.
 
+## Local Tool Development
+The plugin can be tested locally using `launchSettings.json`. For example, to debug the the `deploy-serverless` command:
+```
+{
+  "profiles": {
+    "Amazon.Lambda.Tools": {
+      "commandName": "Project",
+      "commandLineArgs": "deploy-serverless",
+      "workingDirectory": "D:\\Path\\To\\Your\\Lambda\\Project"
+    }
+  }
+}
+```
+
+Alternatively you can install your development build as a global tool by adding the `bin` directory as an additional package source. 
+It is helpful to bump the version number to ensure that you are installing your local debug version rather than the remote nuget version, but consider reverting the version number before submitting the PR.
+
+```
+# All commands below are run from the `Amazon.Lambda.Tools` project directory e.g. `D:\repos\aws-extensions-for-dotnet-cli\src\Amazon.Lambda.Tools`.
+
+# Build the project
+PS > dotnet build
+
+# Create nuget package
+PS > dotnet pack
+
+# Uninstall any existing versions
+PS > dotnet tool uninstall -g Amazon.Lambda.Tools
+
+# Install your debug build by adding your bin directory to the list of nuget sources
+PS > dotnet tool install -g Amazon.Lambda.Tools --version 4.0.1 --add-source ./bin/Debug 
+
+# Test that you get the expected version number when you run the tool
+PS > dotnet lambda
+Amazon Lambda Tools for .NET Core applications (4.0.1)
+```
 
 ## Licensing
 
