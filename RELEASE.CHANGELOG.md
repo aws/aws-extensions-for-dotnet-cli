@@ -1,3 +1,7 @@
+### Release Unreleased
+* **Amazon.Lambda.Tools**
+  * Echo the full `dotnet publish` command using during lambda deployment
+
 ### Release 2020-03-31
 * **Amazon.Lambda.Tools (4.0.0)**
   * Added support to deploy to .NET Core 3.1 Lambda runtime
