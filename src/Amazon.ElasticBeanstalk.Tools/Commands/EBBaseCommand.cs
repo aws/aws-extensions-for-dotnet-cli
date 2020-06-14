@@ -78,7 +78,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             var allSolutionStacks = (await this.EBClient.ListAvailableSolutionStacksAsync()).SolutionStacks;
             foreach (var stack in allSolutionStacks.OrderByDescending(x => x))
             {
-                if (stack.StartsWith("64bit Windows Server") || (stack.StartsWith("64bit Amazon Linux 2") && stack.Contains("Corretto 11")))
+                if (stack.StartsWith("64bit Windows Server") || (stack.StartsWith("64bit Amazon Linux 2") && (stack.Contains(".NET Core") || stack.Contains("DotNetCore"))))
                     solutionStacks.Add(stack);
             }
 

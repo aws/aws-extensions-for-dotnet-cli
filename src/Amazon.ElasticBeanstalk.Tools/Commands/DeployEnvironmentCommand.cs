@@ -121,10 +121,17 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 var publishLocation = Utilities.DeterminePublishLocation(null, projectLocation, configuration, targetFramework);
                 this.Logger?.WriteLine("Determine publish location: " + publishLocation);
 
-                // This is temporary since the environment doesn't have .NET installed so publishing as a self contained publish
-                if (!isWindowsEnvironment && !(publishOptions?.Contains("--self-contained")).GetValueOrDefault())
+                if (!isWindowsEnvironment)
                 {
-                    publishOptions += " --self-contained -r linux-x64";
+                    
+                    if(publishOptions == null || !publishOptions.Contains("-r ") && !publishOptions.Contains("--runtime "))
+                    {
+                        publishOptions += " --runtime linux-x64";
+                    }
+                    if(publishOptions == null || !publishOptions.Contains("--self-contained"))
+                    {
+                        publishOptions += " --self-contained false"; 
+                    }
                 }
 
                 this.Logger?.WriteLine("Executing publish command");
@@ -137,11 +144,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 {
                     this.Logger?.WriteLine("Configuring application bundle for a Windows deployment");
                     EBUtilities.SetupAWSDeploymentManifest(this.Logger, this, this.DeployEnvironmentOptions, publishLocation);
-                }
-                else
-                {
-                    this.Logger?.WriteLine("Configuring application bundle for a Linux deployment");
-                    EBUtilities.SetupPackageForLinux(this.Logger, this, this.DeployEnvironmentOptions, publishLocation);
                 }
 
                 zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, new DirectoryInfo(projectLocation).Name + "-" + DateTime.Now.Ticks + ".zip");
@@ -196,7 +198,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             }
             else
             {
-                environmentArn = await CreateEnvironment(application, environment, versionLabel);
+                environmentArn = await CreateEnvironment(application, environment, versionLabel, isWindowsEnvironment);
             }
 
             bool? waitForUpdate = this.GetBoolValueOrDefault(this.DeployEnvironmentOptions.WaitForUpdate, EBDefinedCommandOptions.ARGUMENT_WAIT_FOR_UPDATE, false);
@@ -274,7 +276,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             return collection;
         }
 
-        private async Task<string> CreateEnvironment(string application, string environment, string versionLabel)
+        private async Task<string> CreateEnvironment(string application, string environment, string versionLabel, bool isWindowsEnvironment)
         {
             var createRequest = new CreateEnvironmentRequest
             {
@@ -285,7 +287,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 CNAMEPrefix = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.CNamePrefix, EBDefinedCommandOptions.ARGUMENT_CNAME_PREFIX, false)
             };
 
-            var environmentType = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.EnvironmentType, EBDefinedCommandOptions.ARGUMENT_ENVIRONMENT_TYPE, false) ?? "LoadBalanced";
+            var environmentType = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.EnvironmentType, EBDefinedCommandOptions.ARGUMENT_ENVIRONMENT_TYPE, false) ?? "SingleInstance";
             if(!string.IsNullOrEmpty(environmentType))
             {
                 createRequest.OptionSettings.Add(new ConfigurationOptionSetting()
@@ -325,7 +327,10 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
             var instanceType = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.InstanceType, EBDefinedCommandOptions.ARGUMENT_INSTANCE_TYPE, false);
             if (string.IsNullOrEmpty(instanceType))
-                instanceType = "t2.small";
+            {
+                instanceType = isWindowsEnvironment ? "t3a.medium" : "t2.micro";
+            }
+                
 
             createRequest.OptionSettings.Add(new ConfigurationOptionSetting()
             {
@@ -352,7 +357,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             }
 
             var serviceRole = this.GetServiceRoleOrCreateIt(this.DeployEnvironmentOptions.ServiceRole, EBDefinedCommandOptions.ARGUMENT_SERVICE_ROLE, 
-                "aws-elasticbeanstalk-service-role", Constants.EC2_ASSUME_ROLE_POLICY, null, "AWSElasticBeanstalkWebTier", "AWSElasticBeanstalkMulticontainerDocker", "AWSElasticBeanstalkWorkerTier");
+                "aws-elasticbeanstalk-service-role", Constants.ELASTICBEANSTALK_ASSUME_ROLE_POLICY, null, "AWSElasticBeanstalkService", "AWSElasticBeanstalkEnhancedHealth");
             if (!string.IsNullOrEmpty(serviceRole))
             {
                 int pos = serviceRole.LastIndexOf('/');
@@ -365,7 +370,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 {
                     Namespace = "aws:elasticbeanstalk:environment",
                     OptionName = "ServiceRole",
-                    Value = serviceRole
+                    Value = serviceRole 
                 });
             }
 

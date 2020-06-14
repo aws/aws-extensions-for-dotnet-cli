@@ -86,6 +86,7 @@ namespace Amazon.Common.DotNetCli.Tools
                 CreateNoWindow = true
             };
 
+            this._logger?.WriteLine($"Executing: dotnet publish {psi.Arguments}");
             int exitCode = base.ExecuteCommand(psi, "dotnet publish");
             if (exitCode != 0)
                 return exitCode;

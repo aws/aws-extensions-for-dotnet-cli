@@ -59,6 +59,28 @@ namespace Amazon.Common.DotNetCli.Tools
 }
 ".Trim();
 
+        public static readonly string ELASTICBEANSTALK_ASSUME_ROLE_POLICY =
+@"
+{
+  ""Version"": ""2008-10-17"",
+  ""Statement"": [
+    {
+      ""Sid"": """",
+      ""Effect"": ""Allow"",
+      ""Principal"": {
+        ""Service"": ""elasticbeanstalk.amazonaws.com""
+      },
+      ""Action"": ""sts:AssumeRole"",
+      ""Condition"": {
+         ""StringEquals"": {
+            ""sts:ExternalId"": ""elasticbeanstalk""
+         }
+      }
+    }
+  ]
+}
+".Trim();
+
         public static readonly string ECS_TASKS_ASSUME_ROLE_POLICY =
 @"
 {
