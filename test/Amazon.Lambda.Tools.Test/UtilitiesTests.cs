@@ -32,5 +32,20 @@ namespace Amazon.Lambda.Tools.Test
             var value = LambdaUtilities.DetermineListDisplayLayerDescription(fullLayer, maxLength);
             Assert.Equal(displayLayer, value);
         }
+
+        [Theory]
+        [InlineData("netcoreapp1.0", "rhel.7.2-x64")]
+        [InlineData("netcoreapp1.1", "linux-x64")]
+        [InlineData("netcoreapp2.0", "rhel.7.2-x64")]
+        [InlineData("netcoreapp2.1", "rhel.7.2-x64")]
+        [InlineData("netcoreapp2.2", "linux-x64")]
+        [InlineData("netcoreapp3.0", "linux-x64")]
+        [InlineData("netcoreapp3.1", "linux-x64")]
+        [InlineData("netcoreapp6.0", "linux-x64")]
+        public void TestDetermineRuntimeParameter(string targetFramework, string expectedValue)
+        {
+            var runtime = LambdaUtilities.DetermineRuntimeParameter(targetFramework);
+            Assert.Equal(expectedValue, runtime);
+        }
     }
 }

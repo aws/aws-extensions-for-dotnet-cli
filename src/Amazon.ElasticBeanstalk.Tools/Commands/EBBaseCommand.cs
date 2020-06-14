@@ -34,9 +34,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                     SetUserAgentString();
 
                     var config = new AmazonElasticBeanstalkConfig();
-                    //config.RegionEndpoint = DetermineAWSRegion();
-
-                    config.ServiceURL = "https://elasticbeanstalk-devo.us-east-1.amazonaws.com/";
+                    config.RegionEndpoint = DetermineAWSRegion();
 
                     this._ebClient = new AmazonElasticBeanstalkClient(DetermineAWSCredentials(), config);
                 }

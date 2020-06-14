@@ -427,7 +427,7 @@ namespace Amazon.Lambda.Tools
 
                 // Use a queue to do a breadth first search through the list of runtimes.
                 var queue = new Queue<string>();
-                queue.Enqueue(LambdaConstants.RUNTIME_HIERARCHY_STARTING_POINT);
+                queue.Enqueue(LambdaConstants.LEGACY_RUNTIME_HIERARCHY_STARTING_POINT);
 
                 while(queue.Count > 0)
                 {

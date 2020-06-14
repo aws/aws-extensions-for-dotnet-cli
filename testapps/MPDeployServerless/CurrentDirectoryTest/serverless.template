@@ -75,7 +75,7 @@
       "Type" : "AWS::Serverless::Function",
       "Properties": {
         "Handler": "app.handler",
-        "Runtime": "nodejs8.10",
+        "Runtime": "nodejs12.x",
         "CodeUri": "../SingleFileNodeFunction/app.js",
         "MemorySize": 256,
         "Timeout": 30,
@@ -97,7 +97,7 @@
       "Type" : "AWS::Serverless::Function",
       "Properties": {
         "Handler": "app.handler",
-        "Runtime": "nodejs8.10",
+        "Runtime": "nodejs12.x",
         "CodeUri": "../DirectoryNodeFunction",
         "MemorySize": 256,
         "Timeout": 30,
