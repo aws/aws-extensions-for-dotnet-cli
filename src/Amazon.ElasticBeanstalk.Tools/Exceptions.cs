@@ -20,6 +20,8 @@ namespace Amazon.ElasticBeanstalk.Tools
             FailedToUpdateEnvironment,
             FailedToCreateEnvironment,
             InvalidPackage,
+            InvalidEnhancedHealthType,
+            InvalidLoadBalancerType,
         }
 
         public ElasticBeanstalkExceptions(string message, EBCode code) : base(message, code.ToString(), null)

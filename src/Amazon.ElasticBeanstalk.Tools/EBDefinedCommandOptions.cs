@@ -146,6 +146,23 @@ namespace Amazon.ElasticBeanstalk.Tools
                 ValueType = CommandOption.CommandOptionValueType.BoolValue,
                 Description = "If set to true then the AWS X-Ray daemon will be enabled on EC2 instances running the application."
             };
+        public static readonly CommandOption ARGUMENT_ENHANCED_HEALTH_TYPE =
+            new CommandOption
+            {
+                Name = "Enhanced Health Type",
+                Switch = "--enhanced-health-type",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "The type of enhanced health to be enabled. Valid values: enhanced, basic"
+            };
+        public static readonly CommandOption ARGUMENT_LOADBALANCER_TYPE =
+            new CommandOption
+            {
+                Name = "Loadbalancer Type",
+                Switch = "--loadbalancer-type",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "LoadBalancer type for the environment. If no value set then a single instance environment type is created. Valid values: application, network, classic"
+            };
+
         public static readonly CommandOption ARGUMENT_EB_ADDITIONAL_OPTIONS =
             new CommandOption
             {

@@ -39,9 +39,12 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             EBDefinedCommandOptions.ARGUMENT_INSTANCE_TYPE,
             EBDefinedCommandOptions.ARGUMENT_HEALTH_CHECK_URL,
             EBDefinedCommandOptions.ARGUMENT_ENABLE_XRAY,
+            EBDefinedCommandOptions.ARGUMENT_ENHANCED_HEALTH_TYPE,
             EBDefinedCommandOptions.ARGUMENT_INSTANCE_PROFILE,
             EBDefinedCommandOptions.ARGUMENT_SERVICE_ROLE,
             EBDefinedCommandOptions.ARGUMENT_INPUT_PACKAGE,
+
+            EBDefinedCommandOptions.ARGUMENT_LOADBALANCER_TYPE,
 
             EBDefinedCommandOptions.ARGUMENT_WAIT_FOR_UPDATE
         });
@@ -287,30 +290,15 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 CNAMEPrefix = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.CNamePrefix, EBDefinedCommandOptions.ARGUMENT_CNAME_PREFIX, false)
             };
 
-            var environmentType = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.EnvironmentType, EBDefinedCommandOptions.ARGUMENT_ENVIRONMENT_TYPE, false) ?? "SingleInstance";
-            if(!string.IsNullOrEmpty(environmentType))
+            (var environmentType, var loadBalancerType) = DetermineEnviornment();
+
+            if (!string.IsNullOrEmpty(environmentType))
             {
                 createRequest.OptionSettings.Add(new ConfigurationOptionSetting()
                 {
                     Namespace = "aws:elasticbeanstalk:environment",
                     OptionName = "EnvironmentType",
                     Value = environmentType
-                });
-            }
-
-            var healthCheckURl = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.HealthCheckUrl, EBDefinedCommandOptions.ARGUMENT_HEALTH_CHECK_URL, false);
-            if(string.IsNullOrEmpty(healthCheckURl) && string.Equals(environmentType, "LoadBalanced", StringComparison.OrdinalIgnoreCase))
-            {
-                healthCheckURl = "/";
-            }
-
-            if (!string.IsNullOrEmpty(healthCheckURl))
-            {
-                createRequest.OptionSettings.Add(new ConfigurationOptionSetting()
-                {
-                    Namespace = "aws:elasticbeanstalk:application",
-                    OptionName = "Application Healthcheck URL",
-                    Value = healthCheckURl
                 });
             }
 
@@ -374,7 +362,20 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 });
             }
 
-            AddAdditionalOptions(createRequest.OptionSettings);
+            if (!string.IsNullOrWhiteSpace(loadBalancerType))
+            {
+                if (!EBConstants.ValidLoadBalancerType.Contains(loadBalancerType))
+                    throw new ElasticBeanstalkExceptions($"The loadbalancer type {loadBalancerType} is invalid. Valid values are: {string.Join(", ", EBConstants.ValidLoadBalancerType)}", ElasticBeanstalkExceptions.EBCode.InvalidLoadBalancerType);
+
+                createRequest.OptionSettings.Add(new ConfigurationOptionSetting()
+                {
+                    Namespace = "aws:elasticbeanstalk:environment",
+                    OptionName = "LoadBalancerType",
+                    Value = loadBalancerType
+                });
+            }
+
+            AddAdditionalOptions(createRequest.OptionSettings, true);
 
             var tags = ConvertToTagsCollection();
             if (tags != null && tags.Count > 0)
@@ -391,7 +392,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             }
         }
 
-        private void AddAdditionalOptions(IList<ConfigurationOptionSetting> settings)
+        private void AddAdditionalOptions(IList<ConfigurationOptionSetting> settings, bool createEnvironmentMode)
         {
             var additionalOptions = this.GetKeyValuePairOrDefault(this.DeployEnvironmentOptions.AdditionalOptions, EBDefinedCommandOptions.ARGUMENT_EB_ADDITIONAL_OPTIONS, false);
             if (additionalOptions != null && additionalOptions.Count > 0)
@@ -425,6 +426,49 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
                 this.Logger?.WriteLine($"Enable AWS X-Ray: {enableXRay.Value}");
             }
+
+            var enhancedHealthType = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.EnhancedHealthType, EBDefinedCommandOptions.ARGUMENT_ENHANCED_HEALTH_TYPE, false);
+            if(!string.IsNullOrWhiteSpace(enhancedHealthType))
+            {
+                if (!EBConstants.ValidEnhanceHealthType.Contains(enhancedHealthType))
+                    throw new ElasticBeanstalkExceptions($"The enhanced value type {enhancedHealthType} is invalid. Valid values are: {string.Join(", ", EBConstants.ValidEnhanceHealthType)}", ElasticBeanstalkExceptions.EBCode.InvalidEnhancedHealthType);
+
+                settings.Add(new ConfigurationOptionSetting()
+                {
+                    Namespace = "aws:elasticbeanstalk:healthreporting:system",
+                    OptionName = "SystemType",
+                    Value = enhancedHealthType
+                });
+            }
+
+            (var environmentType, var loadBalancerType) = DetermineEnviornment();
+            var healthCheckURL = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.HealthCheckUrl, EBDefinedCommandOptions.ARGUMENT_HEALTH_CHECK_URL, false);
+
+            // If creating a new load balanced environment then a heath check url must be set.
+            if (createEnvironmentMode && string.IsNullOrEmpty(healthCheckURL) && EBUtilities.IsLoadBalancedEnvironmentType(environmentType))
+            {
+                healthCheckURL = "/";
+            }
+
+            if (!string.IsNullOrEmpty(healthCheckURL))
+            {
+                settings.Add(new ConfigurationOptionSetting()
+                {
+                    Namespace = "aws:elasticbeanstalk:application",
+                    OptionName = "Application Healthcheck URL",
+                    Value = healthCheckURL
+                });
+
+                if (EBUtilities.IsLoadBalancedEnvironmentType(environmentType) && string.Equals(loadBalancerType, EBConstants.LOADBALANCER_TYPE_APPLICATION))
+                {
+                    settings.Add(new ConfigurationOptionSetting()
+                    {
+                        Namespace = "aws:elasticbeanstalk:environment:process:default",
+                        OptionName = "HealthCheckPath",
+                        Value = healthCheckURL
+                    });
+                }
+            }
         }
 
         private async Task<string> UpdateEnvironment(string application, string environment, string versionLabel)
@@ -437,17 +481,35 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 VersionLabel = versionLabel
             };
 
-            AddAdditionalOptions(updateRequest.OptionSettings);
+            AddAdditionalOptions(updateRequest.OptionSettings, false);
 
             try
             {
-                var updateEnvironmentRespone = await this.EBClient.UpdateEnvironmentAsync(updateRequest);
-                return updateEnvironmentRespone.EnvironmentArn;
+                var updateEnvironmentResponse = await this.EBClient.UpdateEnvironmentAsync(updateRequest);
+                return updateEnvironmentResponse.EnvironmentArn;
             }
             catch(Exception e)
             {
                 throw new ElasticBeanstalkExceptions("Error updating environment: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedToUpdateEnvironment);
             }
+        }
+
+        private (string environmentType, string loadBalancerType) DetermineEnviornment()
+        {
+            var environmentType = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.EnvironmentType, EBDefinedCommandOptions.ARGUMENT_ENVIRONMENT_TYPE, false);
+            var loadBalancerType = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.LoadBalancerType, EBDefinedCommandOptions.ARGUMENT_LOADBALANCER_TYPE, false);
+
+            if (string.IsNullOrWhiteSpace(environmentType))
+            {
+                environmentType = string.IsNullOrWhiteSpace(loadBalancerType) ? EBConstants.ENVIRONMENT_TYPE_SINGLEINSTANCE : EBConstants.ENVIRONMENT_TYPE_LOADBALANCED;
+            }
+
+            if (string.IsNullOrWhiteSpace(loadBalancerType) && EBUtilities.IsLoadBalancedEnvironmentType(environmentType))
+            {
+                loadBalancerType = EBConstants.LOADBALANCER_TYPE_APPLICATION;
+            }
+
+            return (environmentType, loadBalancerType);
         }
 
         private async Task<bool> DoesApplicationExist(string applicationName)

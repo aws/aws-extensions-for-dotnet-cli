@@ -84,5 +84,10 @@ namespace Amazon.ElasticBeanstalk.Tools
         {
             return solutionStackName.Contains("64bit Windows Server");
         }
+
+        public static bool IsLoadBalancedEnvironmentType(string environmentType)
+        {
+            return string.Equals(environmentType, EBConstants.ENVIRONMENT_TYPE_LOADBALANCED, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }
