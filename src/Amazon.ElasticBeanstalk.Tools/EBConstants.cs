@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Text;
 
 namespace Amazon.ElasticBeanstalk.Tools
@@ -29,13 +28,14 @@ namespace Amazon.ElasticBeanstalk.Tools
         public const string ENVIRONMENT_TYPE_SINGLEINSTANCE = "SingleInstance";
         public const string ENVIRONMENT_TYPE_LOADBALANCED = "LoadBalanced";
 
-        public static readonly ImmutableArray<string> ValidEnhanceHealthType = ImmutableArray.Create("enhanced", "basic");
-
+        public const string ENHANCED_HEALTH_TYPE_ENHANCED = "enhanced";
+        public const string ENHANCED_HEALTH_TYPE_BASIC = "basic";
+        public static readonly string[] ValidEnhanceHealthType = new string[]{ ENHANCED_HEALTH_TYPE_ENHANCED, ENHANCED_HEALTH_TYPE_BASIC };
 
         public const string LOADBALANCER_TYPE_APPLICATION = "application";
         public const string LOADBALANCER_TYPE_NETWORK = "network";
         public const string LOADBALANCER_TYPE_CLASSIC = "classic";
-        public static readonly ImmutableArray<string> ValidLoadBalancerType = ImmutableArray.Create(LOADBALANCER_TYPE_APPLICATION, LOADBALANCER_TYPE_NETWORK, LOADBALANCER_TYPE_CLASSIC);
+        public static readonly string[] ValidLoadBalancerType = new string[] { LOADBALANCER_TYPE_APPLICATION, LOADBALANCER_TYPE_NETWORK, LOADBALANCER_TYPE_CLASSIC };
 
     }
 }

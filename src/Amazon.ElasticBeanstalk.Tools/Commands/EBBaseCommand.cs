@@ -94,7 +94,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 var familyName = new StringBuilder();
                 foreach(var token in tokens)
                 {
-                    if(token.StartsWith('v') && char.IsNumber(token[1]))
+                    if (token.StartsWith("v") && char.IsNumber(token[1]))
                     {
                         Version.TryParse(token.Substring(1), out version);
                     }
