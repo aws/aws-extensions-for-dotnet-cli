@@ -20,4 +20,13 @@
     <ProjectReference Include="..\..\src\Amazon.ElasticBeanstalk.Tools\Amazon.ElasticBeanstalk.Tools.csproj" />
     <ProjectReference Include="..\Amazon.Tools.TestHelpers\Amazon.Tools.TestHelpers.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Resources\dotnet31-dependent-runtimeconfig.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\self-contained-example-runtimeconfig.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

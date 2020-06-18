@@ -33,6 +33,10 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
         public string VersionLabel { get; set; }
         public string EnhancedHealthType { get; set; }
         public string LoadBalancerType { get; set; }
+        public bool? EnableStickySessions { get; set; }
+
+        public string ProxyServer { get; set; }
+        public int? ApplicationPort { get; set; }
 
 
         internal void ParseCommandArguments(CommandOptions values)
@@ -83,6 +87,13 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 this.EnhancedHealthType = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_LOADBALANCER_TYPE.Switch)) != null)
                 this.LoadBalancerType = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_ENABLE_STICKY_SESSIONS.Switch)) != null)
+                this.EnableStickySessions = tuple.Item2.BoolValue;
+
+            if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_PROXY_SERVER.Switch)) != null)
+                this.ProxyServer = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_APPLICATION_PORT.Switch)) != null)
+                this.ApplicationPort = tuple.Item2.IntValue;
         }
 
 
@@ -103,12 +114,16 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_SOLUTION_STACK.ConfigFileKey, command.GetStringValueOrDefault(this.SolutionStack, EBDefinedCommandOptions.ARGUMENT_SOLUTION_STACK, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_ENVIRONMENT_TYPE.ConfigFileKey, command.GetStringValueOrDefault(this.EnvironmentType, EBDefinedCommandOptions.ARGUMENT_ENVIRONMENT_TYPE, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_LOADBALANCER_TYPE.ConfigFileKey, command.GetStringValueOrDefault(this.LoadBalancerType, EBDefinedCommandOptions.ARGUMENT_LOADBALANCER_TYPE, false));
+            data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_ENABLE_STICKY_SESSIONS.ConfigFileKey, command.GetBoolValueOrDefault(this.EnableStickySessions, EBDefinedCommandOptions.ARGUMENT_ENABLE_STICKY_SESSIONS, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_CNAME_PREFIX.ConfigFileKey, command.GetStringValueOrDefault(this.CNamePrefix, EBDefinedCommandOptions.ARGUMENT_CNAME_PREFIX, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_INSTANCE_TYPE.ConfigFileKey, command.GetStringValueOrDefault(this.InstanceType, EBDefinedCommandOptions.ARGUMENT_INSTANCE_TYPE, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_EC2_KEYPAIR.ConfigFileKey, command.GetStringValueOrDefault(this.EC2KeyPair, EBDefinedCommandOptions.ARGUMENT_EC2_KEYPAIR, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_HEALTH_CHECK_URL.ConfigFileKey, command.GetStringValueOrDefault(this.HealthCheckUrl, EBDefinedCommandOptions.ARGUMENT_HEALTH_CHECK_URL, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_INSTANCE_PROFILE.ConfigFileKey, command.GetStringValueOrDefault(this.InstanceProfile, EBDefinedCommandOptions.ARGUMENT_INSTANCE_PROFILE, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_SERVICE_ROLE.ConfigFileKey, command.GetStringValueOrDefault(this.ServiceRole, EBDefinedCommandOptions.ARGUMENT_SERVICE_ROLE, false));
+
+            data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_PROXY_SERVER.ConfigFileKey, command.GetStringValueOrDefault(this.ProxyServer, EBDefinedCommandOptions.ARGUMENT_PROXY_SERVER, false));
+            data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_APPLICATION_PORT.ConfigFileKey, command.GetIntValueOrDefault(this.ApplicationPort, EBDefinedCommandOptions.ARGUMENT_APPLICATION_PORT, false));
         }
     }
 

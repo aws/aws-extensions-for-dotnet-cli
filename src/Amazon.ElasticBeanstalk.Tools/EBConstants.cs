@@ -25,6 +25,8 @@ namespace Amazon.ElasticBeanstalk.Tools
 }
 ";
 
+        public const int DEFAULT_APPLICATION_PORT = 5000;
+
         public const string DEFAULT_WINDOWS_INSTANCE_TYPE = "t3a.medium";
         public const string DEFAULT_LINUX_INSTANCE_TYPE = "t2.micro";
 
@@ -40,6 +42,11 @@ namespace Amazon.ElasticBeanstalk.Tools
         public const string LOADBALANCER_TYPE_NETWORK = "network";
         public const string LOADBALANCER_TYPE_CLASSIC = "classic";
         public static readonly string[] ValidLoadBalancerType = new string[] { LOADBALANCER_TYPE_APPLICATION, LOADBALANCER_TYPE_NETWORK, LOADBALANCER_TYPE_CLASSIC };
+
+
+        public const string PROXY_SERVER_NGINX = "nginx";
+        public const string PROXY_SERVER_NONE = "none";
+        public static readonly string[] ValidProxyServer = new string[] { PROXY_SERVER_NGINX, PROXY_SERVER_NONE };
 
     }
 }

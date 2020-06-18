@@ -162,6 +162,15 @@ namespace Amazon.ElasticBeanstalk.Tools
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = $"LoadBalancer type for the environment. If no value set then a single instance environment type is created. Valid values: {EBConstants.LOADBALANCER_TYPE_APPLICATION}, {EBConstants.LOADBALANCER_TYPE_NETWORK}, {EBConstants.LOADBALANCER_TYPE_CLASSIC}"
             };
+        public static readonly CommandOption ARGUMENT_ENABLE_STICKY_SESSIONS =
+            new CommandOption
+            {
+                Name = "Enable Sticky Sessions",
+                Switch = "--enable-sticky-sessions",
+                ValueType = CommandOption.CommandOptionValueType.BoolValue,
+                Description = "If set to true sticky sessions will be enabled for the load balancer of the environment."
+            };
+
 
         public static readonly CommandOption ARGUMENT_EB_ADDITIONAL_OPTIONS =
             new CommandOption
@@ -179,6 +188,22 @@ namespace Amazon.ElasticBeanstalk.Tools
                 Switch = "--output-package",
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = "The zip file containing the application will be packaged into."
+            };
+        public static readonly CommandOption ARGUMENT_PROXY_SERVER =
+            new CommandOption
+            {
+                Name = "Reverse Proxy Server",
+                Switch = "--proxy-server",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = $"The reverse proxy server used on Linux EC2 instances. Valid values: {EBConstants.PROXY_SERVER_NGINX}, {EBConstants.PROXY_SERVER_NONE}. The default is \"{EBConstants.PROXY_SERVER_NGINX}\"."
+            };
+        public static readonly CommandOption ARGUMENT_APPLICATION_PORT =
+            new CommandOption
+            {
+                Name = "Application Port",
+                Switch = "--application-port",
+                ValueType = CommandOption.CommandOptionValueType.IntValue,
+                Description = $"The application port that will be redirect to port 80. The default is port 5000."
             };
     }
 }

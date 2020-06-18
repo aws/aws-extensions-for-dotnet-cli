@@ -22,6 +22,7 @@ namespace Amazon.ElasticBeanstalk.Tools
             InvalidPackage,
             InvalidEnhancedHealthType,
             InvalidLoadBalancerType,
+            InvalidProxyServer,
         }
 
         public ElasticBeanstalkExceptions(string message, EBCode code) : base(message, code.ToString(), null)
