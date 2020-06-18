@@ -25,12 +25,16 @@ namespace Amazon.ElasticBeanstalk.Tools
 }
 ";
 
+        public const string DEFAULT_WINDOWS_INSTANCE_TYPE = "t3a.medium";
+        public const string DEFAULT_LINUX_INSTANCE_TYPE = "t2.micro";
+
         public const string ENVIRONMENT_TYPE_SINGLEINSTANCE = "SingleInstance";
         public const string ENVIRONMENT_TYPE_LOADBALANCED = "LoadBalanced";
 
         public const string ENHANCED_HEALTH_TYPE_ENHANCED = "enhanced";
         public const string ENHANCED_HEALTH_TYPE_BASIC = "basic";
         public static readonly string[] ValidEnhanceHealthType = new string[]{ ENHANCED_HEALTH_TYPE_ENHANCED, ENHANCED_HEALTH_TYPE_BASIC };
+
 
         public const string LOADBALANCER_TYPE_APPLICATION = "application";
         public const string LOADBALANCER_TYPE_NETWORK = "network";

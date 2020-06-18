@@ -56,7 +56,7 @@ namespace Amazon.ElasticBeanstalk.Tools
                 Name = "Type of Elastic Beanstalk Environment",
                 Switch = "--environment-type",
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
-                Description = "Type of the environment to launch \"LoadBalanced\" or \"SingleInstance\". The default is \"LoadBalanced\"."
+                Description = $"Type of the environment to launch \"{EBConstants.ENVIRONMENT_TYPE_LOADBALANCED}\" or \"{EBConstants.ENVIRONMENT_TYPE_SINGLEINSTANCE}\". The default is \"{EBConstants.ENVIRONMENT_TYPE_LOADBALANCED}\"."
             };
         public static readonly CommandOption ARGUMENT_EC2_KEYPAIR =
             new CommandOption
@@ -72,7 +72,7 @@ namespace Amazon.ElasticBeanstalk.Tools
                 Name = "EC2 instance type",
                 Switch = "--instance-type",
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
-                Description = "Type of the EC2 instances launched for the environment. The default is \"t2.small\"."
+                Description = $"Type of the EC2 instances launched for the environment. The default is \"{EBConstants.DEFAULT_LINUX_INSTANCE_TYPE}\" for Linux and {EBConstants.DEFAULT_WINDOWS_INSTANCE_TYPE} for Windows."
             };
         public static readonly CommandOption ARGUMENT_HEALTH_CHECK_URL =
             new CommandOption
@@ -152,7 +152,7 @@ namespace Amazon.ElasticBeanstalk.Tools
                 Name = "Enhanced Health Type",
                 Switch = "--enhanced-health-type",
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
-                Description = "The type of enhanced health to be enabled. Valid values: enhanced, basic"
+                Description = $"The type of enhanced health to be enabled. Valid values: {EBConstants.ENHANCED_HEALTH_TYPE_ENHANCED}, {EBConstants.ENHANCED_HEALTH_TYPE_BASIC}"
             };
         public static readonly CommandOption ARGUMENT_LOADBALANCER_TYPE =
             new CommandOption
@@ -160,7 +160,7 @@ namespace Amazon.ElasticBeanstalk.Tools
                 Name = "Loadbalancer Type",
                 Switch = "--loadbalancer-type",
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
-                Description = "LoadBalancer type for the environment. If no value set then a single instance environment type is created. Valid values: application, network, classic"
+                Description = $"LoadBalancer type for the environment. If no value set then a single instance environment type is created. Valid values: {EBConstants.LOADBALANCER_TYPE_APPLICATION}, {EBConstants.LOADBALANCER_TYPE_NETWORK}, {EBConstants.LOADBALANCER_TYPE_CLASSIC}"
             };
 
         public static readonly CommandOption ARGUMENT_EB_ADDITIONAL_OPTIONS =

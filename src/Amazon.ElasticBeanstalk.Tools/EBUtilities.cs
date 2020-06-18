@@ -85,6 +85,11 @@ namespace Amazon.ElasticBeanstalk.Tools
             return solutionStackName.Contains("64bit Windows Server");
         }
 
+        public static bool IsSolutionStackLinuxNETCore(string solutionStackName)
+        {
+            return solutionStackName.StartsWith("64bit Amazon Linux 2") && (solutionStackName.Contains(".NET Core") || solutionStackName.Contains("DotNetCore"));
+        }
+
         public static bool IsLoadBalancedEnvironmentType(string environmentType)
         {
             return string.Equals(environmentType, EBConstants.ENVIRONMENT_TYPE_LOADBALANCED, StringComparison.OrdinalIgnoreCase);

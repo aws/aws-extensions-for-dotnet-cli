@@ -78,39 +78,41 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             var allSolutionStacks = (await this.EBClient.ListAvailableSolutionStacksAsync()).SolutionStacks;
             foreach (var stack in allSolutionStacks.OrderByDescending(x => x))
             {
-                if (stack.StartsWith("64bit Windows Server") || (stack.StartsWith("64bit Amazon Linux 2") && (stack.Contains(".NET Core") || stack.Contains("DotNetCore"))))
+                if (EBUtilities.IsSolutionStackWindows(stack) || EBUtilities.IsSolutionStackLinuxNETCore(stack))
                     solutionStacks.Add(stack);
             }
 
             return FilterSolutionStackToLatestVersion(solutionStacks);
         }
 
+        private static SolutionStackNameProperties ParseSolutionStackName(string solutionStackName)
+        {
+            Version version = null;
+            var tokens = solutionStackName.Split(' ');
+            var familyName = new StringBuilder();
+            foreach (var token in tokens)
+            {
+                if (token.StartsWith("v") && char.IsNumber(token[1]))
+                {
+                    Version.TryParse(token.Substring(1), out version);
+                }
+                else
+                {
+                    familyName.Append(token + " ");
+                }
+            }
+
+            if (version == null)
+            {
+                return new SolutionStackNameProperties { FamilyName = solutionStackName, FullName = solutionStackName };
+            }
+
+            return new SolutionStackNameProperties { FamilyName = familyName.ToString().TrimEnd(), FullName = solutionStackName, Version = version };
+        }
+
         public static IList<string> FilterSolutionStackToLatestVersion(IList<string> allSolutionStacks)
         {
-            SolutionStackNameProperties ParseSolutionStackName(string solutionStackName)
-            {
-                Version version = null;
-                var tokens = solutionStackName.Split(' ');
-                var familyName = new StringBuilder();
-                foreach(var token in tokens)
-                {
-                    if (token.StartsWith("v") && char.IsNumber(token[1]))
-                    {
-                        Version.TryParse(token.Substring(1), out version);
-                    }
-                    else
-                    {
-                        familyName.Append(token + " ");
-                    }
-                }
 
-                if(version == null)
-                {
-                    return new SolutionStackNameProperties { FamilyName = solutionStackName, FullName = solutionStackName };
-                }
-
-                return new SolutionStackNameProperties { FamilyName = familyName.ToString().TrimEnd(), FullName = solutionStackName, Version = version };
-            }
 
             var latestVersions = new Dictionary<string, SolutionStackNameProperties>();
             foreach(var solutionStackName in allSolutionStacks)

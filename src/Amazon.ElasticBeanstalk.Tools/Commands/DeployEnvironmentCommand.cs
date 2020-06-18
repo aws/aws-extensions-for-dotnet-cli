@@ -86,7 +86,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             var environmentDescription = doesApplicationExist ? await GetEnvironmentDescription(application, environment) : null;
 
             bool isWindowsEnvironment;
-            if (environmentDescription != null)
+            if(environmentDescription != null)
             {
                 isWindowsEnvironment = EBUtilities.IsSolutionStackWindows(environmentDescription.SolutionStackName);
             }
@@ -126,14 +126,14 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
                 if (!isWindowsEnvironment)
                 {
-
-                    if (publishOptions == null || !publishOptions.Contains("-r ") && !publishOptions.Contains("--runtime "))
+                    
+                    if(publishOptions == null || !publishOptions.Contains("-r ") && !publishOptions.Contains("--runtime "))
                     {
                         publishOptions += " --runtime linux-x64";
                     }
-                    if (publishOptions == null || !publishOptions.Contains("--self-contained"))
+                    if(publishOptions == null || !publishOptions.Contains("--self-contained"))
                     {
-                        publishOptions += " --self-contained false";
+                        publishOptions += " --self-contained false"; 
                     }
                 }
 
@@ -143,7 +143,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                     throw new ElasticBeanstalkExceptions("Error executing \"dotnet publish\"", ElasticBeanstalkExceptions.CommonErrorCode.DotnetPublishFailed);
                 }
 
-                if (isWindowsEnvironment)
+                if(isWindowsEnvironment)
                 {
                     this.Logger?.WriteLine("Configuring application bundle for a Windows deployment");
                     EBUtilities.SetupAWSDeploymentManifest(this.Logger, this, this.DeployEnvironmentOptions, publishLocation);
@@ -186,7 +186,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                     SourceBundle = s3Loc
                 }).ConfigureAwait(false);
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 throw new ElasticBeanstalkExceptions("Error creating Elastic Beanstalk application version: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedCreateApplicationVersion);
             }
@@ -195,7 +195,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             var startingEventDate = await GetLatestEventDateAsync(application, environment);
 
             string environmentArn;
-            if (environmentDescription != null)
+            if(environmentDescription != null)
             {
                 environmentArn = await UpdateEnvironment(application, environment, versionLabel);
             }
@@ -205,7 +205,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             }
 
             bool? waitForUpdate = this.GetBoolValueOrDefault(this.DeployEnvironmentOptions.WaitForUpdate, EBDefinedCommandOptions.ARGUMENT_WAIT_FOR_UPDATE, false);
-            if (!waitForUpdate.HasValue || waitForUpdate.Value)
+            if(!waitForUpdate.HasValue || waitForUpdate.Value)
             {
                 this.Logger?.WriteLine("Waiting for environment update to complete");
                 var success = await this.WaitForDeploymentCompletionAsync(application, environment, startingEventDate);
@@ -236,7 +236,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                     {
                         await this.EBClient.UpdateTagsForResourceAsync(updateTagsRequest);
                     }
-                    catch (Exception e)
+                    catch(Exception e)
                     {
                         throw new ElasticBeanstalkExceptions("Error updating tags for environment: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedToUpdateTags);
                     }
@@ -272,7 +272,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 return null;
 
             var collection = new List<Tag>();
-            foreach (var kvp in tags)
+            foreach(var kvp in tags)
             {
                 collection.Add(new Tag { Key = kvp.Key, Value = kvp.Value });
             }
@@ -317,9 +317,9 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             var instanceType = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.InstanceType, EBDefinedCommandOptions.ARGUMENT_INSTANCE_TYPE, false);
             if (string.IsNullOrEmpty(instanceType))
             {
-                instanceType = isWindowsEnvironment ? "t3a.medium" : "t2.micro";
+                instanceType = isWindowsEnvironment ? EBConstants.DEFAULT_WINDOWS_INSTANCE_TYPE : EBConstants.DEFAULT_LINUX_INSTANCE_TYPE;
             }
-
+                
 
             createRequest.OptionSettings.Add(new ConfigurationOptionSetting()
             {
@@ -345,12 +345,12 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 });
             }
 
-            var serviceRole = this.GetServiceRoleOrCreateIt(this.DeployEnvironmentOptions.ServiceRole, EBDefinedCommandOptions.ARGUMENT_SERVICE_ROLE,
+            var serviceRole = this.GetServiceRoleOrCreateIt(this.DeployEnvironmentOptions.ServiceRole, EBDefinedCommandOptions.ARGUMENT_SERVICE_ROLE, 
                 "aws-elasticbeanstalk-service-role", Constants.ELASTICBEANSTALK_ASSUME_ROLE_POLICY, null, "AWSElasticBeanstalkService", "AWSElasticBeanstalkEnhancedHealth");
             if (!string.IsNullOrEmpty(serviceRole))
             {
                 int pos = serviceRole.LastIndexOf('/');
-                if (pos != -1)
+                if(pos != -1)
                 {
                     serviceRole = serviceRole.Substring(pos + 1);
                 }
@@ -359,7 +359,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 {
                     Namespace = "aws:elasticbeanstalk:environment",
                     OptionName = "ServiceRole",
-                    Value = serviceRole
+                    Value = serviceRole 
                 });
             }
 
@@ -416,7 +416,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             }
 
             var enableXRay = this.GetBoolValueOrDefault(this.DeployEnvironmentOptions.EnableXRay, EBDefinedCommandOptions.ARGUMENT_ENABLE_XRAY, false);
-            if (enableXRay.HasValue)
+            if(enableXRay.HasValue)
             {
                 settings.Add(new ConfigurationOptionSetting()
                 {
@@ -429,7 +429,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             }
 
             var enhancedHealthType = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.EnhancedHealthType, EBDefinedCommandOptions.ARGUMENT_ENHANCED_HEALTH_TYPE, false);
-            if (!string.IsNullOrWhiteSpace(enhancedHealthType))
+            if(!string.IsNullOrWhiteSpace(enhancedHealthType))
             {
                 if (!EBConstants.ValidEnhanceHealthType.Contains(enhancedHealthType))
                     throw new ElasticBeanstalkExceptions($"The enhanced value type {enhancedHealthType} is invalid. Valid values are: {string.Join(", ", EBConstants.ValidEnhanceHealthType)}", ElasticBeanstalkExceptions.EBCode.InvalidEnhancedHealthType);
@@ -490,7 +490,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 var updateEnvironmentResponse = await this.EBClient.UpdateEnvironmentAsync(updateRequest);
                 return updateEnvironmentResponse.EnvironmentArn;
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 throw new ElasticBeanstalkExceptions("Error updating environment: " + e.Message, ElasticBeanstalkExceptions.EBCode.FailedToUpdateEnvironment);
             }
@@ -532,7 +532,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             if (environment.Status == EnvironmentStatus.Terminated || environment.Status == EnvironmentStatus.Terminating)
                 return null;
 
-
+            
             return environment;
         }
 
@@ -560,22 +560,22 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
                 var responseEnvironments = await this.EBClient.DescribeEnvironmentsAsync(requestEnvironment);
                 if (responseEnvironments.Environments.Count == 0)
-                    throw new ElasticBeanstalkExceptions("Failed to find environment when waiting for deployment completion", ElasticBeanstalkExceptions.EBCode.FailedToFindEnvironment);
+                    throw new ElasticBeanstalkExceptions("Failed to find environment when waiting for deployment completion", ElasticBeanstalkExceptions.EBCode.FailedToFindEnvironment );
 
                 environment = responseEnvironments.Environments[0];
 
                 requestEvents.StartTimeUtc = lastPrintedEventDate;
                 var responseEvents = await this.EBClient.DescribeEventsAsync(requestEvents);
-                if (responseEvents.Events.Count > 0)
+                if(responseEvents.Events.Count > 0)
                 {
-                    for (int i = responseEvents.Events.Count - 1; i >= 0; i--)
+                    for(int i = responseEvents.Events.Count - 1; i >= 0; i--)
                     {
                         var evnt = responseEvents.Events[i];
                         if (evnt.EventDate <= lastPrintedEventDate)
                             continue;
 
                         this.Logger?.WriteLine(evnt.EventDate.ToLocalTime() + "    " + evnt.Severity + "    " + evnt.Message);
-                        if (evnt.Message.StartsWith("Failed to deploy application", StringComparison.OrdinalIgnoreCase) ||
+                        if(evnt.Message.StartsWith("Failed to deploy application", StringComparison.OrdinalIgnoreCase) ||
                            evnt.Message.StartsWith("Failed to launch environment", StringComparison.OrdinalIgnoreCase) ||
                            evnt.Message.StartsWith("Error occurred during build: Command hooks failed", StringComparison.OrdinalIgnoreCase))
                         {
@@ -588,7 +588,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
             } while (environment.Status == EnvironmentStatus.Launching || environment.Status == EnvironmentStatus.Updating);
 
-            if (success)
+            if(success)
             {
                 this.Logger?.WriteLine("Environment update complete: http://{0}/", environment.EndpointURL);
             }
@@ -625,7 +625,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             var fileInfo = new FileInfo(deploymentPackage);
 
             if (!(await Utilities.EnsureBucketExistsAsync(this.Logger, this.S3Client, bucketName)))
-                throw new ElasticBeanstalkExceptions("Detected error in deployment bucket preparation; abandoning deployment", ElasticBeanstalkExceptions.EBCode.EnsureBucketExistsError);
+                throw new ElasticBeanstalkExceptions("Detected error in deployment bucket preparation; abandoning deployment", ElasticBeanstalkExceptions.EBCode.EnsureBucketExistsError );
 
             this.Logger?.WriteLine("....uploading application deployment package to Amazon S3");
             this.Logger?.WriteLine("......uploading from file path {0}, size {1} bytes", deploymentPackage, fileInfo.Length);
