@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -142,7 +143,7 @@ namespace Amazon.ElasticBeanstalk.Tools
             {
                 logger?.WriteLine("... Proxy server disabled, configuring Kestrel to listen to traffic from all hosts");
                 var port = applicationPort.HasValue ? applicationPort.Value : EBConstants.DEFAULT_APPLICATION_PORT;
-                webCommandLine += $" --urls http://0.0.0.0:{port}/";
+                webCommandLine += $" --urls http://0.0.0.0:{port.ToString(CultureInfo.InvariantCulture)}/";
             }
 
             var content = "web: " + webCommandLine;

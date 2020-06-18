@@ -106,6 +106,11 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                     ApplicationName = environmentDescription.ApplicationName,
                     EnvironmentName = environmentDescription.EnvironmentName
                 });
+
+                if(response.ConfigurationSettings.Count != 1)
+                {
+                    throw new ElasticBeanstalkExceptions($"Unknown error to retrieving settings for existing Beanstalk environment.", ElasticBeanstalkExceptions.EBCode.FailedToDescribeEnvironmentSettings);
+                }
                 existingSettings = response.ConfigurationSettings[0].OptionSettings;
             }
             else
@@ -179,7 +184,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                     {
                         var strPort = existingSettings.FindExistingValue(OPTIONS_NAMESPACE_APPLICATION_ENVIRONMENT, OPTIONS_NAME_APPLICATION_PORT);
                         int intPort;
-                        if(int.TryParse(strPort, out intPort))
+                        if(int.TryParse(strPort, NumberStyles.Any, CultureInfo.InvariantCulture, out intPort))
                         {
                             applicationPort = intPort;
                         }
@@ -519,7 +524,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 if (!string.IsNullOrEmpty(proxyServer))
                 {
                     if (!EBConstants.ValidProxyServer.Contains(proxyServer))
-                        throw new ElasticBeanstalkExceptions($"The proxy server {loadBalancerType} is invalid. Valid values are: {string.Join(", ", EBConstants.ValidProxyServer)}", ElasticBeanstalkExceptions.EBCode.InvalidProxyServer);
+                        throw new ElasticBeanstalkExceptions($"The proxy server {proxyServer} is invalid. Valid values are: {string.Join(", ", EBConstants.ValidProxyServer)}", ElasticBeanstalkExceptions.EBCode.InvalidProxyServer);
 
                     Logger?.WriteLine($"Configuring reverse proxy to {proxyServer}");
                     settings.Add(new ConfigurationOptionSetting()

@@ -195,7 +195,7 @@ namespace Amazon.ElasticBeanstalk.Tools
                 Name = "Reverse Proxy Server",
                 Switch = "--proxy-server",
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
-                Description = $"The reverse proxy server used on Linux EC2 instances. Valid values: {EBConstants.PROXY_SERVER_NGINX}, {EBConstants.PROXY_SERVER_NONE}. The default is \"{EBConstants.PROXY_SERVER_NGINX}\"."
+                Description = $"The reverse proxy server used on Linux EC2 instances. Valid values: {string.Join(", ", EBConstants.ValidProxyServer)}. The default is \"{EBConstants.PROXY_SERVER_NGINX}\"."
             };
         public static readonly CommandOption ARGUMENT_APPLICATION_PORT =
             new CommandOption
@@ -203,7 +203,7 @@ namespace Amazon.ElasticBeanstalk.Tools
                 Name = "Application Port",
                 Switch = "--application-port",
                 ValueType = CommandOption.CommandOptionValueType.IntValue,
-                Description = $"The application port that will be redirect to port 80. The default is port 5000."
+                Description = $"The application port that will be redirect to port 80. The default is port {EBConstants.DEFAULT_APPLICATION_PORT}."
             };
     }
 }

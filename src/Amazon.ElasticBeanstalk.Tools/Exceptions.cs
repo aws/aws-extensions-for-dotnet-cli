@@ -18,6 +18,7 @@ namespace Amazon.ElasticBeanstalk.Tools
             FailedToUpdateTags,
             FailedToDeleteEnvironment,
             FailedToUpdateEnvironment,
+            FailedToDescribeEnvironmentSettings,
             FailedToCreateEnvironment,
             InvalidPackage,
             InvalidEnhancedHealthType,
