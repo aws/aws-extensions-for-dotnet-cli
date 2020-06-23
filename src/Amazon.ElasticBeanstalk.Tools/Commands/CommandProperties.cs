@@ -11,6 +11,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
     {
         public string Configuration { get; set; }
         public string TargetFramework { get; set; }
+        public bool? SelfContained { get; set; }
         public string PublishOptions { get; set; }
         public string Application { get; set; }
         public string Environment { get; set; }
@@ -46,6 +47,8 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 this.Configuration = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK.Switch)) != null)
                 this.TargetFramework = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_SELF_CONTAINED.Switch)) != null)
+                this.SelfContained = tuple.Item2.BoolValue;
             if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_PUBLISH_OPTIONS.Switch)) != null)
                 this.PublishOptions = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_EB_APPLICATION.Switch)) != null)
@@ -101,6 +104,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
         {
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION.ConfigFileKey, command.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false));
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK.ConfigFileKey, command.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false));
+            data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_SELF_CONTAINED.ConfigFileKey, command.GetBoolValueOrDefault(this.SelfContained, CommonDefinedCommandOptions.ARGUMENT_SELF_CONTAINED, false));
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_PUBLISH_OPTIONS.ConfigFileKey, command.GetStringValueOrDefault(this.PublishOptions, CommonDefinedCommandOptions.ARGUMENT_PUBLISH_OPTIONS, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_EB_APPLICATION.ConfigFileKey, command.GetStringValueOrDefault(this.Application, EBDefinedCommandOptions.ARGUMENT_EB_APPLICATION, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT.ConfigFileKey, command.GetStringValueOrDefault(this.Environment, EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT, false));

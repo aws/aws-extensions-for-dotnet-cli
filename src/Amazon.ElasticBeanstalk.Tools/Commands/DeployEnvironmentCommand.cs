@@ -23,6 +23,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION,
             CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION,
             CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK,
+            CommonDefinedCommandOptions.ARGUMENT_SELF_CONTAINED,
             CommonDefinedCommandOptions.ARGUMENT_PUBLISH_OPTIONS,
 
             EBDefinedCommandOptions.ARGUMENT_EB_APPLICATION,
@@ -156,7 +157,8 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                     }
                     if(publishOptions == null || !publishOptions.Contains("--self-contained"))
                     {
-                        publishOptions += " --self-contained false"; 
+                        var selfContained = this.GetBoolValueOrDefault(this.DeployEnvironmentOptions.SelfContained, CommonDefinedCommandOptions.ARGUMENT_SELF_CONTAINED, false);
+                        publishOptions += $" --self-contained {selfContained.GetValueOrDefault().ToString(CultureInfo.InvariantCulture).ToLowerInvariant()}"; 
                     }
                 }
 

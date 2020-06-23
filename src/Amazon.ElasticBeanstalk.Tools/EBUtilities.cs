@@ -120,19 +120,6 @@ namespace Amazon.ElasticBeanstalk.Tools
             if(IsSelfContainedPublish(runtimeConfigFilePath))
             {
                 webCommandLine = $"./{executingAssembly}";
-
-                // Add config to make chmod +x the executing assembly
-                var configDirectory = Path.Combine(publishLocation, ".ebextensions");
-                if (!Directory.Exists(configDirectory))
-                    Directory.CreateDirectory(configDirectory);
-
-                logger?.WriteLine($"... Adding ebextension to make {executingAssembly} executable on Linux");
-                var configContent =
-    $"container_commands:\n" +
-    $"  01_set_file_permissions:\n" +
-    $"     command: \"chmod +x {executingAssembly}\"\n";
-
-                File.WriteAllText(Path.Combine(configDirectory, "assembly-permissions.config"), configContent);
             }
             else
             {

@@ -25,6 +25,14 @@ namespace Amazon.Common.DotNetCli.Tools.Options
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = "Target framework to compile, for example netcoreapp2.1.",
             };
+        public static readonly CommandOption ARGUMENT_SELF_CONTAINED =
+            new CommandOption
+            {
+                Name = "Self Contained",
+                Switch = "--self-contained",
+                ValueType = CommandOption.CommandOptionValueType.BoolValue,
+                Description = "If true a self contained deployment bundle including the targeted .NET runtime will be created.",
+            };
         public static readonly CommandOption ARGUMENT_PUBLISH_OPTIONS =
             new CommandOption
             {

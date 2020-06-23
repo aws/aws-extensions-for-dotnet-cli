@@ -72,7 +72,7 @@ namespace Amazon.ElasticBeanstalk.Tools
                 Name = "EC2 instance type",
                 Switch = "--instance-type",
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
-                Description = $"Type of the EC2 instances launched for the environment. The default is \"{EBConstants.DEFAULT_LINUX_INSTANCE_TYPE}\" for Linux and {EBConstants.DEFAULT_WINDOWS_INSTANCE_TYPE} for Windows."
+                Description = $"Type of the EC2 instances launched for the environment. The default is \"{EBConstants.DEFAULT_LINUX_INSTANCE_TYPE}\" for Linux and \"{EBConstants.DEFAULT_WINDOWS_INSTANCE_TYPE}\" for Windows."
             };
         public static readonly CommandOption ARGUMENT_HEALTH_CHECK_URL =
             new CommandOption
@@ -152,7 +152,7 @@ namespace Amazon.ElasticBeanstalk.Tools
                 Name = "Enhanced Health Type",
                 Switch = "--enhanced-health-type",
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
-                Description = $"The type of enhanced health to be enabled. Valid values: {EBConstants.ENHANCED_HEALTH_TYPE_ENHANCED}, {EBConstants.ENHANCED_HEALTH_TYPE_BASIC}"
+                Description = $"The type of enhanced health to be enabled. Valid values: {string.Join(", ", EBConstants.ValidEnhanceHealthType)}"
             };
         public static readonly CommandOption ARGUMENT_LOADBALANCER_TYPE =
             new CommandOption
