@@ -1,3 +1,9 @@
+### Release 2020-06-23
+* **Amazon.ElasticBeanstalk.Tools (4.0.0)**
+  * Added support to to deploy to the new Beanstalk ".NET Core for Linux" platform.
+  * Added ability to enable sticky sessions.
+  * Added switch to do a self contained publish
+
 ### Release 2020-03-31
 * **Amazon.Lambda.Tools (4.0.0)**
   * Added support to deploy to .NET Core 3.1 Lambda runtime
