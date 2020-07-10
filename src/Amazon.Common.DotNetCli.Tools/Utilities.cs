@@ -723,5 +723,44 @@ namespace Amazon.Common.DotNetCli.Tools
             }
             return code.ToString().Trim();
         }
+        
+        
+        public static void CopyDirectory(string sourceDirectory, string destinationDirectory, bool copySubDirectories)
+        {
+            // Get the subdirectories for the specified directory.
+            DirectoryInfo dir = new DirectoryInfo(sourceDirectory);
+
+            if (!dir.Exists)
+            {
+                throw new DirectoryNotFoundException(
+                    "Source directory does not exist or could not be found: "
+                    + sourceDirectory);
+            }
+
+            DirectoryInfo[] dirs = dir.GetDirectories();
+            // If the destination directory doesn't exist, create it.
+            if (!Directory.Exists(destinationDirectory))
+            {
+                Directory.CreateDirectory(destinationDirectory);
+            }
+
+            // Get the files in the directory and copy them to the new location.
+            FileInfo[] files = dir.GetFiles();
+            foreach (FileInfo file in files)
+            {
+                string tempPath = Path.Combine(destinationDirectory, file.Name);
+                file.CopyTo(tempPath, false);
+            }
+
+            // If copying subdirectories, copy them and their contents to new location.
+            if (copySubDirectories)
+            {
+                foreach (DirectoryInfo subdirectory in dirs)
+                {
+                    string temppath = Path.Combine(destinationDirectory, subdirectory.Name);
+                    CopyDirectory(subdirectory.FullName, temppath, copySubDirectories);
+                }
+            }
+        }
     }
 }

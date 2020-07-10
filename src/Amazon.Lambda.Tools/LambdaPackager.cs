@@ -106,7 +106,10 @@ namespace Amazon.Lambda.Tools
                 // for other platforms.
                 flattenRuntime = FlattenRuntimeFolder(logger, publishLocation, depsJsonTargetNode);
             }
-
+            
+            FlattenPowerShellRuntimeModules(logger, publishLocation, targetFramework);
+            
+            
             if (zipArchivePath == null)
                 zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, new DirectoryInfo(computedProjectLocation).Name + ".zip");
 
@@ -342,6 +345,24 @@ namespace Amazon.Lambda.Tools
 
 
             return true;
+        }
+
+        /// <summary>
+        /// Work around issues with Microsoft.PowerShell.SDK NuGet package not working correctly when publish with a
+        /// runtime switch. The nested Module folder under runtimes/win/lib/netcoreapp3.1/ needs to be copied
+        /// to the copied to the root of the deployment bundle.
+        ///
+        /// https://github.com/PowerShell/PowerShell/issues/13132
+        /// </summary>
+        /// <param name="logger"></param>
+        /// <param name="publishLocation"></param>
+        private static void FlattenPowerShellRuntimeModules(IToolLogger logger, string publishLocation, string targetFramework)
+        {
+            var runtimeModuleDirectory = Path.Combine(publishLocation, "runtimes/win/lib/netcoreapp3.1/Modules");
+            if (!File.Exists(Path.Combine(publishLocation, "Microsoft.PowerShell.SDK.dll")) || !Directory.Exists(runtimeModuleDirectory))
+                return;
+
+            Utilities.CopyDirectory(runtimeModuleDirectory, Path.Combine(publishLocation, "Modules"), true);
         }
 
         /// <summary>
