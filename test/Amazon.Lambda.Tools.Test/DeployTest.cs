@@ -356,7 +356,7 @@ namespace Amazon.Lambda.Tools.Test
             try
             {
 
-                var logger = new TestToolLogger();
+                var logger = new TestToolLogger(_testOutputHelper);
                 var assembly = this.GetType().GetTypeInfo().Assembly;
 
                 var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TemplateSubstitutionTestProjects/StateMachineDefinitionStringTest");
