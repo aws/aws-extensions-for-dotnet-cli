@@ -755,8 +755,7 @@ namespace Amazon.Common.DotNetCli.Tools
                     "Source directory does not exist or could not be found: "
                     + sourceDirectory);
             }
-
-            DirectoryInfo[] dirs = dir.GetDirectories();
+            
             // If the destination directory doesn't exist, create it.
             if (!Directory.Exists(destinationDirectory))
             {
@@ -774,6 +773,7 @@ namespace Amazon.Common.DotNetCli.Tools
             // If copying subdirectories, copy them and their contents to new location.
             if (copySubDirectories)
             {
+                DirectoryInfo[] dirs = dir.GetDirectories();
                 foreach (DirectoryInfo subdirectory in dirs)
                 {
                     string temppath = Path.Combine(destinationDirectory, subdirectory.Name);
