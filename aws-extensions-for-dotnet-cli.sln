@@ -69,6 +69,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestLayerServerless", "test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestLayerAspNetCore", "testapps\TestLayerAspNetCore\TestLayerAspNetCore.csproj", "{D9C49D8B-0162-4C6B-9CAD-FBF8E246CDC9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestPowerShellParallelTest", "testapps\TestPowerShellParallelTest\TestPowerShellParallelTest.csproj", "{71926012-0E0D-4A46-B6C0-6A421645CA06}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -171,6 +173,10 @@ Global
 		{D9C49D8B-0162-4C6B-9CAD-FBF8E246CDC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D9C49D8B-0162-4C6B-9CAD-FBF8E246CDC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9C49D8B-0162-4C6B-9CAD-FBF8E246CDC9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71926012-0E0D-4A46-B6C0-6A421645CA06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71926012-0E0D-4A46-B6C0-6A421645CA06}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71926012-0E0D-4A46-B6C0-6A421645CA06}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71926012-0E0D-4A46-B6C0-6A421645CA06}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -203,6 +209,7 @@ Global
 		{AC3E127E-F157-404C-BCCC-CFF1BFF3A777} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 		{1B90F7DE-9E8D-4F2B-A417-23263925429A} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 		{D9C49D8B-0162-4C6B-9CAD-FBF8E246CDC9} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
+		{71926012-0E0D-4A46-B6C0-6A421645CA06} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DBFC70D6-49A2-40A1-AB08-5D9504AB7112}

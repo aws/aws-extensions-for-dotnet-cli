@@ -773,6 +773,7 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
 
                     var config = new AmazonS3Config();
                     config.RegionEndpoint = DetermineAWSRegion();
+                    config.Timeout = TimeSpan.FromHours(1);
 
                     this._s3Client = new AmazonS3Client(DetermineAWSCredentials(), config);
                 }

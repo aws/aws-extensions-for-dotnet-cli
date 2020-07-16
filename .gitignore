@@ -23,4 +23,5 @@
 
 **/.vscode
 **/.idea
+**/.ionide
 *.userprefs

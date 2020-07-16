@@ -1,0 +1,15 @@
+{
+    "profile"     : "",
+    "region"      : "",
+    "configuration" : "Release",
+    "framework"     : "netcoreapp3.1",
+    "function-runtime" : "dotnetcore3.1",
+    "function-memory-size" : 512,
+    "function-timeout"     : 90,
+    "function-handler"     : "TestPowerShellParallelTest::TestPowerShellParallelTest.Bootstrap::ExecuteFunction",
+    "function-name"        : "",
+    "function-role"        : "",
+    "tracing-mode"         : "",
+    "environment-variables" : "",
+    "apply-defaults"        : true
+}

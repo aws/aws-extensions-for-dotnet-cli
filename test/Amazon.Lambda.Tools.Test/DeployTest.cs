@@ -82,6 +82,51 @@ namespace Amazon.Lambda.Tools.Test
                 }
             }
         }
+        
+        [Fact]
+        public async Task TestPowerShellLambdaParallelTestCommand()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestPowerShellParallelTest");
+            var command = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
+            command.FunctionName = "test-function-" + DateTime.Now.Ticks;
+            command.Timeout = 10;
+            command.MemorySize = 512;
+            command.Role = TestHelper.GetTestRoleArn();
+            command.Configuration = "Release";
+            command.S3Bucket = this._testFixture.Bucket;
+            command.S3Prefix = "TestPowerShellParallelTest/";
+            command.Region = "us-east-1";
+            command.DisableInteractive = true;
+
+            var created = await command.ExecuteAsync();
+            try
+            {
+                Assert.True(created);
+
+                var invokeRequest = new InvokeRequest
+                {
+                    FunctionName = command.FunctionName,
+                    LogType = LogType.Tail,
+                    Payload = "{}"
+                };
+                var response = await command.LambdaClient.InvokeAsync(invokeRequest);
+
+                var logTail = Encoding.UTF8.GetString(Convert.FromBase64String(response.LogResult));
+                
+                Assert.Equal(200, response.StatusCode);
+                Assert.Contains("Running against: 1 for SharedVariable: Hello Shared Variable", logTail);
+                Assert.Contains("Running against: 10 for SharedVariable: Hello Shared Variable", logTail);
+            }
+            finally
+            {
+                if (created)
+                {
+                    await command.LambdaClient.DeleteFunctionAsync(command.FunctionName);
+                }
+            }
+        }        
 
         [Fact]
         public async Task RunDeployCommandWithCustomConfigAndProjectLocation()
@@ -311,7 +356,7 @@ namespace Amazon.Lambda.Tools.Test
             try
             {
 
-                var logger = new TestToolLogger();
+                var logger = new TestToolLogger(_testOutputHelper);
                 var assembly = this.GetType().GetTypeInfo().Assembly;
 
                 var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TemplateSubstitutionTestProjects/StateMachineDefinitionStringTest");
