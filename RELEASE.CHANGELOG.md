@@ -1,6 +1,6 @@
 ### Release 2020-07-22
 * **Amazon.Lambda.Tools (4.1.0)**
-  * Echo the full `dotnet publish` command using during lambda deployment
+  * Pull Request [$120](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/120): Echo the full `dotnet publish` command using during lambda deployment. Thanks [Tom Makin](https://github.com/tmakin)
   * Fixed issue when publish PowerShell Lambda functions with PowerShell unable to find system modules folder when deployed to Lambda.
 
 ### Release 2020-06-23
