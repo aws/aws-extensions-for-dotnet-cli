@@ -1,3 +1,7 @@
+### Release Unreleased
+* **Amazon.Lambda.Tools**
+  * Echo the full `dotnet publish` command using during lambda deployment
+
 ### Release 2020-06-23
 * **Amazon.ElasticBeanstalk.Tools (4.0.0)**
   * Added support to to deploy to the new Beanstalk ".NET Core for Linux" platform.

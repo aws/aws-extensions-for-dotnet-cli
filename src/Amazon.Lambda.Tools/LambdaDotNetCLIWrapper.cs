@@ -264,6 +264,9 @@ namespace Amazon.Lambda.Tools
                 }
             }
 
+            // echo the full dotnet command for debug
+            _logger?.WriteLine($"... dotnet {arguments}");
+
             var psi = new ProcessStartInfo
             {
                 FileName = dotnetCLI,
