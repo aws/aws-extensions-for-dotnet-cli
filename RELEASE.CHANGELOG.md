@@ -1,6 +1,7 @@
-### Release Unreleased
-* **Amazon.Lambda.Tools**
+### Release 2020-07-22
+* **Amazon.Lambda.Tools (4.1.0)**
   * Echo the full `dotnet publish` command using during lambda deployment
+  * Fixed issue when publish PowerShell Lambda functions with PowerShell unable to find system modules folder when deployed to Lambda.
 
 ### Release 2020-06-23
 * **Amazon.ElasticBeanstalk.Tools (4.0.0)**
