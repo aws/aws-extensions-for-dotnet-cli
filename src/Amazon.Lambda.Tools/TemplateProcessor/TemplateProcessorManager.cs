@@ -224,18 +224,12 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 LambdaUtilities.DetermineTargetFrameworkFromLambdaRuntime(field.Resource.LambdaRuntime, location);
 
             command.LayerVersionArns = field.Resource.LambdaLayers;
+            if (!string.IsNullOrEmpty(this.DefaultOptions.TargetFramework))
+                command.TargetFramework = this.DefaultOptions.TargetFramework;
 
-            // If the project is in the same directory as the CloudFormation template then use any parameters
-            // there were specified on the command to build the project.
-            if (IsCurrentDirectory(field.GetLocalPath()))
-            {
-                if (!string.IsNullOrEmpty(this.DefaultOptions.TargetFramework))
-                    command.TargetFramework = this.DefaultOptions.TargetFramework;
-                
-                command.Configuration = this.DefaultOptions.Configuration;
-                command.DisableVersionCheck = this.DefaultOptions.DisableVersionCheck;
-                command.MSBuildParameters = this.DefaultOptions.MSBuildParameters;
-            }
+            command.Configuration = this.DefaultOptions.Configuration;
+            command.DisableVersionCheck = this.DefaultOptions.DisableVersionCheck;
+            command.MSBuildParameters = this.DefaultOptions.MSBuildParameters;
                         
             if(!await command.ExecuteAsync())
             {
