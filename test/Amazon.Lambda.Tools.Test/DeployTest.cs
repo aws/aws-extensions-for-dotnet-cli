@@ -52,7 +52,7 @@ namespace Amazon.Lambda.Tools.Test
             command.Handler = "TestFunction::TestFunction.Function::ToUpper";
             command.Timeout = 10;
             command.MemorySize = 512;
-            command.Role = TestHelper.GetTestRoleArn();
+            command.Role = await TestHelper.GetTestRoleArnAsync();
             command.Configuration = "Release";
             command.TargetFramework = "netcoreapp2.1";
             command.Runtime = "dotnetcore2.1";
@@ -93,7 +93,7 @@ namespace Amazon.Lambda.Tools.Test
             command.FunctionName = "test-function-" + DateTime.Now.Ticks;
             command.Timeout = 10;
             command.MemorySize = 512;
-            command.Role = TestHelper.GetTestRoleArn();
+            command.Role = await TestHelper.GetTestRoleArnAsync();
             command.Configuration = "Release";
             command.S3Bucket = this._testFixture.Bucket;
             command.S3Prefix = "TestPowerShellParallelTest/";
@@ -139,7 +139,7 @@ namespace Amazon.Lambda.Tools.Test
             command.FunctionName = "test-function-" + DateTime.Now.Ticks;
             command.Handler = "TestFunction::TestFunction.Function::ToUpper";
             command.Timeout = 10;
-            command.Role = TestHelper.GetTestRoleArn();
+            command.Role = await TestHelper.GetTestRoleArnAsync();
             command.Configuration = "Release";
             command.Runtime = "dotnetcore2.1";
             command.DisableInteractive = true;
@@ -191,7 +191,7 @@ namespace Amazon.Lambda.Tools.Test
             deployCommand.Handler = "TestFunction::TestFunction.Function::ToUpper";
             deployCommand.Timeout = 10;
             deployCommand.MemorySize = 512;
-            deployCommand.Role = TestHelper.GetTestRoleArn();
+            deployCommand.Role = await TestHelper.GetTestRoleArnAsync();
             deployCommand.Package = packageZip;
             deployCommand.Runtime = "dotnetcore2.1";
             deployCommand.Region = "us-east-1";
@@ -288,7 +288,7 @@ namespace Amazon.Lambda.Tools.Test
                 initialDeployCommand.Handler = "TestFunction::TestFunction.Function::ToUpper";
                 initialDeployCommand.Timeout = 10;
                 initialDeployCommand.MemorySize = 512;
-                initialDeployCommand.Role = TestHelper.GetTestRoleArn();
+                initialDeployCommand.Role = await TestHelper.GetTestRoleArnAsync();
                 initialDeployCommand.Configuration = "Release";
                 initialDeployCommand.TargetFramework = "netcoreapp2.1";
                 initialDeployCommand.Runtime = "dotnetcore2.1";

@@ -177,7 +177,7 @@ namespace Amazon.Lambda.Tools.Test
                 deployCommand.Handler = "TestLayerExample::TestLayerExample.Function::FunctionHandler";
                 deployCommand.Timeout = 10;
                 deployCommand.MemorySize = 512;
-                deployCommand.Role = TestHelper.GetTestRoleArn();
+                deployCommand.Role = await TestHelper.GetTestRoleArnAsync();
                 deployCommand.Configuration = "Release";
                 deployCommand.TargetFramework = "netcoreapp2.1";
                 deployCommand.Runtime = "dotnetcore2.1";

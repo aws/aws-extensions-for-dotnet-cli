@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Amazon.CloudFormation;
@@ -20,18 +21,19 @@ namespace Amazon.Lambda.Tools.Test
 
         private static IAmazonIdentityManagementService _iamClient = new AmazonIdentityManagementServiceClient(Amazon.RegionEndpoint.USEast1);
 
-        private static readonly object ROLE_LOCK = new object();
+        static SemaphoreSlim roleLock = new SemaphoreSlim(1, 1);
 
-        public static string GetTestRoleArn()
+        public static async Task<string> GetTestRoleArnAsync()
         {
-            lock (ROLE_LOCK)
+            await roleLock.WaitAsync(TimeSpan.FromMinutes(5));
+            try
             {
                 if (!string.IsNullOrEmpty(_roleArn))
                     return _roleArn;
 
                 try
                 {
-                    _roleArn = (_iamClient.GetRoleAsync(new GetRoleRequest { RoleName = LAMBDATOOL_TEST_ROLE })).Result.Role.Arn;
+                    _roleArn = (await _iamClient.GetRoleAsync(new GetRoleRequest { RoleName = LAMBDATOOL_TEST_ROLE })).Role.Arn;
                 }
                 catch (Exception e)
                 {
@@ -51,6 +53,10 @@ namespace Amazon.Lambda.Tools.Test
                 }
 
                 return _roleArn;
+            }
+            finally
+            {
+                roleLock.Release();
             }
         }
 
