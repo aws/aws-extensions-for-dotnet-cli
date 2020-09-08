@@ -552,7 +552,7 @@ namespace Amazon.Lambda.Tools.Test
 
     }
 
-    public class DeployTestFixture : IDisposable
+    public class DeployTestFixture : IAsyncLifetime
     {
         public string Bucket { get; set; }
         public IAmazonS3 S3Client { get; set; }
@@ -562,32 +562,20 @@ namespace Amazon.Lambda.Tools.Test
             this.S3Client = new AmazonS3Client(RegionEndpoint.USEast1);
 
             this.Bucket = "dotnet-lambda-tests-" + DateTime.Now.Ticks;
-
-            Task.Run(async () =>
-            {
-                await S3Client.PutBucketAsync(this.Bucket);
-            }).Wait();
         }
 
-        private bool disposedValue;
-        protected virtual void Dispose(bool disposing)
+        public async Task InitializeAsync()
         {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    AmazonS3Util.DeleteS3BucketWithObjectsAsync(this.S3Client, this.Bucket).GetAwaiter().GetResult();
-
-                    this.S3Client.Dispose();
-                }
-
-                disposedValue = true;
-            }
+            await S3Client.PutBucketAsync(this.Bucket);
         }
 
-        public void Dispose()
+        public async Task DisposeAsync()
         {
-            Dispose(true);
+
+            await AmazonS3Util.DeleteS3BucketWithObjectsAsync(this.S3Client, this.Bucket);
+
+            this.S3Client.Dispose();
+
         }
     }
 }
