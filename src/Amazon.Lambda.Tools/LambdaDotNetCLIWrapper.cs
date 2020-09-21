@@ -84,7 +84,7 @@ namespace Amazon.Lambda.Tools
             arguments.Append($" --manifest \"{fullPackageManifest}\"");
 
 
-            arguments.Append($" --runtime {LambdaUtilities.DetermineRuntimeParameter(targetFramework)}");
+            arguments.Append($" --runtime {LambdaConstants.RUNTIME_HIERARCHY_STARTING_POINT}");
 
             if(!enableOptimization)
             {
@@ -216,7 +216,7 @@ namespace Amazon.Lambda.Tools
                     if (msbuildParameters == null ||
                         msbuildParameters.IndexOf("--runtime", StringComparison.InvariantCultureIgnoreCase) == -1)
                     {
-                        arguments.Append($" --runtime {LambdaUtilities.DetermineRuntimeParameter(targetFramework)}");
+                        arguments.Append($" --runtime {LambdaConstants.RUNTIME_HIERARCHY_STARTING_POINT}");
                     }
 
                     if (msbuildParameters == null ||

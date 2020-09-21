@@ -740,27 +740,6 @@ namespace Amazon.Lambda.Tools
             return new ConvertManifestContentToSdkManifestResult(true, updatedContent);
         }
 
-        /// <summary>
-        /// Determines what runtime identifier (RID) to use when running a dotnet CLI command. For the
-        /// older .NET Lambda runtimes that are not running on Amazon Linux 2 keep using the existing rhel.7.2-x64
-        /// RID. For all other runtimes that are running on Amazon Linux 2 use the newer linux-x64 RID which did
-        /// not exist when this tool was first created.
-        /// </summary>
-        /// <param name="targetFramework"></param>
-        /// <returns></returns>
-        public static string DetermineRuntimeParameter(string targetFramework)
-        {
-            switch (targetFramework)
-            {
-                case "netcoreapp1.0":
-                case "netcoreapp2.0":
-                case "netcoreapp2.1":
-                    return LambdaConstants.LEGACY_RUNTIME_HIERARCHY_STARTING_POINT;
-                default:
-                    return "linux-x64";
-            }
-        }
-
         public static async Task WaitTillFunctionAvailableAsync(IToolLogger logger, IAmazonLambda lambdaClient, string functionName)
         {
             const int POLL_INTERVAL = 3000;
