@@ -124,14 +124,16 @@ namespace Amazon.Lambda.Tools.Test
             }
         }
 
-        [Fact]
-        public async Task NativeDependency2Example()
+        [Theory]
+        [InlineData("netcoreapp2.1")]
+        [InlineData("netcoreapp3.1")]
+        public async Task NativeDependency2Example(string targetFramework)
         {
             var fullPath = GetTestProjectPath("NativeDependencyExample2");
             var command = new PackageCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
             command.DisableInteractive = true;
             command.Configuration = "Release";
-            command.TargetFramework = "netcoreapp2.1";
+            command.TargetFramework = targetFramework;
 
             command.OutputPackageFileName = Path.GetTempFileName() + ".zip";
 
