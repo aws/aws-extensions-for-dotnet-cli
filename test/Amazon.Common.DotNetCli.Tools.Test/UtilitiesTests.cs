@@ -13,7 +13,7 @@ namespace Amazon.Common.DotNetCli.Tools.Test
         {
             var result = Utilities.ExecuteShellCommand(null, FindDotnetProcess(), "--info");
             Assert.Equal(0, result.ExitCode);
-            Assert.Contains(".NET Core SDKs installed", result.Stdout);
+            Assert.Contains("SDKs installed", result.Stdout);
         }
         
         [Fact]
