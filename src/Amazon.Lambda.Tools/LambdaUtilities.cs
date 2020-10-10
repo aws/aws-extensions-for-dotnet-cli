@@ -577,11 +577,11 @@ namespace Amazon.Lambda.Tools
             }
         }
 
-        public static ConvertManifestToSdkManifestResult ConvertManifestToSdkManifest(string packageManifest)
+        public static ConvertManifestToSdkManifestResult ConvertManifestToSdkManifest(string targetFramework, string packageManifest)
         {
             var content = File.ReadAllText(packageManifest);
 
-            var result = ConvertManifestContentToSdkManifest(content);
+            var result = ConvertManifestContentToSdkManifest(targetFramework, content);
 
             if (!result.Updated)
             {
@@ -606,12 +606,14 @@ namespace Amazon.Lambda.Tools
             }
         }
 
-        public static ConvertManifestContentToSdkManifestResult ConvertManifestContentToSdkManifest(string packageManifestContent)
+        public static ConvertManifestContentToSdkManifestResult ConvertManifestContentToSdkManifest(string targetFramework, string packageManifestContent)
         {
             var originalDoc = XDocument.Parse(packageManifestContent);
 
-            var attr = originalDoc.Root.Attribute("Sdk");
-            if (string.Equals(attr?.Value, "Microsoft.NET.Sdk", StringComparison.OrdinalIgnoreCase))
+            var sdkType = originalDoc.Root.Attribute("Sdk")?.Value ?? "Microsoft.NET.Sdk";
+            var isWebSdk = string.Equals(sdkType, "Microsoft.NET.Sdk.Web", StringComparison.OrdinalIgnoreCase);
+
+            if (string.Equals("netcoreapp2.1", targetFramework) && !isWebSdk)
                 return new ConvertManifestContentToSdkManifestResult(false, packageManifestContent);
 
             
@@ -632,27 +634,32 @@ namespace Amazon.Lambda.Tools
                 throw new LambdaToolsException("Error detecting .NET SDK version: \n\t" + e.Message, LambdaToolsException.LambdaErrorCode.FailedToDetectSdkVersion, e );
             }
 
-            if (dotnetSdkVersion < LambdaConstants.MINIMUM_DOTNET_SDK_VERSION_FOR_ASPNET_LAYERS)
+
+            if (isWebSdk && string.Equals("netcoreapp2.1", targetFramework, StringComparison.OrdinalIgnoreCase))
             {
-                throw new LambdaToolsException($"To create a runtime package store layer for an ASP.NET Core project " +
-                                               $"version {LambdaConstants.MINIMUM_DOTNET_SDK_VERSION_FOR_ASPNET_LAYERS} " + 
-                                               "or above of the .NET Core SDK must be installed. " +
-                                               "If a 2.1.X SDK is used then the \"dotnet store\" command will include all " +
-                                               "of the ASP.NET Core dependencies that are already available in Lambda.",
-                                                LambdaToolsException.LambdaErrorCode.LayerNetSdkVersionMismatch);
+                if (dotnetSdkVersion < LambdaConstants.MINIMUM_DOTNET_SDK_VERSION_FOR_ASPNET_LAYERS)
+                {
+                    throw new LambdaToolsException($"To create a runtime package store layer for an ASP.NET Core project " +
+                                                   $"version {LambdaConstants.MINIMUM_DOTNET_SDK_VERSION_FOR_ASPNET_LAYERS} " + 
+                                                   "or above of the .NET Core SDK must be installed. " +
+                                                   "If a 2.1.X SDK is used then the \"dotnet store\" command will include all " +
+                                                   "of the ASP.NET Core dependencies that are already available in Lambda.",
+                        LambdaToolsException.LambdaErrorCode.LayerNetSdkVersionMismatch);
+                }
+
+                // These were added to make sure the ASP.NET Core dependencies are filter if any of the packages
+                // depend on them.
+                // See issue for more info: https://github.com/dotnet/cli/issues/10784
+                var aspNerCorePackageReference = new XElement("PackageReference");
+                aspNerCorePackageReference.SetAttributeValue("Include", "Microsoft.AspNetCore.App");
+                itemGroup.Add(aspNerCorePackageReference);
+        
+                var aspNerCoreUpdatePackageReference = new XElement("PackageReference");
+                aspNerCoreUpdatePackageReference.SetAttributeValue("Update", "Microsoft.NETCore.App");
+                aspNerCoreUpdatePackageReference.SetAttributeValue("Publish", "false");
+                itemGroup.Add(aspNerCoreUpdatePackageReference);                        
             }
-            
-            // These were added to make sure the ASP.NET Core dependencies are filter if any of the packages
-            // depend on them.
-            // See issue for more info: https://github.com/dotnet/cli/issues/10784
-            var aspNerCorePackageReference = new XElement("PackageReference");
-            aspNerCorePackageReference.SetAttributeValue("Include", "Microsoft.AspNetCore.App");
-            itemGroup.Add(aspNerCorePackageReference);
-            
-            var aspNerCoreUpdatePackageReference = new XElement("PackageReference");
-            aspNerCoreUpdatePackageReference.SetAttributeValue("Update", "Microsoft.NETCore.App");
-            aspNerCoreUpdatePackageReference.SetAttributeValue("Publish", "false");
-            itemGroup.Add(aspNerCoreUpdatePackageReference);
+
 
             foreach (var packageReference in originalDoc.XPathSelectElements("//ItemGroup/PackageReference"))
             {
@@ -667,6 +674,39 @@ namespace Amazon.Lambda.Tools
                 newRef.SetAttributeValue("Include", packageName);
                 newRef.SetAttributeValue("Version", version);
                 itemGroup.Add(newRef);
+            }
+            
+            // In .NET Core 3.1 the dotnet store command will include system dependencies like System.Runtime if 
+            // any of the packages referenced in the packages included explicit references system dependencies.
+            // This is common on older packages or versions of packages before .NET Core 2.1. Newtonsoft.Json version 9.0.1
+            // is an example of this behavior.
+            //
+            // To avoid these system dependencies getting added to the layer we need to inject the list of system
+            // dependency to prune from the store graph.
+            // 
+            // For further information on the issue check out this GitHub issue: https://github.com/dotnet/sdk/issues/10973 
+            if (string.Equals(targetFramework, "netcoreapp3.1", StringComparison.OrdinalIgnoreCase))
+            {
+                var lambdaAssembly = typeof(LambdaUtilities).Assembly;
+                string manifestName;
+                if (isWebSdk)
+                {
+                    manifestName = lambdaAssembly.GetManifestResourceNames().FirstOrDefault(x => x.EndsWith(LambdaConstants.PRUNE_LIST_SDKWEB_XML));
+                }
+                else
+                {
+                    manifestName = lambdaAssembly.GetManifestResourceNames().FirstOrDefault(x => x.EndsWith(LambdaConstants.PRUNE_LIST_SDK_XML));
+                }
+
+                string pruneListString;
+                using (var stream = lambdaAssembly.GetManifestResourceStream(manifestName))
+                {
+                    pruneListString = new StreamReader(stream).ReadToEnd();
+                }
+
+                var pruneListElement = XElement.Parse(pruneListString);
+                
+                root.Add(pruneListElement);
             }
             
             var updatedDoc = new XDocument(root);

@@ -156,10 +156,15 @@ namespace Amazon.Lambda.Tools.Commands
 
             if(string.Equals(targetFramework, "netcoreapp3.1"))
             {
-                var message = "Publishing runtime package store layers targeting .NET Core 3.1 is currently disabled due to an issue with the dotnet cli's 'store' command " +
-                              "used to create the runtime package store. For further information see the following GitHub issue.\n" +
-                              "https://github.com/dotnet/sdk/issues/10973";
-                throw new LambdaToolsException(message, LambdaToolsException.LambdaErrorCode.DisabledSupportForNET31Layers);
+                var version = DotNetCLIWrapper.GetSdkVersion();
+                
+                // .NET SDK 3.1 versions less then 3.1.400 have an issue throwing NullReferenceExceptions when pruning packages out with the manifest.
+                // https://github.com/dotnet/sdk/issues/10973
+                if (version < Version.Parse("3.1.400"))
+                {
+                    var message = $"Publishing runtime package store layers targeting .NET Core 3.1 requires at least version 3.1.400 of the .NET SDK. Current version installed is {version}.";
+                    throw new LambdaToolsException(message, LambdaToolsException.LambdaErrorCode.DisabledSupportForNET31Layers);
+                }
             }
 
 #if NETCORE
@@ -224,7 +229,7 @@ namespace Amazon.Lambda.Tools.Commands
             var storeOutputDirectory = Path.Combine(tempRootPath, optDirectory);
 
             {
-                var convertResult = LambdaUtilities.ConvertManifestToSdkManifest(packageManifest);
+                var convertResult = LambdaUtilities.ConvertManifestToSdkManifest(targetFramework, packageManifest);
                 if (convertResult.ShouldDelete)
                 {
                     this.Logger?.WriteLine("Converted ASP.NET Core project file to temporary package manifest file.");
