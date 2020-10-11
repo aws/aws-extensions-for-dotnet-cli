@@ -635,29 +635,40 @@ namespace Amazon.Lambda.Tools
             }
 
 
-            if (isWebSdk && string.Equals("netcoreapp2.1", targetFramework, StringComparison.OrdinalIgnoreCase))
+            if (isWebSdk)
             {
-                if (dotnetSdkVersion < LambdaConstants.MINIMUM_DOTNET_SDK_VERSION_FOR_ASPNET_LAYERS)
+                if(string.Equals("netcoreapp2.1", targetFramework, StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new LambdaToolsException($"To create a runtime package store layer for an ASP.NET Core project " +
-                                                   $"version {LambdaConstants.MINIMUM_DOTNET_SDK_VERSION_FOR_ASPNET_LAYERS} " + 
-                                                   "or above of the .NET Core SDK must be installed. " +
-                                                   "If a 2.1.X SDK is used then the \"dotnet store\" command will include all " +
-                                                   "of the ASP.NET Core dependencies that are already available in Lambda.",
-                        LambdaToolsException.LambdaErrorCode.LayerNetSdkVersionMismatch);
-                }
+                    if (dotnetSdkVersion < LambdaConstants.MINIMUM_DOTNET_SDK_VERSION_FOR_ASPNET_LAYERS)
+                    {
+                        throw new LambdaToolsException($"To create a runtime package store layer for an ASP.NET Core project " +
+                                                       $"version {LambdaConstants.MINIMUM_DOTNET_SDK_VERSION_FOR_ASPNET_LAYERS} " +
+                                                       "or above of the .NET Core SDK must be installed. " +
+                                                       "If a 2.1.X SDK is used then the \"dotnet store\" command will include all " +
+                                                       "of the ASP.NET Core dependencies that are already available in Lambda.",
+                            LambdaToolsException.LambdaErrorCode.LayerNetSdkVersionMismatch);
+                    }
 
-                // These were added to make sure the ASP.NET Core dependencies are filter if any of the packages
-                // depend on them.
-                // See issue for more info: https://github.com/dotnet/cli/issues/10784
-                var aspNerCorePackageReference = new XElement("PackageReference");
-                aspNerCorePackageReference.SetAttributeValue("Include", "Microsoft.AspNetCore.App");
-                itemGroup.Add(aspNerCorePackageReference);
-        
-                var aspNerCoreUpdatePackageReference = new XElement("PackageReference");
-                aspNerCoreUpdatePackageReference.SetAttributeValue("Update", "Microsoft.NETCore.App");
-                aspNerCoreUpdatePackageReference.SetAttributeValue("Publish", "false");
-                itemGroup.Add(aspNerCoreUpdatePackageReference);                        
+                    // These were added to make sure the ASP.NET Core dependencies are filter if any of the packages
+                    // depend on them.
+                    // See issue for more info: https://github.com/dotnet/cli/issues/10784
+                    var aspNerCorePackageReference = new XElement("PackageReference");
+                    aspNerCorePackageReference.SetAttributeValue("Include", "Microsoft.AspNetCore.App");
+                    itemGroup.Add(aspNerCorePackageReference);
+
+                    var aspNerCoreUpdatePackageReference = new XElement("PackageReference");
+                    aspNerCoreUpdatePackageReference.SetAttributeValue("Update", "Microsoft.NETCore.App");
+                    aspNerCoreUpdatePackageReference.SetAttributeValue("Publish", "false");
+                    itemGroup.Add(aspNerCoreUpdatePackageReference);
+                }   
+                else
+                {
+                    var frameworkReference = new XElement("FrameworkReference");
+                    frameworkReference.SetAttributeValue("Include", "Microsoft.AspNetCore.App");
+                    var frameworkReferenceGroupItemGroup = new XElement("ItemGroup");
+                    frameworkReferenceGroupItemGroup.Add(frameworkReference);
+                    root.Add(frameworkReferenceGroupItemGroup);
+                }
             }
 
 
