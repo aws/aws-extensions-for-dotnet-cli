@@ -10,18 +10,18 @@ using Xunit;
 
 namespace Amazon.Lambda.Tools.Test
 {
-    public class ConvertAspNerCoreManifestTests
+    public class ConvertLayerManifestTests
     {
         [Fact]
         public void CheckIfWebProject()
         {
             var originalContent = "<Project Sdk=\"Microsoft.NET.Sdk.Web\"></Project>";
-            var result = LambdaUtilities.ConvertManifestContentToSdkManifest(originalContent);
+            var result = LambdaUtilities.ConvertManifestContentToSdkManifest("netcoreapp2.1",originalContent);
             Assert.True(result.Updated);
             Assert.False(object.ReferenceEquals(originalContent, result.UpdatedContent));
 
             originalContent = "<Project Sdk=\"Microsoft.NET.Sdk\"></Project>";
-            result = LambdaUtilities.ConvertManifestContentToSdkManifest("<Project Sdk=\"Microsoft.NET.Sdk\"></Project>");
+            result = LambdaUtilities.ConvertManifestContentToSdkManifest("netcoreapp2.1", "<Project Sdk=\"Microsoft.NET.Sdk\"></Project>");
             Assert.False(result.Updated);
             Assert.True(object.ReferenceEquals(originalContent, result.UpdatedContent));
         }
@@ -31,7 +31,7 @@ namespace Amazon.Lambda.Tools.Test
         {
             var testManifest = File.ReadAllText("./TestFiles/ManifestAspNetCoreProject.xml");
             
-            var result = LambdaUtilities.ConvertManifestContentToSdkManifest(testManifest);
+            var result = LambdaUtilities.ConvertManifestContentToSdkManifest("netcoreapp2.1",testManifest);
             Assert.True(result.Updated);   
             Assert.False(object.ReferenceEquals(testManifest, result.UpdatedContent));
 
@@ -57,6 +57,30 @@ namespace Amazon.Lambda.Tools.Test
             Assert.NotNull(findRef("Amazon.Lambda.AspNetCoreServer"));
             Assert.NotNull(findRef("AWSSDK.S3"));
             Assert.NotNull(findRef("AWSSDK.Extensions.NETCore.Setup"));
+        }
+
+        [Fact]
+        public void Convert31SDKProjectToManifest()
+        {
+            var originalContent = "<Project Sdk=\"Microsoft.NET.Sdk\"></Project>";
+            var result = LambdaUtilities.ConvertManifestContentToSdkManifest("netcoreapp3.1", originalContent);
+            Assert.True(result.Updated);
+            
+            Assert.Contains("<Project Sdk=\"Microsoft.NET.Sdk\">", result.UpdatedContent);
+            Assert.Contains("<PackagesToPrune Include=\"Microsoft.CSharp\" />", result.UpdatedContent);
+            Assert.DoesNotContain("Microsoft.AspNetCore.App", result.UpdatedContent);
+        }
+        
+        [Fact]
+        public void Convert31SDKWebProjectToManifest()
+        {
+            var originalContent = "<Project Sdk=\"Microsoft.NET.Sdk.Web\"></Project>";
+            var result = LambdaUtilities.ConvertManifestContentToSdkManifest("netcoreapp3.1", originalContent);
+            Assert.True(result.Updated);
+            
+            Assert.Contains("<Project Sdk=\"Microsoft.NET.Sdk\">", result.UpdatedContent);
+            Assert.Contains("<PackagesToPrune Include=\"Microsoft.CSharp\" />", result.UpdatedContent);
+            Assert.DoesNotContain("Microsoft.AspNetCore.App", result.UpdatedContent);
         }
     }
 }

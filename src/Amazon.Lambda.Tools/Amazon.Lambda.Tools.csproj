@@ -29,6 +29,10 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\netcore.runtime.hierarchy.json" Exclude="bin\**;obj\**;**\*.xproj;packages\**;@(EmbeddedResource)" />
+    <None Remove="Resources\publish-layer-31sdkweb-prunelist.xml" />
+    <EmbeddedResource Include="Resources\publish-layer-31sdkweb-prunelist.xml" />
+    <None Remove="Resources\publish-layer-31sdk-prunelist.xml" />
+    <EmbeddedResource Include="Resources\publish-layer-31sdk-prunelist.xml" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
