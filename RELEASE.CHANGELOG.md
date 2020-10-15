@@ -1,3 +1,7 @@
+### Release 2020-10-15
+* **Amazon.Lambda.Tools (4.2.0)**
+  * Add support for creating .NET Lambda layers for .NET Core 3.1.
+
 ### Release 2020-07-22
 * **Amazon.Lambda.Tools (4.1.0)**
   * Pull Request [$120](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/120): Echo the full `dotnet publish` command using during lambda deployment. Thanks [Tom Makin](https://github.com/tmakin)
