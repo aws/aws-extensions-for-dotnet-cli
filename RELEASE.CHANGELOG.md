@@ -1,3 +1,11 @@
+### Release 2020-10-19
+* **Amazon.Lambda.Tools (4.3.0)**
+  * Update to latest version of the AWS SDK for .NET.
+* **Amazon.ECS.Tools (3.2.0)**
+  * Update to latest version of the AWS SDK for .NET.
+* **Amazon.ElasticBeanstalk.Tools (4.1.0)**
+  * Update to latest version of the AWS SDK for .NET.
+
 ### Release 2020-10-15
 * **Amazon.Lambda.Tools (4.2.0)**
   * Add support for creating .NET Lambda layers for .NET Core 3.1.
