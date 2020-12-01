@@ -29,7 +29,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             this.Fields = new List<IUpdateResourceField>();
             foreach (var fieldDefinition in definition.Fields)
             {
-                this.Fields.Add(new UpdatableResourceField(this, fieldDefinition));
+                this.Fields.Add(new UpdatableResourceField(this, fieldDefinition, dataSource));
             }
         }
 
@@ -70,6 +70,20 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             }
         }
 
+        public CodeUploadType UploadType
+        {
+            get
+            {
+                var packageType = this.DataSource.GetValue("PackageType");
+                if (string.Equals("image", packageType, StringComparison.OrdinalIgnoreCase))
+                {
+                    return CodeUploadType.Image;
+                }
+
+                return CodeUploadType.Zip;
+            }
+        }
+
         public void SetEnvironmentVariable(string key, string value)
         {
             this.DataSource.SetValue(value, "Environment", "Variables", key);
@@ -82,10 +96,13 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
 
             private UpdatableResourceDefinition.FieldDefinition Field { get; }
 
-            public UpdatableResourceField(UpdatableResource resource, UpdatableResourceDefinition.FieldDefinition field)
+            private IUpdatableResourceDataSource DataSource;
+
+            public UpdatableResourceField(UpdatableResource resource, UpdatableResourceDefinition.FieldDefinition field, IUpdatableResourceDataSource dataSource)
             {
                 this._resource = resource;
                 this.Field = field;
+                this.DataSource = dataSource;
             }
 
             public string Name => this.Field.Name;
@@ -116,6 +133,21 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             public void SetS3Location(string s3Bucket, string s3Key)
             {
                 this.Field.SetS3Location(this._resource.DataSource, s3Bucket, s3Key);
+            }
+
+            public void SetImageUri(string imageUri)
+            {
+                this.Field.SetImageUri(this._resource.DataSource, imageUri);
+            }
+
+            public string GetMetadataDockerfile()
+            {
+                return this.DataSource.GetValueFromResource("Metadata", "Dockerfile");
+            }
+
+            public string GetMetadataDockerTag()
+            {
+                return this.DataSource.GetValueFromResource("Metadata", "DockerTag");
             }
         }
     }

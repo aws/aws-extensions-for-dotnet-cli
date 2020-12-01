@@ -63,7 +63,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                     out updatableResourceDefinition))
                     continue;
                 
-                var updatableResource = new UpdatableResource(resource.Key.ToString(), updatableResourceDefinition, new YamlUpdatableResourceDataSource(root, properties));
+                var updatableResource = new UpdatableResource(resource.Key.ToString(), updatableResourceDefinition, new YamlUpdatableResourceDataSource(root,  resourceBody, properties));
                 
                 yield return updatableResource;
             }
@@ -76,11 +76,13 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         public class YamlUpdatableResourceDataSource : IUpdatableResourceDataSource
         {
             YamlMappingNode Root { get; }
+            YamlMappingNode Resource { get; }
             YamlMappingNode Properties { get; }
 
-            public YamlUpdatableResourceDataSource(YamlMappingNode root, YamlMappingNode properties)
+            public YamlUpdatableResourceDataSource(YamlMappingNode root, YamlMappingNode resource, YamlMappingNode properties)
             {
                 this.Root = root;
+                this.Resource = resource;
                 this.Properties = properties;
             }
 
@@ -93,7 +95,12 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             {
                 return GetValueList(this.Root, keyPath);
             }
-            
+
+            public string GetValueFromResource(params string[] keyPath)
+            {
+                return GetValue(this.Resource, keyPath);
+            }
+
             public string GetValue(params string[] keyPath)
             {
                 return GetValue(this.Properties, keyPath);

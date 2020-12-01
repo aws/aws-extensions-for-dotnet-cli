@@ -11,12 +11,12 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
     {
         public static readonly UpdatableResourceDefinition DEF_LAMBDA_FUNCTION = new UpdatableResourceDefinition(
             "AWS::Lambda::Function",
-            FieldDefinition.CreateFieldDefinitionS3LocationStyle(true, "Code", "S3Bucket", "S3Key")
+            FieldDefinition.CreateFieldDefinitionForLambda(false)
         );
 
         public static readonly UpdatableResourceDefinition DEF_SERVERLESS_FUNCTION = new UpdatableResourceDefinition(
             "AWS::Serverless::Function",
-            FieldDefinition.CreateFieldDefinitionUrlStyle(true, "CodeUri")
+            FieldDefinition.CreateFieldDefinitionForLambda(true)
         );
 
         public static readonly UpdatableResourceDefinition DEF_APIGATEWAY_RESTAPI = new UpdatableResourceDefinition(
@@ -99,6 +99,99 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             /// </summary>
             public Action<IUpdatableResourceDataSource, string, string> SetS3Location { get; set; }
 
+            /// <summary>
+            /// The Action that knows how to set the ImageUri for the field into this datasource.
+            /// </summary>
+            public Action<IUpdatableResourceDataSource, string> SetImageUri { get; set; }
+
+            /// <summary>
+            /// Creates a field definition that handles AWS::Lambda::Function or AWS::Serverless::Function resources. It will
+            /// take care of settting either the S3 location or the ImageUri depending on the package type specified for the resource.
+            /// </summary>
+            /// <param name="isServerlessResource">True if the resource is AWS::Serverless::Function otherwise AWS::Lambda::Resource</param>
+            /// <returns></returns>
+            public static FieldDefinition CreateFieldDefinitionForLambda(bool isServerlessResource)
+            {
+                return new FieldDefinition
+                {
+                    Name = "CodeUri-Or-ImageUri",
+                    IsCode = true,
+                    GetLocalPath = (s) =>
+                    {
+                        string localPath;
+                        var packageType = s.GetValue(LambdaConstants.CF_LAMBDA_PACKAGE_TYPE);
+
+                        if(isServerlessResource)
+                        {
+                            if (string.Equals(PackageType.Image.Value, packageType, StringComparison.OrdinalIgnoreCase))
+                            {
+                                localPath = s.GetValueFromResource(LambdaConstants.CF_SERVERLESS_METADATA, LambdaConstants.CF_SERVERLESS_DOCKERCONTEXT);
+                                if (string.IsNullOrEmpty(localPath))
+                                {
+                                    localPath = s.GetValue(LambdaConstants.CF_LAMBDA_IMAGEURI);
+                                }
+                            }
+                            else
+                            {
+                                localPath = s.GetValue(LambdaConstants.CF_LAMBDA_CODEURI);
+                            }
+                        }
+                        else
+                        {
+                            if (string.Equals(PackageType.Image.Value, packageType, StringComparison.OrdinalIgnoreCase))
+                            {
+                                localPath = s.GetValue(LambdaConstants.CF_LAMBDA_CODE, LambdaConstants.CF_LAMBDA_IMAGEURI);
+                            }
+                            else
+                            {
+                                var bucket = s.GetValue(LambdaConstants.CF_LAMBDA_CODE, LambdaConstants.CF_LAMBDA_S3BUCKET);
+
+                                // If the bucket has a value then that means the CF template is referencing already
+                                // uploaded resource.
+                                if (!string.IsNullOrEmpty(bucket))
+                                    return null;
+
+                                localPath = s.GetValue(LambdaConstants.CF_LAMBDA_CODE, LambdaConstants.CF_LAMBDA_S3KEY);
+                            }
+                        }
+
+                        if (string.IsNullOrEmpty(localPath))
+                        {
+                            localPath = ".";
+                        }
+                        else if (localPath.StartsWith("s3://"))
+                        {
+                            localPath = null;
+                        }
+
+                        return localPath;
+                    },
+                    SetS3Location = (s, b, k) =>
+                    {
+                        if(isServerlessResource)
+                        {
+                            var s3Url = $"s3://{b}/{k}";
+                            s.SetValue(s3Url, LambdaConstants.CF_LAMBDA_CODEURI);
+                        }
+                        else
+                        {
+                            s.SetValue(b, LambdaConstants.CF_LAMBDA_CODE, LambdaConstants.CF_LAMBDA_S3BUCKET);
+                            s.SetValue(k, LambdaConstants.CF_LAMBDA_CODE, LambdaConstants.CF_LAMBDA_S3KEY);
+                        }
+                    },
+                    SetImageUri = (s, i) =>
+                    {
+                        if (isServerlessResource)
+                        {
+                            s.SetValue(i, LambdaConstants.CF_LAMBDA_IMAGEURI);
+                        }
+                        else
+                        {
+                            s.SetValue(i, LambdaConstants.CF_LAMBDA_CODE, LambdaConstants.CF_LAMBDA_IMAGEURI);
+                        }
+                    }
+                };
+            }
 
             /// <summary>
             /// Creates a field definition that is storing the S3 location as a S3 path like s3://mybucket/myfile.zip

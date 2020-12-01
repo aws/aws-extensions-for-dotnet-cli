@@ -47,6 +47,7 @@ namespace Amazon.Lambda.Tools
             LambdaGetLayerVersionDetails,
             LambdaDeleteLayerVersion,
             ParseLayerVersionArnFail,
+            LambdaWaitTillFunctionAvailable,
 
             UnknownLayerType,
             StoreCommandError,

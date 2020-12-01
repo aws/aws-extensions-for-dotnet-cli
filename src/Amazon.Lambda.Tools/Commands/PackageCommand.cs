@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Amazon.Common.DotNetCli.Tools;
+using Amazon.Common.DotNetCli.Tools.Commands;
 using Amazon.Common.DotNetCli.Tools.Options;
 using ThirdParty.Json.LitJson;
 
@@ -10,7 +11,8 @@ namespace Amazon.Lambda.Tools.Commands
     public class PackageCommand : LambdaBaseCommand
     {
         public const string COMMAND_NAME = "package";
-        public const string COMMAND_DESCRIPTION = "Command to package a Lambda project into a zip file ready for deployment";
+        public const string COMMAND_DESCRIPTION = "Command to package a Lambda project either into a zip file or docker image if --package-type is set to \"image\". The output can later be deployed to Lambda " +
+                                                  "with either deploy-function command or with another tool.";
         public const string COMMAND_ARGUMENTS = "<ZIP-FILE> The name of the zip file to package the project into";
 
         public static readonly IList<CommandOption> PackageCommandOptions = BuildLineOptions(new List<CommandOption>
@@ -23,7 +25,14 @@ namespace Amazon.Lambda.Tools.Commands
             CommonDefinedCommandOptions.ARGUMENT_CONFIG_FILE,
             CommonDefinedCommandOptions.ARGUMENT_PERSIST_CONFIG_FILE,
             LambdaDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE,
-            LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK
+            LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK,
+
+            LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_TYPE,
+            LambdaDefinedCommandOptions.ARGUMENT_IMAGE_TAG,
+            CommonDefinedCommandOptions.ARGUMENT_DOCKERFILE,
+            CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_OPTIONS,
+            CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_WORKING_DIRECTORY,
+            CommonDefinedCommandOptions.ARGUMENT_HOST_BUILD_OUTPUT
         });
 
         public string Configuration { get; set; }
@@ -34,7 +43,15 @@ namespace Amazon.Lambda.Tools.Commands
         public string[] LayerVersionArns { get; set; }
 
         public bool? DisableVersionCheck { get; set; }
-        
+
+        public string PackageType { get; set; }
+        public string DockerFile { get; set; }
+        public string DockerBuildOptions { get; set; }
+        public string DockerBuildWorkingDirectory { get; set; }
+        public string DockerImageTag { get; set; }
+
+        public string HostBuildOutput { get; set; }
+
         /// <summary>
         /// Property set when the package command is being created from another command or tool
         /// and the service clients have been copied over. In that case there is no reason
@@ -96,6 +113,20 @@ namespace Amazon.Lambda.Tools.Commands
                 else
                     this.MSBuildParameters += " " + values.MSBuildParameters;
             }
+
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_TYPE.Switch)) != null)
+                this.PackageType = tuple.Item2.StringValue;
+
+            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_DOCKERFILE.Switch)) != null)
+                this.DockerFile = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_OPTIONS.Switch)) != null)
+                this.DockerBuildOptions = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_WORKING_DIRECTORY.Switch)) != null)
+                this.DockerBuildWorkingDirectory = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_IMAGE_TAG.Switch)) != null)
+                this.DockerImageTag = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_HOST_BUILD_OUTPUT.Switch)) != null)
+                this.HostBuildOutput = tuple.Item2.StringValue;
         }
 
         protected override async Task<bool> PerformActionAsync()
@@ -105,78 +136,136 @@ namespace Amazon.Lambda.Tools.Commands
             // Disable interactive since this command is intended to be run as part of a pipeline.
             this.DisableInteractive = true;
 
-            var layerVersionArns = this.GetStringValuesOrDefault(this.LayerVersionArns, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS, false);
-            LayerPackageInfo layerPackageInfo = null;
-            if (layerVersionArns != null)
-            {
-                if (!this.DisableRegionAndCredentialsCheck)
-                {
-                    // Region and credentials are only required if using layers. This is new behavior so do a preemptive check when there are layers to
-                    // see if region and credentials are set. If they are not set give a specific error message about region and credentials required
-                    // when using layers.
-                    try
-                    {
-                        base.DetermineAWSRegion();
-                    }
-                    catch (Exception)
-                    {
-                        throw new ToolsException("Region is required for the package command when layers are specified. The layers must be inspected to see how they affect packaging.", ToolsException.CommonErrorCode.RegionNotConfigured);
-                    }
-                    try
-                    {
-                        base.DetermineAWSCredentials();
-                    }
-                    catch (Exception)
-                    {
-                        throw new ToolsException("AWS credentials are required for the package command when layers are specified. The layers must be inspected to see how they affect packaging.", ToolsException.CommonErrorCode.InvalidCredentialConfiguration);
-                    }                    
-                }
+            var projectLocation = this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false);
 
-                layerPackageInfo = await LambdaUtilities.LoadLayerPackageInfos(this.Logger, this.LambdaClient, this.S3Client, layerVersionArns);
+            Lambda.PackageType packageType = LambdaUtilities.DeterminePackageType(this.GetStringValueOrDefault(this.PackageType, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_TYPE, false));
+            if(packageType == Lambda.PackageType.Image)
+            {
+                var pushResults = await PushLambdaImageAsync();
+
+                if (!pushResults.Success)
+                {
+                    if (pushResults.LastToolsException != null)
+                        throw pushResults.LastToolsException;
+
+                    return false;
+                }
             }
             else
             {
-                layerPackageInfo = new LayerPackageInfo();
-            }
+                var layerVersionArns = this.GetStringValuesOrDefault(this.LayerVersionArns, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS, false);
+                LayerPackageInfo layerPackageInfo = null;
+                if (layerVersionArns != null)
+                {
+                    if (!this.DisableRegionAndCredentialsCheck)
+                    {
+                        // Region and credentials are only required if using layers. This is new behavior so do a preemptive check when there are layers to
+                        // see if region and credentials are set. If they are not set give a specific error message about region and credentials required
+                        // when using layers.
+                        try
+                        {
+                            base.DetermineAWSRegion();
+                        }
+                        catch (Exception)
+                        {
+                            throw new ToolsException("Region is required for the package command when layers are specified. The layers must be inspected to see how they affect packaging.", ToolsException.CommonErrorCode.RegionNotConfigured);
+                        }
+                        try
+                        {
+                            base.DetermineAWSCredentials();
+                        }
+                        catch (Exception)
+                        {
+                            throw new ToolsException("AWS credentials are required for the package command when layers are specified. The layers must be inspected to see how they affect packaging.", ToolsException.CommonErrorCode.InvalidCredentialConfiguration);
+                        }
+                    }
 
-            var projectLocation = this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false);
+                    layerPackageInfo = await LambdaUtilities.LoadLayerPackageInfos(this.Logger, this.LambdaClient, this.S3Client, layerVersionArns);
+                }
+                else
+                {
+                    layerPackageInfo = new LayerPackageInfo();
+                }
 
-            // Release will be the default configuration if nothing set.
-            var configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false);
+                // Release will be the default configuration if nothing set.
+                var configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false);
 
-            var targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
-            if(string.IsNullOrEmpty(targetFramework))
-            {
-                targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation));
-            }
-            
-            var msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
-            var disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
+                var targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
+                if (string.IsNullOrEmpty(targetFramework))
+                {
+                    targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation));
+                }
 
-            var zipArchivePath = GetStringValueOrDefault(this.OutputPackageFileName, LambdaDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE, false);
+                var msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
+                var disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
 
-            string publishLocation;
-            var success = LambdaPackager.CreateApplicationBundle(this.DefaultConfig, this.Logger, this.WorkingDirectory, projectLocation, configuration, targetFramework, msbuildParameters, disableVersionCheck, layerPackageInfo, out publishLocation, ref zipArchivePath);
-            if (!success)
-            {
-                this.Logger.WriteLine("Failed to create application package");
-                return false;
-            }
+                var zipArchivePath = GetStringValueOrDefault(this.OutputPackageFileName, LambdaDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE, false);
+
+                string publishLocation;
+                var success = LambdaPackager.CreateApplicationBundle(this.DefaultConfig, this.Logger, this.WorkingDirectory, projectLocation, configuration, targetFramework, msbuildParameters, disableVersionCheck, layerPackageInfo, out publishLocation, ref zipArchivePath);
+                if (!success)
+                {
+                    this.Logger.WriteLine("Failed to create application package");
+                    return false;
+                }
 
 
-            this.Logger.WriteLine("Lambda project successfully packaged: " + zipArchivePath);
-            var dotnetSharedStoreValue = layerPackageInfo.GenerateDotnetSharedStoreValue();
-            if(!string.IsNullOrEmpty(dotnetSharedStoreValue))
-            {
-                this.NewDotnetSharedStoreValue = dotnetSharedStoreValue;
-                
-                this.Logger.WriteLine($"\nWarning: You must set the {LambdaConstants.ENV_DOTNET_SHARED_STORE} environment variable when deploying the package. " +
-                                      "If not set the layers specified will not be located by the .NET Core runtime. The trailing '/' is required.");
-                this.Logger.WriteLine($"{LambdaConstants.ENV_DOTNET_SHARED_STORE}: {dotnetSharedStoreValue}");
+                this.Logger.WriteLine("Lambda project successfully packaged: " + zipArchivePath);
+                var dotnetSharedStoreValue = layerPackageInfo.GenerateDotnetSharedStoreValue();
+                if (!string.IsNullOrEmpty(dotnetSharedStoreValue))
+                {
+                    this.NewDotnetSharedStoreValue = dotnetSharedStoreValue;
+
+                    this.Logger.WriteLine($"\nWarning: You must set the {LambdaConstants.ENV_DOTNET_SHARED_STORE} environment variable when deploying the package. " +
+                                          "If not set the layers specified will not be located by the .NET Core runtime. The trailing '/' is required.");
+                    this.Logger.WriteLine($"{LambdaConstants.ENV_DOTNET_SHARED_STORE}: {dotnetSharedStoreValue}");
+                }
             }
 
             return true;
-        } 
+        }
+
+
+        private async Task<PushLambdaImageResult> PushLambdaImageAsync()
+        {
+            var pushCommand = new PushDockerImageCommand(this.Logger, this.WorkingDirectory, this.OriginalCommandLineArguments)
+            {
+                ConfigFile = this.ConfigFile,
+                DisableInteractive = this.DisableInteractive,
+                Credentials = this.Credentials,
+                ECRClient = this.ECRClient,
+                Profile = this.Profile,
+                ProfileLocation = this.ProfileLocation,
+                ProjectLocation = this.ProjectLocation,
+                Region = this.Region,
+                WorkingDirectory = this.WorkingDirectory,
+                SkipPushToECR = true,
+
+                PushDockerImageProperties = new BasePushDockerImageCommand<LambdaToolsDefaults>.PushDockerImagePropertyContainer
+                {
+                    Configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false),
+                    TargetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false),
+
+                    DockerFile = this.GetStringValueOrDefault(this.DockerFile, CommonDefinedCommandOptions.ARGUMENT_DOCKERFILE, false),
+                    DockerBuildOptions = this.GetStringValueOrDefault(this.DockerBuildOptions, CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_OPTIONS, false),
+                    DockerBuildWorkingDirectory = this.GetStringValueOrDefault(this.DockerBuildWorkingDirectory, CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_WORKING_DIRECTORY, false),
+                    DockerImageTag = this.GetStringValueOrDefault(this.DockerImageTag, LambdaDefinedCommandOptions.ARGUMENT_IMAGE_TAG, false),
+                    PublishOptions = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false),
+                    HostBuildOutput = this.GetStringValueOrDefault(this.HostBuildOutput, CommonDefinedCommandOptions.ARGUMENT_HOST_BUILD_OUTPUT, false)
+                }
+            };
+
+            var result = new PushLambdaImageResult();
+            result.Success = await pushCommand.ExecuteAsync();
+            result.LastToolsException = pushCommand.LastToolsException;
+
+            if(result.Success)
+            {
+                this.Logger.WriteLine($"Packaged project as image: \"{pushCommand.PushedImageUri}\"");
+            }
+
+            return result;
+        }
 
         protected override void SaveConfigFile(JsonData data)
         {

@@ -21,7 +21,7 @@ namespace Amazon.Lambda.Tools.Commands
         {
         }
 
-        protected override string ToolName => "AWSLambdaToolsDotnet";
+        protected override string ToolName => LambdaConstants.TOOLNAME;
         
 
 

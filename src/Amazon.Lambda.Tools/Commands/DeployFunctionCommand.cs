@@ -10,6 +10,7 @@ using Amazon.Lambda.Model;
 
 using ThirdParty.Json.LitJson;
 using Amazon.Common.DotNetCli.Tools;
+using Amazon.Common.DotNetCli.Tools.Commands;
 using Amazon.Common.DotNetCli.Tools.Options;
 
 namespace Amazon.Lambda.Tools.Commands
@@ -33,13 +34,22 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_PACKAGE,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_DESCRIPTION,
+            LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_TYPE,
+
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_PUBLISH,
-            LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_MEMORY_SIZE,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT,
+
+            LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS,
+
+            LambdaDefinedCommandOptions.ARGUMENT_IMAGE_ENTRYPOINT,
+            LambdaDefinedCommandOptions.ARGUMENT_IMAGE_COMMAND,
+            LambdaDefinedCommandOptions.ARGUMENT_IMAGE_WORKING_DIRECTORY,
+            CommonDefinedCommandOptions.ARGUMENT_DOCKER_TAG,
+
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TAGS,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SUBNETS,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SECURITY_GROUPS,
@@ -51,7 +61,13 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_APPLY_DEFAULTS_FOR_UPDATE_OBSOLETE,
             LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET,
             LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX,
-            LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK
+            LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK,
+
+            CommonDefinedCommandOptions.ARGUMENT_LOCAL_DOCKER_IMAGE,
+            CommonDefinedCommandOptions.ARGUMENT_DOCKERFILE,
+            CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_OPTIONS,
+            CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_WORKING_DIRECTORY,
+            CommonDefinedCommandOptions.ARGUMENT_HOST_BUILD_OUTPUT
         });
 
         public string Configuration { get; set; }
@@ -64,10 +80,13 @@ namespace Amazon.Lambda.Tools.Commands
 
         public bool? DisableVersionCheck { get; set; }
 
+        public string DockerFile { get; set; }
+        public string DockerBuildOptions { get; set; }
+        public string DockerBuildWorkingDirectory { get; set; }
+        public string DockerImageTag { get; set; }
 
-        // Disable handler validation for now.
-        // TODO: Fix issue with loading dependent assemblies when doing validation.
-        public bool SkipHandlerValidation { get; set; } = true;
+        public string HostBuildOutput { get; set; }
+        public string LocalDockerImage { get; set; }
 
 
         public DeployFunctionCommand(IToolLogger logger, string workingDirectory, string[] args)
@@ -112,6 +131,24 @@ namespace Amazon.Lambda.Tools.Commands
                 else
                     this.MSBuildParameters += " " + values.MSBuildParameters;
             }
+
+
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_TYPE.Switch)) != null)
+                this.PackageType = tuple.Item2.StringValue;
+
+            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_DOCKERFILE.Switch)) != null)
+                this.DockerFile = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_OPTIONS.Switch)) != null)
+                this.DockerBuildOptions = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_WORKING_DIRECTORY.Switch)) != null)
+                this.DockerBuildWorkingDirectory = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_IMAGE_TAG.Switch)) != null)
+                this.DockerImageTag = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_HOST_BUILD_OUTPUT.Switch)) != null)
+                this.HostBuildOutput = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_LOCAL_DOCKER_IMAGE.Switch)) != null)
+                this.LocalDockerImage = tuple.Item2.StringValue;
+
         }
 
 
@@ -125,51 +162,76 @@ namespace Amazon.Lambda.Tools.Commands
             var layerVersionArns = this.GetStringValuesOrDefault(this.LayerVersionArns, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS, false);
             var layerPackageInfo = await LambdaUtilities.LoadLayerPackageInfos(this.Logger, this.LambdaClient, this.S3Client, layerVersionArns);
 
-            if(string.IsNullOrEmpty(package))
+            Lambda.PackageType packageType = DeterminePackageType();
+            string ecrImageUri = null;
+
+            if (packageType == Lambda.PackageType.Image)
             {
-                EnsureInProjectDirectory();
+                var pushResults = await PushLambdaImageAsync();
 
-                // Release will be the default configuration if nothing set.
-                string configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false);
-
-                var targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
-                if (string.IsNullOrEmpty(targetFramework))
+                if (!pushResults.Success)
                 {
-                    targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation));
-                }
-                string msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
+                    if (pushResults.LastToolsException != null)
+                        throw pushResults.LastToolsException;
 
-                ValidateTargetFrameworkAndLambdaRuntime(targetFramework);
-
-                bool disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
-                string publishLocation;
-                LambdaPackager.CreateApplicationBundle(this.DefaultConfig, this.Logger, this.WorkingDirectory, projectLocation, configuration, targetFramework, msbuildParameters, disableVersionCheck, layerPackageInfo, out publishLocation, ref zipArchivePath);
-                if (string.IsNullOrEmpty(zipArchivePath))
                     return false;
+                }
+
+                ecrImageUri = pushResults.ImageUri;
             }
             else
             {
-                if(!File.Exists(package))
-                    throw new LambdaToolsException($"Package {package} does not exist", LambdaToolsException.LambdaErrorCode.InvalidPackage);
-                if(!string.Equals(Path.GetExtension(package), ".zip", StringComparison.OrdinalIgnoreCase))
-                    throw new LambdaToolsException($"Package {package} must be a zip file", LambdaToolsException.LambdaErrorCode.InvalidPackage);
+                if (string.IsNullOrEmpty(package))
+                {
+                    EnsureInProjectDirectory();
 
-                this.Logger.WriteLine($"Skipping compilation and using precompiled package {package}");
-                zipArchivePath = package;
+                    // Release will be the default configuration if nothing set.
+                    string configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false);
+
+                    var targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
+                    if (string.IsNullOrEmpty(targetFramework))
+                    {
+                        targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation));
+                    }
+                    string msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
+
+                    ValidateTargetFrameworkAndLambdaRuntime(targetFramework);
+
+                    bool disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
+                    string publishLocation;
+                    LambdaPackager.CreateApplicationBundle(this.DefaultConfig, this.Logger, this.WorkingDirectory, projectLocation, configuration, targetFramework, msbuildParameters, disableVersionCheck, layerPackageInfo, out publishLocation, ref zipArchivePath);
+                    if (string.IsNullOrEmpty(zipArchivePath))
+                        return false;
+                }
+                else
+                {
+                    if (!File.Exists(package))
+                        throw new LambdaToolsException($"Package {package} does not exist", LambdaToolsException.LambdaErrorCode.InvalidPackage);
+                    if (!string.Equals(Path.GetExtension(package), ".zip", StringComparison.OrdinalIgnoreCase))
+                        throw new LambdaToolsException($"Package {package} must be a zip file", LambdaToolsException.LambdaErrorCode.InvalidPackage);
+
+                    this.Logger.WriteLine($"Skipping compilation and using precompiled package {package}");
+                    zipArchivePath = package;
+                }
             }
 
 
-            using (var stream = new MemoryStream(File.ReadAllBytes(zipArchivePath)))
+            MemoryStream lambdaZipArchiveStream = null;
+            if(zipArchivePath != null)
+            {
+                lambdaZipArchiveStream = new MemoryStream(File.ReadAllBytes(zipArchivePath));
+            }
+            try
             {
                 var s3Bucket = this.GetStringValueOrDefault(this.S3Bucket, LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET, false);
                 string s3Key = null;
-                if (!string.IsNullOrEmpty(s3Bucket))
+                if (zipArchivePath != null && !string.IsNullOrEmpty(s3Bucket))
                 {
                     await Utilities.ValidateBucketRegionAsync(this.S3Client, s3Bucket);
 
                     var functionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true);
                     var s3Prefix = this.GetStringValueOrDefault(this.S3Prefix, LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX, false);
-                    s3Key = await Utilities.UploadToS3Async(this.Logger, this.S3Client, s3Bucket, s3Prefix, functionName, stream);
+                    s3Key = await Utilities.UploadToS3Async(this.Logger, this.S3Client, s3Bucket, s3Prefix, functionName, lambdaZipArchiveStream);
                 }
 
 
@@ -179,18 +241,15 @@ namespace Amazon.Lambda.Tools.Commands
                     this.Logger.WriteLine($"Creating new Lambda function {this.FunctionName}");
                     var createRequest = new CreateFunctionRequest
                     {
+                        PackageType = packageType,
                         FunctionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true),
                         Description = this.GetStringValueOrDefault(this.Description, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_DESCRIPTION, false),
-                        
                         Role = this.GetRoleValueOrDefault(this.Role, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE, 
                             Constants.LAMBDA_PRINCIPAL, LambdaConstants.AWS_LAMBDA_MANAGED_POLICY_PREFIX, 
                             LambdaConstants.KNOWN_MANAGED_POLICY_DESCRIPTIONS, true),
                         
-                        Layers = layerVersionArns?.ToList(),
-                        Handler = this.GetStringValueOrDefault(this.Handler, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER, true),
                         Publish = this.GetBoolValueOrDefault(this.Publish, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_PUBLISH, false).GetValueOrDefault(),
                         MemorySize = this.GetIntValueOrDefault(this.MemorySize, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_MEMORY_SIZE, true).GetValueOrDefault(),
-                        Runtime = this.GetStringValueOrDefault(this.Runtime, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME, true),
                         Timeout = this.GetIntValueOrDefault(this.Timeout, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT, true).GetValueOrDefault(),
                         KMSKeyArn = this.GetStringValueOrDefault(this.KMSKeyArn, LambdaDefinedCommandOptions.ARGUMENT_KMS_KEY_ARN, false),
                         VpcConfig = new VpcConfig
@@ -199,6 +258,43 @@ namespace Amazon.Lambda.Tools.Commands
                             SecurityGroupIds = this.GetStringValuesOrDefault(this.SecurityGroupIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SECURITY_GROUPS, false)?.ToList()
                         }
                     };
+
+                    if(packageType == Lambda.PackageType.Zip)
+                    {
+                        createRequest.Handler = this.GetStringValueOrDefault(this.Handler, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER, true);
+                        createRequest.Runtime = this.GetStringValueOrDefault(this.Runtime, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME, true);
+                        createRequest.Layers = layerVersionArns?.ToList();
+
+                        if (s3Bucket != null)
+                        {
+                            createRequest.Code = new FunctionCode
+                            {
+                                S3Bucket = s3Bucket,
+                                S3Key = s3Key
+                            };
+                        }
+                        else
+                        {
+                            createRequest.Code = new FunctionCode
+                            {
+                                ZipFile = lambdaZipArchiveStream
+                            };
+                        }
+                    }
+                    else if(packageType == Lambda.PackageType.Image)
+                    {
+                        createRequest.Code = new FunctionCode
+                        {
+                            ImageUri = ecrImageUri
+                        };
+
+                        createRequest.ImageConfig = new ImageConfig
+                        {
+                            Command = this.GetStringValuesOrDefault(this.ImageCommand, LambdaDefinedCommandOptions.ARGUMENT_IMAGE_COMMAND, false)?.ToList(),
+                            EntryPoint = this.GetStringValuesOrDefault(this.ImageEntryPoint, LambdaDefinedCommandOptions.ARGUMENT_IMAGE_ENTRYPOINT, false)?.ToList(),
+                            WorkingDirectory = this.GetStringValueOrDefault(this.ImageWorkingDirectory, LambdaDefinedCommandOptions.ARGUMENT_IMAGE_WORKING_DIRECTORY, false)
+                        };
+                    }
 
                     var environmentVariables = GetEnvironmentVariables(null);
 
@@ -239,22 +335,6 @@ namespace Amazon.Lambda.Tools.Commands
                         createRequest.TracingConfig = new TracingConfig { Mode = tracingMode };
                     }
 
-                    if (s3Bucket != null)
-                    {
-                        createRequest.Code = new FunctionCode
-                        {
-                            S3Bucket = s3Bucket,
-                            S3Key = s3Key
-                        };
-                    }
-                    else
-                    {
-                        createRequest.Code = new FunctionCode
-                        {
-                            ZipFile = stream
-                        };
-                    }
-
 
                     try
                     {
@@ -275,14 +355,28 @@ namespace Amazon.Lambda.Tools.Commands
                         FunctionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true)
                     };
 
-                    if (s3Bucket != null)
+                    // In case the function is currently being updated from previous deployment wait till it available
+                    // to be updated.
+                    if (currentConfiguration.LastUpdateStatus == LastUpdateStatus.InProgress)
                     {
-                        updateCodeRequest.S3Bucket = s3Bucket;
-                        updateCodeRequest.S3Key = s3Key;
+                        await LambdaUtilities.WaitTillFunctionAvailableAsync(Logger, this.LambdaClient, updateCodeRequest.FunctionName);
                     }
-                    else
+
+                    if (packageType == Lambda.PackageType.Zip)
                     {
-                        updateCodeRequest.ZipFile = stream;
+                        if (s3Bucket != null)
+                        {
+                            updateCodeRequest.S3Bucket = s3Bucket;
+                            updateCodeRequest.S3Key = s3Key;
+                        }
+                        else
+                        {
+                            updateCodeRequest.ZipFile = lambdaZipArchiveStream;
+                        }
+                    }
+                    else if (packageType == Lambda.PackageType.Image)
+                    {
+                        updateCodeRequest.ImageUri = ecrImageUri;                       
                     }
 
                     try
@@ -305,9 +399,59 @@ namespace Amazon.Lambda.Tools.Commands
                     }
                 }
             }
+            finally
+            {
+                lambdaZipArchiveStream?.Dispose();
+            }
 
             return true;
         }
+
+        private Lambda.PackageType DeterminePackageType()
+        {
+            var strPackageType = this.GetStringValueOrDefault(this.PackageType, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_TYPE, false);
+            return LambdaUtilities.DeterminePackageType(strPackageType);
+        }
+
+        private async Task<PushLambdaImageResult> PushLambdaImageAsync()
+        {
+            var pushCommand = new PushDockerImageCommand(this.Logger, this.WorkingDirectory, this.OriginalCommandLineArguments)
+            {
+                ConfigFile = this.ConfigFile,
+                DisableInteractive = this.DisableInteractive,
+                Credentials = this.Credentials,
+                ECRClient = this.ECRClient,
+                Profile = this.Profile,
+                ProfileLocation = this.ProfileLocation,
+                ProjectLocation = this.ProjectLocation,
+                Region = this.Region,
+                WorkingDirectory = this.WorkingDirectory,
+                
+
+                PushDockerImageProperties = new BasePushDockerImageCommand<LambdaToolsDefaults>.PushDockerImagePropertyContainer
+                {
+                    Configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false),
+                    TargetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false),
+
+                    LocalDockerImage = this.GetStringValueOrDefault(this.LocalDockerImage, CommonDefinedCommandOptions.ARGUMENT_LOCAL_DOCKER_IMAGE, false),
+                    DockerFile = this.GetStringValueOrDefault(this.DockerFile, CommonDefinedCommandOptions.ARGUMENT_DOCKERFILE, false),
+                    DockerBuildOptions = this.GetStringValueOrDefault(this.DockerBuildOptions, CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_OPTIONS, false),
+                    DockerBuildWorkingDirectory = this.GetStringValueOrDefault(this.DockerBuildWorkingDirectory, CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_WORKING_DIRECTORY, false),
+                    DockerImageTag = this.GetStringValueOrDefault(this.DockerImageTag, LambdaDefinedCommandOptions.ARGUMENT_IMAGE_TAG, false),
+                    PublishOptions = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false),
+                    HostBuildOutput = this.GetStringValueOrDefault(this.HostBuildOutput, CommonDefinedCommandOptions.ARGUMENT_HOST_BUILD_OUTPUT, false)
+                }
+            };
+
+            var result = new PushLambdaImageResult();
+            result.Success = await pushCommand.ExecuteAsync();
+            result.ImageUri = pushCommand.PushedImageUri;
+            result.LastToolsException = pushCommand.LastToolsException;
+
+            return result;
+        }
+
+
 
         private void ValidateTargetFrameworkAndLambdaRuntime(string targetFramework)
         {
@@ -328,6 +472,9 @@ namespace Amazon.Lambda.Tools.Commands
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME.ConfigFileKey, this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_DESCRIPTION.ConfigFileKey, this.GetStringValueOrDefault(this.Description, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_DESCRIPTION, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TAGS.ConfigFileKey, LambdaToolsDefaults.FormatKeyValue(this.GetKeyValuePairOrDefault(this.Tags, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TAGS, false)));
+
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_TYPE.ConfigFileKey, this.GetStringValueOrDefault(this.PackageType, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_TYPE, false));
+
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_PUBLISH.ConfigFileKey, this.GetBoolValueOrDefault(this.Publish, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_PUBLISH, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER.ConfigFileKey, this.GetStringValueOrDefault(this.Handler, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_MEMORY_SIZE.ConfigFileKey, this.GetIntValueOrDefault(this.MemorySize, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_MEMORY_SIZE, false));
@@ -335,6 +482,11 @@ namespace Amazon.Lambda.Tools.Commands
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT.ConfigFileKey, this.GetIntValueOrDefault(this.Timeout, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME.ConfigFileKey, this.GetStringValueOrDefault(this.Runtime, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS.ConfigFileKey, LambdaToolsDefaults.FormatCommaDelimitedList(this.GetStringValuesOrDefault(this.LayerVersionArns, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS, false)));
+
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_IMAGE_ENTRYPOINT.ConfigFileKey, LambdaToolsDefaults.FormatCommaDelimitedList(this.GetStringValuesOrDefault(this.ImageEntryPoint, LambdaDefinedCommandOptions.ARGUMENT_IMAGE_ENTRYPOINT, false)));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_IMAGE_COMMAND.ConfigFileKey, LambdaToolsDefaults.FormatCommaDelimitedList(this.GetStringValuesOrDefault(this.ImageCommand, LambdaDefinedCommandOptions.ARGUMENT_IMAGE_COMMAND, false)));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_IMAGE_WORKING_DIRECTORY.ConfigFileKey, this.GetStringValueOrDefault(this.ImageWorkingDirectory, LambdaDefinedCommandOptions.ARGUMENT_IMAGE_WORKING_DIRECTORY, false));
+
 
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SUBNETS.ConfigFileKey, LambdaToolsDefaults.FormatCommaDelimitedList(this.GetStringValuesOrDefault(this.SubnetIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SUBNETS, false)));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SECURITY_GROUPS.ConfigFileKey, LambdaToolsDefaults.FormatCommaDelimitedList(this.GetStringValuesOrDefault(this.SecurityGroupIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SECURITY_GROUPS, false)));
@@ -347,6 +499,13 @@ namespace Amazon.Lambda.Tools.Commands
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET.ConfigFileKey, this.GetStringValueOrDefault(this.S3Bucket, LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX.ConfigFileKey, this.GetStringValueOrDefault(this.S3Prefix, LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX, false));
 
+            var projectLocation = Utilities.DetermineProjectLocation(this.WorkingDirectory, this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false));
+            data.SetFilePathIfNotNull(CommonDefinedCommandOptions.ARGUMENT_DOCKERFILE.ConfigFileKey, this.GetStringValueOrDefault(this.DockerFile, CommonDefinedCommandOptions.ARGUMENT_DOCKERFILE, false), projectLocation);
+
+            data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_OPTIONS.ConfigFileKey, this.GetStringValueOrDefault(this.DockerBuildOptions, CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_OPTIONS, false));
+            data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_WORKING_DIRECTORY.ConfigFileKey, this.GetStringValueOrDefault(this.DockerBuildWorkingDirectory, CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_WORKING_DIRECTORY, false));
+            data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_HOST_BUILD_OUTPUT.ConfigFileKey, this.GetStringValueOrDefault(this.HostBuildOutput, CommonDefinedCommandOptions.ARGUMENT_HOST_BUILD_OUTPUT, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_IMAGE_TAG.ConfigFileKey, this.GetStringValueOrDefault(this.DockerImageTag, LambdaDefinedCommandOptions.ARGUMENT_IMAGE_TAG, false));
         }
 
     }

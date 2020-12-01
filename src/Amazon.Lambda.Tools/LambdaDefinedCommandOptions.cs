@@ -63,6 +63,15 @@ namespace Amazon.Lambda.Tools
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = "Handler for the function <assembly>::<type>::<method>"
             };
+        public static readonly CommandOption ARGUMENT_PACKAGE_TYPE =
+            new CommandOption
+            {
+                Name = "Package Type",
+                ShortSwitch = "-pt",
+                Switch = "--package-type",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "The deployment package type for Lambda function. Valid values: image, zip"
+            };
         public static readonly CommandOption ARGUMENT_FUNCTION_MEMORY_SIZE =
             new CommandOption
             {
@@ -360,6 +369,44 @@ namespace Amazon.Lambda.Tools
                 Switch = "--enable-package-optimization",
                 ValueType = CommandOption.CommandOptionValueType.BoolValue,
                 Description = "If true the packages will be pre-jitted to improve cold start performance. This must done on an Amazon Linux environment."
+            };
+
+        public static readonly CommandOption ARGUMENT_IMAGE_ENTRYPOINT =
+            new CommandOption
+            {
+                Name = "Image Entrypoint",
+                ShortSwitch = "-ie",
+                Switch = "--image-entrypoint",
+                ValueType = CommandOption.CommandOptionValueType.CommaDelimitedList,
+                Description = "Overrides the image's ENTRYPOINT when package type is set \"image\"."
+            };
+
+        public static readonly CommandOption ARGUMENT_IMAGE_COMMAND =
+            new CommandOption
+            {
+                Name = "Image Command",
+                ShortSwitch = "-ic",
+                Switch = "--image-command",
+                ValueType = CommandOption.CommandOptionValueType.CommaDelimitedList,
+                Description = "Overrides the image's CMD when package type is set \"image\"."
+            };
+        public static readonly CommandOption ARGUMENT_IMAGE_WORKING_DIRECTORY =
+            new CommandOption
+            {
+                Name = "Image Working Directory",
+                ShortSwitch = "-iwd",
+                Switch = "--image-working-directory",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "Overrides the image's working directory when package type is set \"image\"."
+            };
+        public static readonly CommandOption ARGUMENT_IMAGE_TAG =
+            new CommandOption
+            {
+                Name = "Docker Image Tag",
+                ShortSwitch = "-it",
+                Switch = "--image-tag",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "Docker image name and tag in the 'name:tag' format."
             };
     }
 }

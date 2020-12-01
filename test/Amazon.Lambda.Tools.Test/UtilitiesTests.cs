@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 
 using Xunit;
+using Amazon.Common.DotNetCli.Tools;
 
 namespace Amazon.Lambda.Tools.Test
 {
@@ -46,6 +47,88 @@ namespace Amazon.Lambda.Tools.Test
         {
             var runtime = LambdaUtilities.DetermineRuntimeParameter(targetFramework);
             Assert.Equal(expectedValue, runtime);
+        }
+
+        [Theory]
+        [InlineData("repo:old", "repo", "old")]
+        [InlineData("repo", "repo", "latest")]
+        [InlineData("repo:", "repo", "latest")]
+        public void TestSplitImageTag(string imageTag, string repositoryName, string tag)
+        {
+            var tuple = Amazon.Lambda.Tools.Commands.PushDockerImageCommand.SplitImageTag(imageTag);
+            Assert.Equal(repositoryName, tuple.RepositoryName);
+            Assert.Equal(tag, tuple.Tag);
+        }
+
+        [Theory]
+        [InlineData("Seed", "foo:bar", "1234", "foo:seed-1234-bar")]
+        [InlineData("Seed", "foo", "1234", "foo:seed-1234-latest")]
+        public void TestGenerateUniqueTag(string uniqueSeed, string destinationDockerTag, string imageId, string expected)
+        {
+            var tag = Amazon.Lambda.Tools.Commands.PushDockerImageCommand.GenerateUniqueEcrTag(uniqueSeed, destinationDockerTag, imageId);
+            Assert.Equal(expected, tag);
+        }
+
+        [Fact]
+        public void TestGenerateUniqueTagWithNullImageId()
+        {
+            var tag = Amazon.Lambda.Tools.Commands.PushDockerImageCommand.GenerateUniqueEcrTag("Seed", "foo:bar", null);
+
+            Assert.StartsWith("foo:seed-", tag);
+            Assert.EndsWith("-bar", tag);
+
+            var tokens = tag.Split('-');
+            var ticks = long.Parse(tokens[1]);
+            var dt = new DateTime(ticks);
+            Assert.Equal(DateTime.UtcNow.Year, dt.Year);
+        }
+
+        [Theory]
+        [InlineData("ProjectName", "projectname")]
+        [InlineData("Amazon.Lambda_Tools-CLI", "amazon.lambda_tools-cli")]
+        [InlineData("._-Solo", "solo")]
+        [InlineData("Foo@Bar", "foobar")]
+        [InlineData("#$%^&!", null)]
+        [InlineData("a", null)]
+        public void TestGeneratingECRRepositoryName(string projectName, string expectRepositoryName)
+        {
+            string repositoryName;
+            var computed = Amazon.Common.DotNetCli.Tools.Utilities.TryGenerateECRRepositoryName(projectName, out repositoryName);
+
+            if(expectRepositoryName == null)
+            {
+                Assert.False(computed);
+            }
+            else
+            {
+                Assert.True(computed);
+                Assert.Equal(expectRepositoryName, repositoryName);
+            }
+        }
+
+        [Fact]
+        public void TestMaxLengthGeneratedRepositoryName()
+        {
+            var projectName = new string('A', 1000);
+            string repositoryName;
+            var computed = Amazon.Common.DotNetCli.Tools.Utilities.TryGenerateECRRepositoryName(projectName, out repositoryName);
+
+            Assert.True(computed);
+            Assert.Equal(new string('a', 256), repositoryName);
+        }
+
+        [Theory]
+        [InlineData("Dockerfile.custom", "", "Dockerfile.custom")]
+        [InlineData(@"c:\project\Dockerfile.custom", null, @"c:\project\Dockerfile.custom")]
+        [InlineData("Dockerfile.custom", @"c:\project", "Dockerfile.custom")]
+        [InlineData(@"c:\project\Dockerfile.custom", @"c:\project", "Dockerfile.custom")]
+        [InlineData(@"c:\par1\Dockerfile.custom", @"c:\par1\par2", "../Dockerfile.custom")]
+        public void TestSavingDockerfileInDefaults(string dockerfilePath, string projectLocation, string expected)
+        {
+            var rootData = new ThirdParty.Json.LitJson.JsonData();
+            rootData.SetFilePathIfNotNull("Dockerfile", dockerfilePath, projectLocation);
+
+            Assert.Equal(expected, rootData["Dockerfile"]);
         }
     }
 }

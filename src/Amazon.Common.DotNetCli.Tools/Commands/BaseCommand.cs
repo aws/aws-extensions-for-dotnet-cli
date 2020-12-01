@@ -9,9 +9,11 @@ using System.Text;
 using System.Threading.Tasks;
 using ThirdParty.Json.LitJson;
 
+using Amazon.ECR;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 using Amazon.S3;
+
 
 namespace Amazon.Common.DotNetCli.Tools.Commands
 {
@@ -780,6 +782,25 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
                 return this._s3Client;
             }
             set { this._s3Client = value; }
+        }
+
+        IAmazonECR _ecrClient;
+        public IAmazonECR ECRClient
+        {
+            get
+            {
+                if (this._ecrClient == null)
+                {
+                    SetUserAgentString();
+
+                    var config = new AmazonECRConfig();
+                    config.RegionEndpoint = DetermineAWSRegion();
+
+                    this._ecrClient = new AmazonECRClient(DetermineAWSCredentials(), config);
+                }
+                return this._ecrClient;
+            }
+            set { this._ecrClient = value; }
         }
 
         protected void SaveConfigFile()

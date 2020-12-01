@@ -8,6 +8,8 @@ using YamlDotNet.RepresentationModel;
 
 namespace Amazon.Lambda.Tools.TemplateProcessor
 {
+    public enum CodeUploadType { Zip, Image}
+
     /// <summary>
     /// Interface to iterate over the CloudFormation resources that can be updated.
     /// </summary>
@@ -63,6 +65,11 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// <param name="key"></param>
         /// <param name="value"></param>
         void SetEnvironmentVariable(string key, string value);
+
+        /// <summary>
+        /// Indicates whether the code should be uploaded to S3 as a zip or built as an image and pushed to ECR.
+        /// </summary>
+        CodeUploadType UploadType { get; }
     }
 
     /// <summary>
@@ -98,6 +105,24 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// <param name="s3Bucket"></param>
         /// <param name="s3Key"></param>
         void SetS3Location(string s3Bucket, string s3Key);
+
+        /// <summary>
+        /// Sets the image uri on the resource.
+        /// </summary>
+        /// <param name="imageUri"></param>
+        void SetImageUri(string imageUri);
+
+        /// <summary>
+        /// Gets the name of the Dockerfile specified for an AWS::Serverless::Function
+        /// </summary>
+        /// <returns></returns>
+        string GetMetadataDockerfile();
+
+        /// <summary>
+        /// Gets the Docker image tag specified for an AWS::Serverless::Function
+        /// </summary>
+        /// <returns></returns>
+        string GetMetadataDockerTag();
     }
 
     /// <summary>
@@ -118,7 +143,14 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// <param name="keyPath"></param>
         /// <returns></returns>
         string[] GetValueListFromRoot(params string[] keyPath);
-        
+
+        /// <summary>
+        /// Gets the value starting from the resource node.
+        /// </summary>
+        /// <param name="keyPath"></param>
+        /// <returns></returns>
+        string GetValueFromResource(params string[] keyPath);
+
         /// <summary>
         /// Gets value in datasource.
         /// </summary>

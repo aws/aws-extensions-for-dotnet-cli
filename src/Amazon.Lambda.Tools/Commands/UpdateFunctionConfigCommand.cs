@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 using Amazon.Common.DotNetCli.Tools;
@@ -28,12 +29,18 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_DESCRIPTION,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_PUBLISH,
-            LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_MEMORY_SIZE,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT,
+
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME,
+            LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS,
+
+            LambdaDefinedCommandOptions.ARGUMENT_IMAGE_ENTRYPOINT,
+            LambdaDefinedCommandOptions.ARGUMENT_IMAGE_COMMAND,
+            LambdaDefinedCommandOptions.ARGUMENT_IMAGE_WORKING_DIRECTORY,
+
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TAGS,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SUBNETS,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SECURITY_GROUPS,
@@ -62,6 +69,12 @@ namespace Amazon.Lambda.Tools.Commands
         public string KMSKeyArn { get; set; }
         public string DeadLetterTargetArn { get; set; }
         public string TracingMode { get; set; }
+
+        public string[] ImageEntryPoint { get; set; }
+        public string[] ImageCommand { get; set; }
+        public string ImageWorkingDirectory { get; set; }
+
+        public string PackageType { get; set; }
 
         public UpdateFunctionConfigCommand(IToolLogger logger, string workingDirectory, string[] args)
             : base(logger, workingDirectory, UpdateCommandOptions, args)
@@ -122,6 +135,12 @@ namespace Amazon.Lambda.Tools.Commands
                 this.AppendEnvironmentVariables = tuple.Item2.KeyValuePairs;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_KMS_KEY_ARN.Switch)) != null)
                 this.KMSKeyArn = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_IMAGE_ENTRYPOINT.Switch)) != null)
+                this.ImageEntryPoint = tuple.Item2.StringValues;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_IMAGE_COMMAND.Switch)) != null)
+                this.ImageCommand = tuple.Item2.StringValues;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_IMAGE_WORKING_DIRECTORY.Switch)) != null)
+                this.ImageWorkingDirectory = tuple.Item2.StringValue;
         }
 
 
@@ -154,6 +173,8 @@ namespace Amazon.Lambda.Tools.Commands
         {
             try
             {
+                await LambdaUtilities.WaitTillFunctionAvailableAsync(this.Logger, this.LambdaClient, functionName);
+
                 var response = await this.LambdaClient.PublishVersionAsync(new PublishVersionRequest
                 {
                     FunctionName = functionName
@@ -194,6 +215,7 @@ namespace Amazon.Lambda.Tools.Commands
             var request = CreateConfigurationRequestIfDifferent(existingConfiguration, dotnetSharedStoreValue);
             if (request != null)
             {
+                await LambdaUtilities.WaitTillFunctionAvailableAsync(Logger, this.LambdaClient, request.FunctionName);
                 this.Logger.WriteLine($"Updating runtime configuration for function {this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true)}");
                 try
                 {
@@ -264,13 +286,6 @@ namespace Amazon.Lambda.Tools.Commands
                 }
             }
 
-            var handler = this.GetStringValueOrDefault(this.Handler, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER, false);
-            if (!string.IsNullOrEmpty(handler) && !string.Equals(handler, existingConfiguration.Handler, StringComparison.Ordinal))
-            {
-                request.Handler = handler;
-                different = true;
-            }
-
             var memorySize = this.GetIntValueOrDefault(this.MemorySize, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_MEMORY_SIZE, false);
             if(memorySize.HasValue && memorySize.Value != existingConfiguration.MemorySize)
             {
@@ -278,12 +293,7 @@ namespace Amazon.Lambda.Tools.Commands
                 different = true;
             }
 
-            var runtime = this.GetStringValueOrDefault(this.Runtime, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME, false);
-            if (runtime != null && runtime != existingConfiguration.Runtime)
-            {
-                request.Runtime = runtime;
-                different = true;
-            }
+
 
             var timeout = this.GetIntValueOrDefault(this.Timeout, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT, false);
             if (timeout.HasValue && timeout.Value != existingConfiguration.Timeout)
@@ -310,7 +320,7 @@ namespace Amazon.Lambda.Tools.Commands
                     };
                     different = true;
                 }
-                if(AreDifferent(subnetIds, request.VpcConfig.SubnetIds))
+                else if(AreDifferent(subnetIds, request.VpcConfig.SubnetIds))
                 {
                     request.VpcConfig.SubnetIds = subnetIds.ToList();
                     different = true;
@@ -328,7 +338,7 @@ namespace Amazon.Lambda.Tools.Commands
                     };
                     different = true;
                 }
-                if (AreDifferent(securityGroupIds, request.VpcConfig.SecurityGroupIds))
+                else if (AreDifferent(securityGroupIds, request.VpcConfig.SecurityGroupIds))
                 {
                     request.VpcConfig.SecurityGroupIds = securityGroupIds.ToList();
                     different = true;
@@ -391,7 +401,76 @@ namespace Amazon.Lambda.Tools.Commands
                 different = true;
             }
 
+            var packageType = this.GetStringValueOrDefault(this.PackageType, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_TYPE, false);
+            if (string.Equals(packageType, Lambda.PackageType.Zip.Value, StringComparison.OrdinalIgnoreCase))
+            {
+                var handler = this.GetStringValueOrDefault(this.Handler, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER, false);
+                if (!string.IsNullOrEmpty(handler) && !string.Equals(handler, existingConfiguration.Handler, StringComparison.Ordinal))
+                {
+                    request.Handler = handler;
+                    different = true;
+                }
 
+                var runtime = this.GetStringValueOrDefault(this.Runtime, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME, false);
+                if (runtime != null && runtime != existingConfiguration.Runtime)
+                {
+                    request.Runtime = runtime;
+                    different = true;
+                }
+            }
+            else if (string.Equals(packageType, Lambda.PackageType.Image.Value, StringComparison.OrdinalIgnoreCase))
+            {
+                {
+                    var imageEntryPoints = this.GetStringValuesOrDefault(this.ImageEntryPoint, LambdaDefinedCommandOptions.ARGUMENT_IMAGE_ENTRYPOINT, false);
+                    if (imageEntryPoints != null)
+                    {
+                        if (AreDifferent(imageEntryPoints, existingConfiguration.ImageConfigResponse?.ImageConfig?.EntryPoint))
+                        {
+                            if (request.ImageConfig == null)
+                            {
+                                request.ImageConfig = new ImageConfig();
+                            }
+
+                            request.ImageConfig.EntryPoint = imageEntryPoints.ToList();
+                            request.ImageConfig.IsEntryPointSet = true;
+                            different = true;
+                        }
+                    }
+                }
+
+                {
+                    var imageCommands = this.GetStringValuesOrDefault(this.ImageCommand, LambdaDefinedCommandOptions.ARGUMENT_IMAGE_COMMAND, false);
+                    if (imageCommands != null)
+                    {
+                        if (AreDifferent(imageCommands, existingConfiguration.ImageConfigResponse?.ImageConfig?.Command))
+                        {
+                            if (request.ImageConfig == null)
+                            {
+                                request.ImageConfig = new ImageConfig();
+                            }
+
+                            request.ImageConfig.Command = imageCommands.ToList();
+                            request.ImageConfig.IsCommandSet = true;
+                            different = true;
+                        }
+                    }
+                }
+
+                var imageWorkingDirectory = this.GetStringValueOrDefault(this.ImageWorkingDirectory, LambdaDefinedCommandOptions.ARGUMENT_IMAGE_WORKING_DIRECTORY, false);
+                if (imageWorkingDirectory != null)
+                {
+                    if (request.ImageConfig == null)
+                    {
+                        request.ImageConfig = new ImageConfig();
+                    }
+
+                    if(!string.Equals(imageWorkingDirectory, existingConfiguration.ImageConfigResponse?.ImageConfig?.WorkingDirectory, StringComparison.Ordinal))
+                    {
+                        request.ImageConfig.WorkingDirectory = imageWorkingDirectory;
+                        different = true;
+                    }
+                }
+            }
 
             if (!different)
                 return null;

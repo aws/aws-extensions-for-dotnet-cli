@@ -80,7 +80,7 @@ namespace Amazon.Lambda.Tools.Test
             
             Assert.Contains("<Project Sdk=\"Microsoft.NET.Sdk\">", result.UpdatedContent);
             Assert.Contains("<PackagesToPrune Include=\"Microsoft.CSharp\" />", result.UpdatedContent);
-            Assert.DoesNotContain("Microsoft.AspNetCore.App", result.UpdatedContent);
+            Assert.Contains("Microsoft.AspNetCore.App", result.UpdatedContent);
         }
     }
 }

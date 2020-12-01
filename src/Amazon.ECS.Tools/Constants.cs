@@ -8,6 +8,7 @@ namespace Amazon.ECS.Tools
 {
     public static class Constants
     {
+        public const string TOOLNAME = "AWSECSToolsDotnet";
 
         public static readonly string ECS_DEFAULT_SERVICE_POLICY =
 @"

@@ -1,0 +1,30 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "An AWS Serverless Application.",
+  "Resources": {
+
+    "UseDockerMetadata": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Policies": [
+          "AWSLambdaBasicExecutionRole"
+        ],
+        "PackageType" : "Image",
+        "ImageConfig" : {
+            "Command" : "UseDockerMetadata::UseDockerMetadata.Function::FunctionHandler"
+        }
+      },
+      "Metadata": {
+        "DockerContext": "./UseDockerMetadata",
+        "DockerTag": "aws-extensions-tests:usedockermetadata"
+      }
+    }
+  },
+
+
+  "Outputs": {
+  }
+}

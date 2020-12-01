@@ -781,5 +781,47 @@ namespace Amazon.Common.DotNetCli.Tools
                 }
             }
         }
+
+        public static bool TryGenerateECRRepositoryName(string projectName, out string repositoryName)
+        {
+            repositoryName = null;
+            if (Directory.Exists(projectName))
+            {
+                projectName = new DirectoryInfo(projectName).Name;
+            }
+            else if(File.Exists(projectName))
+            {
+                projectName = Path.GetFileNameWithoutExtension(projectName);
+            }
+
+            projectName = projectName.ToLower();
+            var sb = new StringBuilder();
+
+            foreach(var c in projectName)
+            {
+                if(char.IsLetterOrDigit(c))
+                {
+                    sb.Append(c);
+                }
+                else if(sb.Length > 0 && (c == '.' || c == '_' || c == '-'))
+                {
+                    sb.Append(c);
+                }
+            }
+
+            // Repository name must be at least 2 characters
+            if(sb.Length > 1)
+            {
+                repositoryName = sb.ToString();
+
+                // Max length of repository name is 256 characters.
+                if (Constants.MAX_ECR_REPOSITORY_NAME_LENGTH < repositoryName.Length)
+                {
+                    repositoryName = repositoryName.Substring(0, Constants.MAX_ECR_REPOSITORY_NAME_LENGTH);
+                }
+            }
+
+            return !string.IsNullOrEmpty(repositoryName);
+        }
     }
 }

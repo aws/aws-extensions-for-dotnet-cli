@@ -35,7 +35,8 @@ namespace Amazon.Lambda.Tools
 
                     new GroupHeaderInfo("Other Commands:"),
                     new CommandInfo<PackageCommand>(PackageCommand.COMMAND_NAME, PackageCommand.COMMAND_DESCRIPTION, PackageCommand.PackageCommandOptions, PackageCommand.COMMAND_ARGUMENTS),
-                    new CommandInfo<PackageCICommand>(PackageCICommand.COMMAND_NAME, PackageCICommand.COMMAND_SYNOPSIS, PackageCICommand.PackageCICommandOptions)
+                    new CommandInfo<PackageCICommand>(PackageCICommand.COMMAND_NAME, PackageCICommand.COMMAND_SYNOPSIS, PackageCICommand.PackageCICommandOptions),
+                    new CommandInfo<PushDockerImageCommand>(PushDockerImageCommand.COMMAND_NAME, PushDockerImageCommand.COMMAND_DESCRIPTION, PushDockerImageCommand.CommandOptions)
                 });
 
             var exitCode = application.Execute(args);

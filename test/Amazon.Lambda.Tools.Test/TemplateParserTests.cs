@@ -45,14 +45,14 @@ namespace Amazon.Lambda.Tools.Test
             {
                 var rootData = new JsonData();
                 rootData["CodeUri"] = "/home/code";
-                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, rootData);
+                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, null, rootData);
                 list.Add(new object[] { source });
             }
             {
                 var rootData = new YamlMappingNode();
                 rootData.Children.Add("CodeUri", new YamlScalarNode("/home/code"));
 
-                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(null, rootData);
+                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(null, null, rootData);
                 list.Add(new object[] { source });
             }
 
@@ -81,7 +81,7 @@ namespace Amazon.Lambda.Tools.Test
                 var rootData = new JsonData();
                 rootData["Code"] = codeData;
 
-                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, rootData);
+                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, null, rootData);
                 list.Add(new object[] { source });
             }
             {
@@ -92,7 +92,7 @@ namespace Amazon.Lambda.Tools.Test
                 var rootData = new YamlMappingNode();
                 rootData.Children.Add("Code", codeData);
 
-                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(null, rootData);
+                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(null, null, rootData);
                 list.Add(new object[] { source });
             }
 
@@ -115,13 +115,13 @@ namespace Amazon.Lambda.Tools.Test
             {
                 var rootData = new JsonData();
 
-                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, rootData);
+                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, null, rootData);
                 list.Add(new object[] { source });
             }
             {
                 var rootData = new YamlMappingNode();
 
-                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(null, rootData);
+                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(null, null, rootData);
                 list.Add(new object[] { source });
             }
 
@@ -144,13 +144,13 @@ namespace Amazon.Lambda.Tools.Test
             {
                 var rootData = new JsonData();
 
-                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, rootData);
+                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, null, rootData);
                 list.Add(new object[] { source });
             }
             {
                 var rootData = new YamlMappingNode();
 
-                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(null, rootData);
+                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(null, null, rootData);
                 list.Add(new object[] { source });
             }
 
@@ -468,7 +468,7 @@ namespace Amazon.Lambda.Tools.Test
                 var rootData = new JsonData();
                 rootData["Code"] = codeData;
 
-                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, rootData);
+                var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, null, rootData);
                 list.Add(new object[] { source });
             }
             {
@@ -478,7 +478,7 @@ namespace Amazon.Lambda.Tools.Test
                 var rootData = new YamlMappingNode();
                 rootData.Children.Add("Code", codeData);
 
-                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(null, rootData);
+                var source = new YamlTemplateParser.YamlUpdatableResourceDataSource(null, null, rootData);
                 list.Add(new object[] { source });
             }
 
@@ -564,6 +564,11 @@ namespace Amazon.Lambda.Tools.Test
             {
                 var key = string.Join("/", keyPath);
                 Properties[key] = string.Join(',', values);
+            }
+
+            public string GetValueFromResource(params string[] keyPath)
+            {
+                throw new System.NotImplementedException();
             }
         }
     }

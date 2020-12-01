@@ -8,6 +8,10 @@ namespace Amazon.Common.DotNetCli.Tools
 {
     public static class Constants
     {
+        public const string DEFAULT_DOCKERFILE = "Dockerfile";
+        public const int MAX_ECR_REPOSITORY_NAME_LENGTH = 256;
+
+
         public static readonly string CWE_ASSUME_ROLE_POLICY =
 @"
 {

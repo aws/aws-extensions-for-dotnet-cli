@@ -101,8 +101,20 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                             $"Using previous upload artifact s3://{this.S3Bucket}/{updateResults.S3Key} for resource {updatableResource.Name}");
                     }
 
-                    field.SetS3Location(this.S3Bucket, updateResults.S3Key);
-                    if(!string.IsNullOrEmpty(updateResults.DotnetShareStoreEnv))
+                    if(updatableResource.UploadType == CodeUploadType.Zip)
+                    {
+                        field.SetS3Location(this.S3Bucket, updateResults.S3Key);
+                    }
+                    else if(updatableResource.UploadType == CodeUploadType.Image)
+                    {
+                        field.SetImageUri(updateResults.ImageUri);
+                    }
+                    else
+                    {
+                        throw new LambdaToolsException($"Unknown upload type for setting resource: {updatableResource.UploadType}", LambdaToolsException.LambdaErrorCode.ServerlessTemplateParseError);
+                    }
+
+                    if (!string.IsNullOrEmpty(updateResults.DotnetShareStoreEnv))
                     {
                         field.Resource.SetEnvironmentVariable(LambdaConstants.ENV_DOTNET_SHARED_STORE, updateResults.DotnetShareStoreEnv);
                     }
@@ -131,6 +143,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 localPath = Path.Combine(templateDirectory, localPath);
 
             bool deleteArchiveAfterUploaded = false;
+            // Uploading a single file as the code for the resource. If the single file is not a zip file then zip the file first.
             if(File.Exists(localPath))
             {
                 if(field.IsCode && !string.Equals(Path.GetExtension(localPath), ".zip", StringComparison.OrdinalIgnoreCase))
@@ -162,7 +175,10 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             }
             else if(field.IsCode)
             {
-                if (IsDotnetProjectDirectory(localPath))
+                // If the function is image upload then run the .NET tools to handle running
+                // docker build even if the current folder is not a .NET project. The .NET
+                // could be in a sub folder or be a self contained Docker build.
+                if (IsDotnetProjectDirectory(localPath) || field.Resource.UploadType == CodeUploadType.Image)
                 {
                     results = await PackageDotnetProjectAsync(field, localPath);
                 }
@@ -171,30 +187,33 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                     results = new UpdateResourceResults { ZipArchivePath = GenerateOutputZipFilename(field) };
                     LambdaPackager.BundleDirectory(results.ZipArchivePath, localPath, false, this.Logger);                    
                 }
-                deleteArchiveAfterUploaded = true;                    
+                deleteArchiveAfterUploaded = true;
             }
             else
             {
                 throw new LambdaToolsException($"Unable to determine package action for the field {field.Resource.Name}/{field.Name}", LambdaToolsException.LambdaErrorCode.ServerlessTemplateUnknownActionForLocalPath);
             }
 
-            string s3Key;
-            using (var stream = File.OpenRead(results.ZipArchivePath))
+            if(!string.IsNullOrEmpty(results.ZipArchivePath))
             {
-                s3Key = await Utilities.UploadToS3Async(this.Logger, this.S3Client, this.S3Bucket, this.S3Prefix, Path.GetFileName(results.ZipArchivePath), stream);
-                results.S3Key = s3Key;
-            }
-
-            // Now that the temp zip file is uploaded to S3 clean up by deleting the temp file.
-            if (deleteArchiveAfterUploaded)
-            {
-                try
+                string s3Key;
+                using (var stream = File.OpenRead(results.ZipArchivePath))
                 {
-                    File.Delete(results.ZipArchivePath);
+                    s3Key = await Utilities.UploadToS3Async(this.Logger, this.S3Client, this.S3Bucket, this.S3Prefix, Path.GetFileName(results.ZipArchivePath), stream);
+                    results.S3Key = s3Key;
                 }
-                catch (Exception e)
+
+                // Now that the temp zip file is uploaded to S3 clean up by deleting the temp file.
+                if (deleteArchiveAfterUploaded)
                 {
-                    this.Logger?.WriteLine($"Warning: Unable to delete temporary archive, {results.ZipArchivePath}, after uploading to S3: {e.Message}");
+                    try
+                    {
+                        File.Delete(results.ZipArchivePath);
+                    }
+                    catch (Exception e)
+                    {
+                        this.Logger?.WriteLine($"Warning: Unable to delete temporary archive, {results.ZipArchivePath}, after uploading to S3: {e.Message}");
+                    }
                 }
             }
 
@@ -210,49 +229,76 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// <exception cref="LambdaToolsException"></exception>
         private async Task<UpdateResourceResults> PackageDotnetProjectAsync(IUpdateResourceField field, string location)
         {
-            var command = new Commands.PackageCommand(this.Logger, location, null);
-
-            command.LambdaClient = this.OriginatingCommand?.LambdaClient;
-            command.S3Client = this.OriginatingCommand?.S3Client;
-            command.IAMClient = this.OriginatingCommand?.IAMClient;
-            command.CloudFormationClient = this.OriginatingCommand?.CloudFormationClient;
-            command.DisableRegionAndCredentialsCheck = true;
-
-            var outputPackage = GenerateOutputZipFilename(field);
-            command.OutputPackageFileName = outputPackage;
-            command.TargetFramework =
-                LambdaUtilities.DetermineTargetFrameworkFromLambdaRuntime(field.Resource.LambdaRuntime, location);
-
-            command.LayerVersionArns = field.Resource.LambdaLayers;
-
-            // If the project is in the same directory as the CloudFormation template then use any parameters
-            // there were specified on the command to build the project.
-            if (IsCurrentDirectory(field.GetLocalPath()))
+            if (field.Resource.UploadType == CodeUploadType.Zip)
             {
-                if (!string.IsNullOrEmpty(this.DefaultOptions.TargetFramework))
-                    command.TargetFramework = this.DefaultOptions.TargetFramework;
+                var command = new Commands.PackageCommand(this.Logger, location, null);
+
+                command.LambdaClient = this.OriginatingCommand?.LambdaClient;
+                command.S3Client = this.OriginatingCommand?.S3Client;
+                command.IAMClient = this.OriginatingCommand?.IAMClient;
+                command.CloudFormationClient = this.OriginatingCommand?.CloudFormationClient;
+                command.DisableRegionAndCredentialsCheck = true;
+
+                var outputPackage = GenerateOutputZipFilename(field);
+                command.OutputPackageFileName = outputPackage;
+                command.TargetFramework =
+                    LambdaUtilities.DetermineTargetFrameworkFromLambdaRuntime(field.Resource.LambdaRuntime, location);
+
+                command.LayerVersionArns = field.Resource.LambdaLayers;
+
+                // If the project is in the same directory as the CloudFormation template then use any parameters
+                // that were specified on the command to build the project.
+                if (IsCurrentDirectory(field.GetLocalPath()))
+                {
+                    if (!string.IsNullOrEmpty(this.DefaultOptions.TargetFramework))
+                        command.TargetFramework = this.DefaultOptions.TargetFramework;
+
+                    command.Configuration = this.DefaultOptions.Configuration;
+                    command.DisableVersionCheck = this.DefaultOptions.DisableVersionCheck;
+                    command.MSBuildParameters = this.DefaultOptions.MSBuildParameters;
+                }
+
+                if (!await command.ExecuteAsync())
+                {
+                    var message = $"Error packaging up project in {location} for CloudFormation resource {field.Resource.Name}";
+                    if (command.LastToolsException != null)
+                        message += $": {command.LastToolsException.Message}";
+
+                    throw new LambdaToolsException(message, ToolsException.CommonErrorCode.DotnetPublishFailed);
+                }
+
+                var results = new UpdateResourceResults() { ZipArchivePath = outputPackage };
+                if (!string.IsNullOrEmpty(command.NewDotnetSharedStoreValue))
+                {
+                    results.DotnetShareStoreEnv = command.NewDotnetSharedStoreValue;
+                }
+
+                return results;
+            }
+            else if (field.Resource.UploadType == CodeUploadType.Image)
+            {
+                this.Logger.WriteLine($"Building Docker image for {location}");
+                var pushCommand = new PushDockerImageCommand(Logger, location, new string[0]);
+                pushCommand.ECRClient = OriginatingCommand.ECRClient;
+                pushCommand.IAMClient = OriginatingCommand.IAMClient;
+                pushCommand.DisableInteractive = true;
+                pushCommand.PushDockerImageProperties.DockerFile = field.GetMetadataDockerfile();
+                pushCommand.PushDockerImageProperties.DockerImageTag = field.GetMetadataDockerTag();
+                pushCommand.ImageTagUniqueSeed = field.Resource.Name;
                 
-                command.Configuration = this.DefaultOptions.Configuration;
-                command.DisableVersionCheck = this.DefaultOptions.DisableVersionCheck;
-                command.MSBuildParameters = this.DefaultOptions.MSBuildParameters;
+
+
+                await pushCommand.PushImageAsync();
+                if (pushCommand.LastToolsException != null)
+                    throw pushCommand.LastToolsException;
+
+                return new UpdateResourceResults { ImageUri = pushCommand.PushedImageUri };
             }
-                        
-            if(!await command.ExecuteAsync())
+            else
             {
-                var message = $"Error packaging up project in {location} for CloudFormation resource {field.Resource.Name}";
-                if (command.LastToolsException != null)
-                    message += $": {command.LastToolsException.Message}";
-
-                throw new LambdaToolsException(message, ToolsException.CommonErrorCode.DotnetPublishFailed);
+                throw new LambdaToolsException($"Unknown upload type for packaging: {field.Resource.UploadType}", LambdaToolsException.LambdaErrorCode.ServerlessTemplateParseError);
             }
 
-            var results = new UpdateResourceResults() { ZipArchivePath = outputPackage };
-            if (!string.IsNullOrEmpty(command.NewDotnetSharedStoreValue))
-            {
-                results.DotnetShareStoreEnv = command.NewDotnetSharedStoreValue;
-            }
-
-            return results;
         }
 
         private static string GenerateOutputZipFilename(IUpdateResourceField field)
@@ -316,6 +362,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             public string ZipArchivePath { get; set; }
             public string S3Key { get; set; }
             public string DotnetShareStoreEnv { get; set; }
+            public string ImageUri { get; set; }
         }
     }
 }

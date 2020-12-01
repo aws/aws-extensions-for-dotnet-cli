@@ -16,14 +16,6 @@ namespace Amazon.ECS.Tools
     {
         public enum ECSErrorCode {
 
-            DockerBuildFailed,
-            FailedToFindSolutionDirectory,
-
-            FailedToSetupECRRepository,
-            GetECRAuthTokens,
-            DockerCLILoginFail,
-            DockerTagFail,
-            DockerPushFail,
             EnsureClusterExistsFail,
 
             FailedToUpdateTaskDefinition,

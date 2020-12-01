@@ -167,5 +167,26 @@ namespace Amazon.Lambda.Tools
 
         public string TracingMode => GetValueAsString(LambdaDefinedCommandOptions.ARGUMENT_TRACING_MODE);
 
+        public string ImageRepo
+        {
+            get
+            {
+                if (LambdaImageTagData.TryParse(GetValueAsString(LambdaDefinedCommandOptions.ARGUMENT_IMAGE_TAG), out var data))
+                    return data.Repo;
+                return null;
+            }
+        }
+        public string ImageTag
+        {
+            get
+            {
+                if (LambdaImageTagData.TryParse(GetValueAsString(LambdaDefinedCommandOptions.ARGUMENT_IMAGE_TAG), out var data))
+                    return data.Tag;
+                return null;
+            }
+        }
+        public string ImageCommand => GetValueAsString(LambdaDefinedCommandOptions.ARGUMENT_IMAGE_COMMAND);
+        public string PackageType => GetValueAsString(LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_TYPE);
+
     }
 }

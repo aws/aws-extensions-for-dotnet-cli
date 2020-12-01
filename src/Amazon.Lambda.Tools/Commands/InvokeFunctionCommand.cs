@@ -90,6 +90,7 @@ namespace Amazon.Lambda.Tools.Commands
             InvokeResponse response;
             try
             {
+                await LambdaUtilities.WaitTillFunctionAvailableAsync(this.Logger, this.LambdaClient, invokeRequest.FunctionName);
                 response = await this.LambdaClient.InvokeAsync(invokeRequest);
             }
             catch(Exception e)

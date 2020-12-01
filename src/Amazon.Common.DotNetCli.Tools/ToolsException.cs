@@ -23,6 +23,15 @@ namespace Amazon.Common.DotNetCli.Tools
 
             DotnetPublishFailed,
 
+            DockerBuildFailed,
+            FailedToFindSolutionDirectory,
+
+            FailedToSetupECRRepository,
+            GetECRAuthTokens,
+            DockerCLILoginFail,
+            DockerTagFail,
+            DockerPushFail,
+
             IAMAttachRole,
             IAMCreateRole,
             IAMGetRole,

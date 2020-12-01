@@ -11,6 +11,8 @@ namespace Amazon.Lambda.Tools
 
     public static class LambdaConstants
     {
+        public const string TOOLNAME = "AWSLambdaToolsDotnet";
+
         public const string ENV_DOTNET_SHARED_STORE = "DOTNET_SHARED_STORE";
         public const string LAYER_TYPE_RUNTIME_PACKAGE_STORE_DISPLAY_NAME = ".NET Runtime Package Store";
         public const string LAYER_TYPE_RUNTIME_PACKAGE_STORE = "runtime-package-store";
@@ -60,5 +62,15 @@ namespace Amazon.Lambda.Tools
             {"arn:aws:iam::aws:policy/AWSDeepLensLambdaFunctionAccessPolicy","This policy specifies permissions required by DeepLens Administrative lambda functions that run on a DeepLens device"},
             {"arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole","Provides minimum permissions for a Lambda function to execute while accessing a resource within a VPC"}
         };
+
+
+        public const string CF_LAMBDA_PACKAGE_TYPE = "PackageType";
+        public const string CF_SERVERLESS_METADATA = "Metadata";
+        public const string CF_SERVERLESS_DOCKERCONTEXT = "DockerContext";
+        public const string CF_LAMBDA_IMAGEURI = "ImageUri";
+        public const string CF_LAMBDA_CODEURI = "CodeUri";
+        public const string CF_LAMBDA_CODE = "Code";
+        public const string CF_LAMBDA_S3BUCKET = "S3Bucket";
+        public const string CF_LAMBDA_S3KEY = "S3Key";
     }
 }

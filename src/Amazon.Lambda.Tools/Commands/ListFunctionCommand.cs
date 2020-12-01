@@ -57,7 +57,8 @@ namespace Amazon.Lambda.Tools.Commands
 
                 foreach (var function in response.Functions)
                 {
-                    this.Logger.WriteLine((function.FunctionName.PadRight(40) + " (" + function.Runtime + ")").PadRight(10) + "\t" + function.Description);
+                    var extraInfo = function.PackageType == Lambda.PackageType.Zip ? "Runtime: " + function.Runtime.Value : "Package Type: " + function.PackageType.Value;
+                    this.Logger.WriteLine((function.FunctionName.PadRight(40) + " (" + extraInfo + ")").PadRight(10) + "\t" + function.Description);
                 }
 
             } while (!string.IsNullOrEmpty(response.NextMarker));

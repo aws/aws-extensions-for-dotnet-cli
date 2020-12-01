@@ -42,7 +42,7 @@ namespace Amazon.ECS.Tools.Commands
         {
         }
 
-        protected override string ToolName => "AWSECSToolsDotnet";
+        protected override string ToolName => Constants.TOOLNAME;
 
         IAmazonCloudWatchEvents _cweClient;
         public IAmazonCloudWatchEvents CWEClient
@@ -80,25 +80,6 @@ namespace Amazon.ECS.Tools.Commands
                 return this._cwlClient;
             }
             set { this._cwlClient = value; }
-        }
-
-        IAmazonECR _ecrClient;
-        public IAmazonECR ECRClient
-        {
-            get
-            {
-                if (this._ecrClient == null)
-                {
-                    SetUserAgentString();
-
-                    var config = new AmazonECRConfig();
-                    config.RegionEndpoint = DetermineAWSRegion();
-
-                    this._ecrClient = new AmazonECRClient(DetermineAWSCredentials(), config);
-                }
-                return this._ecrClient;
-            }
-            set { this._ecrClient = value; }
         }
 
         IAmazonECS _ecsClient;

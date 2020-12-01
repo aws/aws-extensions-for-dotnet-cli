@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2027
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30608.117
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A5EA2C7D-846F-4266-8423-EFC4BA0FE4B6}"
 EndProject
@@ -61,15 +61,21 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NativeDependencyExample2", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amazon.ElasticBeanstalk.Tools.Test", "test\Amazon.ElasticBeanstalk.Tools.Test\Amazon.ElasticBeanstalk.Tools.Test.csproj", "{5CCBF935-1EF1-4D7A-ABC6-46EA3BDF3496}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestBeanstalkWebApp", "testapps\TestBeanstalkWebApp\TestBeanstalkWebApp.csproj", "{465DC6ED-4EE7-4FCE-8211-02E69BF37F54}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestBeanstalkWebApp", "testapps\TestBeanstalkWebApp\TestBeanstalkWebApp.csproj", "{465DC6ED-4EE7-4FCE-8211-02E69BF37F54}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestLayerExample", "testapps\TestLayerExample\TestLayerExample.csproj", "{AC3E127E-F157-404C-BCCC-CFF1BFF3A777}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestLayerServerless", "testapps\TestLayerServerless\TestLayerServerless.csproj", "{1B90F7DE-9E8D-4F2B-A417-23263925429A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestLayerServerless", "testapps\TestLayerServerless\TestLayerServerless.csproj", "{1B90F7DE-9E8D-4F2B-A417-23263925429A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestLayerAspNetCore", "testapps\TestLayerAspNetCore\TestLayerAspNetCore.csproj", "{D9C49D8B-0162-4C6B-9CAD-FBF8E246CDC9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestLayerAspNetCore", "testapps\TestLayerAspNetCore\TestLayerAspNetCore.csproj", "{D9C49D8B-0162-4C6B-9CAD-FBF8E246CDC9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestPowerShellParallelTest", "testapps\TestPowerShellParallelTest\TestPowerShellParallelTest.csproj", "{71926012-0E0D-4A46-B6C0-6A421645CA06}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestPowerShellParallelTest", "testapps\TestPowerShellParallelTest\TestPowerShellParallelTest.csproj", "{71926012-0E0D-4A46-B6C0-6A421645CA06}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ImageBasedProjects", "ImageBasedProjects", "{7C227173-0F21-44DD-93A7-5D3693240271}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestSimpleImageProject", "testapps\ImageBasedProjects\TestSimpleImageProject\TestSimpleImageProject.csproj", "{4FA5B55F-BE55-42F7-A2DE-1924B10296A2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amazon.Lambda.Tools.Integ.Tests", "test\Amazon.Lambda.Tools.Integ.Tests\Amazon.Lambda.Tools.Integ.Tests.csproj", "{7B2AE176-8AB5-4050-8E22-A2A80E88BB92}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -177,6 +183,14 @@ Global
 		{71926012-0E0D-4A46-B6C0-6A421645CA06}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71926012-0E0D-4A46-B6C0-6A421645CA06}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71926012-0E0D-4A46-B6C0-6A421645CA06}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4FA5B55F-BE55-42F7-A2DE-1924B10296A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FA5B55F-BE55-42F7-A2DE-1924B10296A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FA5B55F-BE55-42F7-A2DE-1924B10296A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FA5B55F-BE55-42F7-A2DE-1924B10296A2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B2AE176-8AB5-4050-8E22-A2A80E88BB92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B2AE176-8AB5-4050-8E22-A2A80E88BB92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B2AE176-8AB5-4050-8E22-A2A80E88BB92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B2AE176-8AB5-4050-8E22-A2A80E88BB92}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -210,6 +224,9 @@ Global
 		{1B90F7DE-9E8D-4F2B-A417-23263925429A} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 		{D9C49D8B-0162-4C6B-9CAD-FBF8E246CDC9} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 		{71926012-0E0D-4A46-B6C0-6A421645CA06} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
+		{7C227173-0F21-44DD-93A7-5D3693240271} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
+		{4FA5B55F-BE55-42F7-A2DE-1924B10296A2} = {7C227173-0F21-44DD-93A7-5D3693240271}
+		{7B2AE176-8AB5-4050-8E22-A2A80E88BB92} = {BB0A8314-3127-4159-8B6A-64F97FEF9474}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DBFC70D6-49A2-40A1-AB08-5D9504AB7112}

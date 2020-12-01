@@ -145,5 +145,70 @@ namespace Amazon.Common.DotNetCli.Tools.Options
                 Description = $"If true the arguments used for a successful deployment are persisted to a config file."
             };
 
+
+        public static readonly CommandOption ARGUMENT_DOCKER_TAG =
+            new CommandOption
+            {
+                Name = "Docker Image Tag",
+                ShortSwitch = "-it",
+                Switch = "--image-tag",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "Name and optionally a tag in the 'name:tag' format.",
+            };
+        public static readonly CommandOption ARGUMENT_DOCKER_TAG_OBSOLETE =
+            new CommandOption
+            {
+                Name = "Docker Image Tag",
+                ShortSwitch = "-t",
+                Switch = "--tag",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "Obsolete. This has been replaced with the --image-tag switch.",
+            };
+
+        public static readonly CommandOption ARGUMENT_DOCKER_BUILD_WORKING_DIRECTORY =
+            new CommandOption
+            {
+                Name = "Docker Build Working Directory",
+                ShortSwitch = "-dbwd",
+                Switch = "--docker-build-working-dir",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "The directory to execute the \"docker build\" command from.",
+            };
+        public static readonly CommandOption ARGUMENT_DOCKER_BUILD_OPTIONS =
+            new CommandOption
+            {
+                Name = "Docker Build Options",
+                ShortSwitch = "-dbo",
+                Switch = "--docker-build-options",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "Additional options passed to the \"docker build\" command.",
+            };
+        public static readonly CommandOption ARGUMENT_DOCKERFILE =
+            new CommandOption
+            {
+                Name = "Dockerfile",
+                ShortSwitch = "-df",
+                Switch = "--dockerfile",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = $"The docker file used build image. Default value is \"{Constants.DEFAULT_DOCKERFILE}\".",
+            };
+        public static readonly CommandOption ARGUMENT_LOCAL_DOCKER_IMAGE =
+            new CommandOption
+            {
+                Name = "Local Docker Image",
+                ShortSwitch = "-ldi",
+                Switch = "--local-docker-image",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "If set the docker build command is skipped and the indicated local image is pushed to ECR.",
+            };
+
+        public static readonly CommandOption ARGUMENT_HOST_BUILD_OUTPUT =
+            new CommandOption
+            {
+                Name = "Host Build Output Directory",
+                Switch = "--docker-host-build-output-dir",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "If set a \"dotnet publish\" command is executed on the host machine before executing \"docker build\". The output can be copied into image being built.",
+            };
     }
 }

@@ -53,6 +53,20 @@ namespace Amazon.Lambda.Tools
             return kvp.Key;
         }
 
+        public static Lambda.PackageType DeterminePackageType(string packageType)
+        {
+            if (string.IsNullOrEmpty(packageType) || string.Equals(packageType, Lambda.PackageType.Zip.Value, StringComparison.OrdinalIgnoreCase))
+            {
+                return Lambda.PackageType.Zip;
+            }
+            else if (string.Equals(packageType, Lambda.PackageType.Image.Value, StringComparison.OrdinalIgnoreCase))
+            {
+                return Lambda.PackageType.Image;
+            }
+
+            throw new LambdaToolsException($"Unknown value for package type {packageType}", ToolsException.CommonErrorCode.CommandLineParseError);
+        }
+
         /// <summary>
         /// Make sure nobody is trying to deploy a function based on a higher .NET Core framework than the Lambda runtime knows about.
         /// </summary>
@@ -745,6 +759,59 @@ namespace Amazon.Lambda.Tools
                 default:
                     return "linux-x64";
             }
+        }
+
+        public static async Task WaitTillFunctionAvailableAsync(IToolLogger logger, IAmazonLambda lambdaClient, string functionName)
+        {
+            const int POLL_INTERVAL = 3000;
+            const int MAX_TIMEOUT_MINUTES = 20;
+            try
+            {
+                var request = new GetFunctionConfigurationRequest
+                {
+                    FunctionName = functionName
+                };
+
+                GetFunctionConfigurationResponse response = null;
+
+                bool logInitialMessage = false;
+                var timeout = DateTime.UtcNow.AddMinutes(MAX_TIMEOUT_MINUTES);
+                var startTime = DateTime.UtcNow;
+                do
+                {
+                    response = await lambdaClient.GetFunctionConfigurationAsync(request);
+                    if (response.LastUpdateStatus != LastUpdateStatus.InProgress && response.State != State.Pending)
+                    {
+                        if(response.LastUpdateStatus == LastUpdateStatus.Failed)
+                        {
+                            // Not throwing exception because it is possible the calling code could be fixing the failed state.
+                            logger.WriteLine($"Warning: function {functionName} is currently in failed state: {response.LastUpdateStatusReason}");
+                        }
+
+                        return;
+                    }
+
+                    if(!logInitialMessage)
+                    {
+                        logger.WriteLine($"An update is currently in progress for Lambda function {functionName}. Waiting till update completes.");
+                        logInitialMessage = true;
+                    }
+                    else
+                    {
+                        var ts = DateTime.UtcNow - startTime;
+                        logger.WriteLine($"... Waiting ({ts.TotalSeconds.ToString("N2")} seconds)");
+                    }
+                    await Task.Delay(POLL_INTERVAL);                    
+
+                } while (DateTime.UtcNow < timeout);
+
+            }
+            catch(Exception e)
+            {
+                throw new LambdaToolsException($"Error waiting for Lambda function to be in available status: {e.Message}", LambdaToolsException.LambdaErrorCode.LambdaWaitTillFunctionAvailable);
+            }
+
+            throw new LambdaToolsException($"Timeout waiting for function {functionName} to become available", LambdaToolsException.LambdaErrorCode.LambdaWaitTillFunctionAvailable);
         }
     }
 }

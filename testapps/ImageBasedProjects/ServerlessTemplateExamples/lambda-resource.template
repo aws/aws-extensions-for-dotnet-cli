@@ -1,0 +1,52 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "An AWS Serverless Application.",
+  "Resources": {
+
+
+    "LambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": [
+                "sts:AssumeRole"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        ]
+      }
+    },
+
+    "UseDefaultDockerLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "MemorySize": 256,
+        "Code" : {
+            "ImageUri" : "./UseDefaultDocker"
+        },
+        "Timeout": 30,
+        "Role" : { "Ref" : "LambdaRole" },
+        "PackageType" : "Image",
+        "ImageConfig" : {
+            "Command" : "UseDefaultDocker::UseDefaultDocker.Function::FunctionHandler"
+        }
+      }
+    }
+  },
+
+  "Outputs": {
+  }
+}

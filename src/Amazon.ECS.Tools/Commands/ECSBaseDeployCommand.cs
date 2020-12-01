@@ -1,4 +1,5 @@
 ﻿using Amazon.Common.DotNetCli.Tools;
+using Amazon.Common.DotNetCli.Tools.Commands;
 using Amazon.Common.DotNetCli.Tools.Options;
 using System;
 using System.Collections.Generic;
@@ -18,14 +19,14 @@ namespace Amazon.ECS.Tools.Commands
         {
         }
 
-        PushDockerImageProperties _pushProperties;
-        public PushDockerImageProperties PushDockerImageProperties
+        BasePushDockerImageCommand<ECSToolsDefaults>.PushDockerImagePropertyContainer _pushProperties;
+        public BasePushDockerImageCommand<ECSToolsDefaults>.PushDockerImagePropertyContainer PushDockerImageProperties
         {
             get
             {
                 if (this._pushProperties == null)
                 {
-                    this._pushProperties = new PushDockerImageProperties();
+                    this._pushProperties = new BasePushDockerImageCommand<ECSToolsDefaults>.PushDockerImagePropertyContainer();
                 }
 
                 return this._pushProperties;

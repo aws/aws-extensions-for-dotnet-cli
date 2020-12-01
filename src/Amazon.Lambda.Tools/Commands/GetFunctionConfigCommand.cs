@@ -62,19 +62,43 @@ namespace Amazon.Lambda.Tools.Commands
                 throw new LambdaToolsException("Error getting configuration for Lambda function: " + e.Message, LambdaToolsException.LambdaErrorCode.LambdaGetConfiguration, e);
             }
 
-            const int PAD_SIZE = 20;
+            const int PAD_SIZE = 30;
             this.Logger.WriteLine("Name:".PadRight(PAD_SIZE) + response.FunctionName);
             this.Logger.WriteLine("Arn:".PadRight(PAD_SIZE) + response.FunctionArn);
             if(!string.IsNullOrEmpty(response.Description))
                 this.Logger.WriteLine("Description:".PadRight(PAD_SIZE) + response.Description);
-            this.Logger.WriteLine("Handler:".PadRight(PAD_SIZE) + response.Handler);
+
+            this.Logger.WriteLine("Package Type:".PadRight(PAD_SIZE) + response.PackageType);
+            if (response.PackageType == PackageType.Image)
+            {
+                if(response.ImageConfigResponse?.ImageConfig?.Command?.Count > 0)
+                    this.Logger.WriteLine("Image Command:".PadRight(PAD_SIZE) + FormatAsJsonStringArray(response.ImageConfigResponse?.ImageConfig?.Command));
+                if (response.ImageConfigResponse?.ImageConfig?.EntryPoint?.Count > 0)
+                    this.Logger.WriteLine("Image EntryPoint:".PadRight(PAD_SIZE) + FormatAsJsonStringArray(response.ImageConfigResponse?.ImageConfig?.EntryPoint));
+
+                if (!string.IsNullOrEmpty(response.ImageConfigResponse?.ImageConfig?.WorkingDirectory))
+                    this.Logger.WriteLine("Image WorkingDirectory:".PadRight(PAD_SIZE) + response.ImageConfigResponse?.ImageConfig?.WorkingDirectory);
+            }
+            else
+            {
+                this.Logger.WriteLine("Runtime:".PadRight(PAD_SIZE) + response.Runtime);
+                this.Logger.WriteLine("Function Handler:".PadRight(PAD_SIZE) + response.Handler);
+            }
             this.Logger.WriteLine("Last Modified:".PadRight(PAD_SIZE) + response.LastModified);
             this.Logger.WriteLine("Memory Size:".PadRight(PAD_SIZE) + response.MemorySize);
             this.Logger.WriteLine("Role:".PadRight(PAD_SIZE) + response.Role);
             this.Logger.WriteLine("Timeout:".PadRight(PAD_SIZE) + response.Timeout);
             this.Logger.WriteLine("Version:".PadRight(PAD_SIZE) + response.Version);
 
-            if(!string.IsNullOrEmpty(response.KMSKeyArn))
+            this.Logger.WriteLine("State:".PadRight(PAD_SIZE) + response.State);
+            if(!string.IsNullOrEmpty(response.StateReason))
+                this.Logger.WriteLine("State Reason:".PadRight(PAD_SIZE) + response.StateReason);
+
+            this.Logger.WriteLine("Last Update Status:".PadRight(PAD_SIZE) + response.LastUpdateStatus);
+            if (!string.IsNullOrEmpty(response.LastUpdateStatusReason))
+                this.Logger.WriteLine("Last Update Status Reason:".PadRight(PAD_SIZE) + response.LastUpdateStatusReason);
+
+            if (!string.IsNullOrEmpty(response.KMSKeyArn))
                 this.Logger.WriteLine("KMS Key ARN:".PadRight(PAD_SIZE) + response.KMSKeyArn);
             else
                 this.Logger.WriteLine("KMS Key ARN:".PadRight(PAD_SIZE) + "(default) aws/lambda");
@@ -110,6 +134,30 @@ namespace Amazon.Lambda.Tools.Commands
             return true;
         }
         
+        private static string FormatAsJsonStringArray(IList<string> items)
+        {
+            if (items.Count == 0)
+                return null;
+
+            var sb = new StringBuilder();
+
+            sb.Append("[");
+
+            foreach(var token in items)
+            {
+                if(sb.Length > 1)
+                {
+                    sb.Append(", ");
+                }
+
+                sb.Append("\"" + token + "\"");
+            }
+
+            sb.Append("]");
+
+            return sb.ToString();
+        }
+
         protected override void SaveConfigFile(JsonData data)
         {
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME.ConfigFileKey, this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, false));    
