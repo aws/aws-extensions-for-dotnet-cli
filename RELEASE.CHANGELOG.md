@@ -1,3 +1,20 @@
+### Release 2020-12-01
+* **Amazon.Lambda.Tools (5.0.0)**
+  * Updated deploy-function to have the following switches to support Lambda functions packaged as container images.
+    * `--package-type`: Determines the format for packaging Lambda function. Valid values are `zip` and `image`. Default is `zip`.
+    * `--image-entrypoint`: Overrides the image's ENTRYPOINT when package type is set `image`
+    * `--image-command`: Overrides the image's CMD when package type is set `image`
+    * `--image-working-directory`: Overrides the image's working directory when package type is set `image`
+    * `--image-tag`: Name and optionally a tag in the 'name:tag' format
+    * `--local-docker-image`: If set the docker build command is skipped and the indicated local image is pushed to ECR
+    * `--dockerfile`: The docker file used build image. Default value is "Dockerfile"
+    * `--docker-build-options`: Additional options passed to the "docker build" command
+    * `--docker-build-working-dir`: The directory to execute the "docker build" command from
+    * `--docker-host-build-output-dir`: If set a "dotnet publish" command is executed on the host machine before executing "docker build". The output can be copied into image being built.
+  * Updated `deploy-serverless` command to build and push Lambda functions as container images if CloudFormation resource has `PackageType` set to `image`
+  * Updated `package` command to build container image if `--package-type` is set to `image`. The image can later be used with `deploy-function` using the `--local-docker-image`
+  * Added push-image command to build .NET Lambda project and push to ECR
+
 ### Release 2020-10-19
 * **Amazon.Lambda.Tools (4.3.0)**
   * Update to latest version of the AWS SDK for .NET.
