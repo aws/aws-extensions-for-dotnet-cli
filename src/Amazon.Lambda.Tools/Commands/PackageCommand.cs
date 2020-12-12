@@ -194,6 +194,13 @@ namespace Amazon.Lambda.Tools.Commands
                 if (string.IsNullOrEmpty(targetFramework))
                 {
                     targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation));
+
+                    // If we still don't know what the target framework is ask the user what targetframework to use.
+                    // This is common when a project is using multi targeting.
+                    if (string.IsNullOrEmpty(targetFramework))
+                    {
+                        targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
+                    }
                 }
 
                 var msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
