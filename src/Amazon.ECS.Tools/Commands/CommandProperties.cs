@@ -47,13 +47,19 @@ namespace Amazon.ECS.Tools.Commands
             var tag = command.GetStringValueOrDefault(this.DockerImageTag, ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG, false);
             if (!string.IsNullOrEmpty(tag))
             {
-                // Strip the full ECR URL name.
-                int pos = tag.LastIndexOf('/');
-                if (pos != -1)
+                // Strip the full ECR URL name of form - protocol://aws_account_id.dkr.ecr.region.amazonaws.domain/repository:tag
+                // irrespective of domain
+                int dkrPos = tag.IndexOf(".dkr.ecr");
+                if (dkrPos != -1)
                 {
-                    tag = tag.Substring(pos + 1);
+                    tag = tag.Substring(dkrPos + 1);
+                    int pos = tag.IndexOf('/');
+                    if (pos != -1)
+                    {
+                        tag = tag.Substring(pos + 1);
+                    }
                 }
-
+                
                 data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG.ConfigFileKey, tag);
             }
 
@@ -108,6 +114,7 @@ namespace Amazon.ECS.Tools.Commands
             ECSDefinedCommandOptions.ARGUMENT_TD_CPU,
             ECSDefinedCommandOptions.ARGUMENT_TD_MEMORY,
             ECSDefinedCommandOptions.ARGUMENT_TD_VOLUMES,
+            ECSDefinedCommandOptions.ARGUMENT_TD_PLATFORM_VERSION,
 
             ECSDefinedCommandOptions.ARGUMENT_CONTAINER_COMMANDS,
             ECSDefinedCommandOptions.ARGUMENT_CONTAINER_CPU,
@@ -171,6 +178,7 @@ namespace Amazon.ECS.Tools.Commands
         public string TaskCPU { get; set; }
         public string TaskMemory { get; set; }
         public string TaskDefinitionVolumes { get; set; }
+        public string TaskPlatformVersion { get; set; }
 
 
         internal void ParseCommandArguments(CommandOptions values)
@@ -188,6 +196,8 @@ namespace Amazon.ECS.Tools.Commands
                 this.TaskCPU = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(ECSDefinedCommandOptions.ARGUMENT_TD_MEMORY.Switch)) != null)
                 this.TaskMemory = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(ECSDefinedCommandOptions.ARGUMENT_TD_PLATFORM_VERSION.Switch)) != null)
+                this.TaskPlatformVersion = tuple.Item2.StringValue;
 
             if ((tuple = values.FindCommandOption(ECSDefinedCommandOptions.ARGUMENT_CONTAINER_COMMANDS.Switch)) != null)
                 this.ContainerCommands = tuple.Item2.StringValues;
@@ -247,6 +257,7 @@ namespace Amazon.ECS.Tools.Commands
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_TD_NETWORK_MODE.ConfigFileKey, command.GetStringValueOrDefault(this.TaskDefinitionNetworkMode, ECSDefinedCommandOptions.ARGUMENT_TD_NETWORK_MODE, false));
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_TD_CPU.ConfigFileKey, command.GetStringValueOrDefault(this.TaskCPU, ECSDefinedCommandOptions.ARGUMENT_TD_CPU, false));
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_TD_MEMORY.ConfigFileKey, command.GetStringValueOrDefault(this.TaskMemory, ECSDefinedCommandOptions.ARGUMENT_TD_MEMORY, false));
+            data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_TD_PLATFORM_VERSION.ConfigFileKey, command.GetStringValueOrDefault(this.TaskPlatformVersion, ECSDefinedCommandOptions.ARGUMENT_TD_PLATFORM_VERSION, false));
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_TD_ROLE.ConfigFileKey, command.GetStringValueOrDefault(this.TaskDefinitionRole, ECSDefinedCommandOptions.ARGUMENT_TD_ROLE, false));
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_TD_EXECUTION_ROLE.ConfigFileKey, command.GetStringValueOrDefault(this.TaskDefinitionExecutionRole, ECSDefinedCommandOptions.ARGUMENT_TD_EXECUTION_ROLE, false));
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_TD_VOLUMES.ConfigFileKey, command.GetStringValueOrDefault(this.TaskDefinitionVolumes, ECSDefinedCommandOptions.ARGUMENT_TD_VOLUMES, false));

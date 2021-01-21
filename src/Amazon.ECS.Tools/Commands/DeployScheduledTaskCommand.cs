@@ -81,7 +81,7 @@ namespace Amazon.ECS.Tools.Commands
             var skipPush = this.GetBoolValueOrDefault(this.DeployScheduledTaskProperties.SkipImagePush, ECSDefinedCommandOptions.ARGUMENT_SKIP_IMAGE_PUSH, false).GetValueOrDefault();
             var ecsContainer = this.GetStringValueOrDefault(this.TaskDefinitionProperties.ContainerName, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_NAME, true);
             var ecsTaskDefinition = this.GetStringValueOrDefault(this.TaskDefinitionProperties.TaskDefinitionName, ECSDefinedCommandOptions.ARGUMENT_TD_NAME, true);
-
+            var ecsPlatformVersion = this.GetStringValueOrDefault(this.TaskDefinitionProperties.TaskPlatformVersion, ECSDefinedCommandOptions.ARGUMENT_TD_PLATFORM_VERSION, false);
 
             this.PushDockerImageProperties.DockerImageTag = this.GetStringValueOrDefault(this.PushDockerImageProperties.DockerImageTag, ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG, true).ToLower();
 
@@ -139,6 +139,25 @@ namespace Amazon.ECS.Tools.Commands
             if (!desiredCount.HasValue)
                 desiredCount = 1;
 
+            var launchType = this.GetStringValueOrDefault(this.ClusterProperties.LaunchType, ECSDefinedCommandOptions.ARGUMENT_LAUNCH_TYPE, true);
+            var ecsParameters = new EcsParameters
+            {
+                TaskCount = desiredCount.Value,
+                TaskDefinitionArn = taskDefinitionArn,
+                LaunchType = launchType
+            };
+
+            if (IsFargateLaunch(this.ClusterProperties.LaunchType))
+            {
+                var networkConfiguration = new Amazon.CloudWatchEvents.Model.NetworkConfiguration();
+                await ECSUtilities.SetupAwsVpcNetworkConfigurationCloudwatchEventAsync(this, networkConfiguration);
+
+                ecsParameters.NetworkConfiguration = networkConfiguration;
+                ecsParameters.PlatformVersion = ecsPlatformVersion;
+
+                await this.AttemptToCreateServiceLinkRoleAsync();
+            }
+
             string ruleArn = null;
             try
             {
@@ -168,11 +187,7 @@ namespace Amazon.ECS.Tools.Commands
                             Arn = ecsCluster,
                             RoleArn = cweRole,
                             Id = targetName,
-                            EcsParameters = new EcsParameters
-                            {
-                                TaskCount = desiredCount.Value,
-                                TaskDefinitionArn = taskDefinitionArn
-                            }
+                            EcsParameters = ecsParameters
                         }
                     }
                 });

@@ -163,6 +163,15 @@ namespace Amazon.ECS.Tools
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = "The full Amazon Resource Name (ARN) of the Elastic Load Balancing target group associated with a service. "
             };
+
+        public static readonly CommandOption ARGUMENT_TD_PLATFORM_VERSION =
+            new CommandOption
+            {
+                Name = "Task Platform version",
+                Switch = "--platform-version",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "The platform version selected for the task. Fargate only."
+            };
         public static readonly CommandOption ARGUMENT_ELB_CONTAINER_PORT =
             new CommandOption
             {
