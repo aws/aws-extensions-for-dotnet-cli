@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-
 using Amazon.EC2.Model;
 using Amazon.ECS.Model;
 using Amazon.IdentityManagement.Model;
@@ -15,12 +14,12 @@ using Amazon.CloudWatchLogs.Model;
 using Amazon.CloudWatchLogs;
 using ThirdParty.Json.LitJson;
 using System.Linq;
+using Task = System.Threading.Tasks.Task;
 
 namespace Amazon.ECS.Tools
 {
     public static class ECSUtilities
     {
-
         public static List<PlacementConstraint> ConvertPlacementConstraint(string[] values)
         {
             if (values == null || values.Length == 0)
@@ -139,7 +138,7 @@ namespace Amazon.ECS.Tools
         }
 
         public static async Task<string> CreateOrUpdateTaskDefinition(IToolLogger logger, IAmazonECS ecsClient, ECSBaseCommand command,
-    TaskDefinitionProperties properties, string dockerImageTag, bool isFargate)
+            TaskDefinitionProperties properties, string dockerImageTag, bool isFargate)
         {
             var ecsContainer = command.GetStringValueOrDefault(properties.ContainerName, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_NAME, true);
             var ecsTaskDefinition = command.GetStringValueOrDefault(properties.TaskDefinitionName, ECSDefinedCommandOptions.ARGUMENT_TD_NAME, true);
@@ -657,11 +656,85 @@ namespace Amazon.ECS.Tools
                 networkConfiguration.AwsvpcConfiguration = new AwsVpcConfiguration();
 
             string defaultVpcId = null;
+
+            bool noExistingSubnets = networkConfiguration.AwsvpcConfiguration.Subnets.Count == 0;
+
+            var vpcSubnetWrapper = await SetupAwsVpcNetworkConfigurationSubnets(command, defaultVpcId, noExistingSubnets);
+            var subnets = vpcSubnetWrapper.Subnets;
+            defaultVpcId = vpcSubnetWrapper.VpcId;
+
+            if (subnets != null)
+            {
+                networkConfiguration.AwsvpcConfiguration.Subnets = new List<string>(subnets);
+            }
+
+            bool noExistingSecurityGroups = networkConfiguration.AwsvpcConfiguration.SecurityGroups.Count == 0;
+            var securityGroups = await SetupAwsVpcNetworkConfigurationSecurityGroups(command, defaultVpcId, noExistingSecurityGroups);
+
+            if (securityGroups != null)
+            {
+                networkConfiguration.AwsvpcConfiguration.SecurityGroups = new List<string>(securityGroups);
+            }
+
+            var assignPublicIp = command.GetBoolValueOrDefault(command.ClusterProperties.AssignPublicIpAddress, ECSDefinedCommandOptions.ARGUMENT_LAUNCH_ASSIGN_PUBLIC_IP, false);
+            if (assignPublicIp.HasValue)
+            {
+                networkConfiguration.AwsvpcConfiguration.AssignPublicIp =
+                    assignPublicIp.Value ? AssignPublicIp.ENABLED : AssignPublicIp.DISABLED;
+            }
+            else if (networkConfiguration?.AwsvpcConfiguration?.AssignPublicIp == null)
+            {
+                // Enable by default if not set to make the common case easier
+                networkConfiguration.AwsvpcConfiguration.AssignPublicIp = AssignPublicIp.ENABLED;
+                command.Logger?.WriteLine("Enabling \"Assign Public IP\" for tasks");
+            }
+        }
+
+        public static async System.Threading.Tasks.Task SetupAwsVpcNetworkConfigurationCloudwatchEventAsync(
+            ECSBaseDeployCommand command, Amazon.CloudWatchEvents.Model.NetworkConfiguration networkConfiguration)
+        {
+            if (networkConfiguration.AwsvpcConfiguration == null)
+                networkConfiguration.AwsvpcConfiguration = new Amazon.CloudWatchEvents.Model.AwsVpcConfiguration();
+
+            string defaultVpcId = null;
+
+            bool noExistingSubnets = networkConfiguration.AwsvpcConfiguration.Subnets.Count == 0;
+            var vpcSubnetWrapper = await SetupAwsVpcNetworkConfigurationSubnets(command, defaultVpcId, noExistingSubnets);
+            var subnets = vpcSubnetWrapper.Subnets;
+            defaultVpcId = vpcSubnetWrapper.VpcId;
+
+            if (subnets != null)
+            {
+                networkConfiguration.AwsvpcConfiguration.Subnets = new List<string>(subnets);
+            }
+            
+            bool noExistingSecurityGroups = networkConfiguration.AwsvpcConfiguration.SecurityGroups.Count == 0;
+            var securityGroups = await SetupAwsVpcNetworkConfigurationSecurityGroups(command, defaultVpcId, noExistingSecurityGroups);
+
+            if (securityGroups != null)
+            {
+                networkConfiguration.AwsvpcConfiguration.SecurityGroups = new List<string>(securityGroups);
+            }
+
+            var assignPublicIp = command.GetBoolValueOrDefault(command.ClusterProperties.AssignPublicIpAddress, ECSDefinedCommandOptions.ARGUMENT_LAUNCH_ASSIGN_PUBLIC_IP, false);
+            if (assignPublicIp.HasValue)
+            {
+                networkConfiguration.AwsvpcConfiguration.AssignPublicIp = assignPublicIp.Value ? Amazon.CloudWatchEvents.AssignPublicIp.ENABLED : Amazon.CloudWatchEvents.AssignPublicIp.DISABLED;
+            }
+            else if(networkConfiguration?.AwsvpcConfiguration?.AssignPublicIp == null)
+            {
+                // Enable by default if not set to make the common case easier
+                networkConfiguration.AwsvpcConfiguration.AssignPublicIp = Amazon.CloudWatchEvents.AssignPublicIp.ENABLED;
+                command.Logger?.WriteLine("Enabling \"Assign Public IP\" for tasks");
+            }
+        }
+
+
+        private static async Task<VpcSubnetWrapper> SetupAwsVpcNetworkConfigurationSubnets(ECSBaseDeployCommand command,
+            string defaultVpcId, bool noExistingSubnets)
+        {
             var subnets = command.GetStringValuesOrDefault(command.ClusterProperties.SubnetIds, ECSDefinedCommandOptions.ARGUMENT_LAUNCH_SUBNETS, false);
-
-            bool noExistingSubnets = networkConfiguration == null || networkConfiguration.AwsvpcConfiguration == null || networkConfiguration.AwsvpcConfiguration.Subnets.Count == 0;
-
-            if (subnets == null && noExistingSubnets)
+            if ((subnets == null || subnets.Length == 0) && noExistingSubnets)
             {
                 command.Logger?.WriteLine("No subnets specified, looking for default VPC and subnets");
                 var defaultSubnets = new List<string>();
@@ -683,12 +756,12 @@ namespace Amazon.ECS.Tools
                         }
                     }
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     command.Logger?.WriteLine("Warning: Unable to determine default subnets for VPC: " + e.Message);
                 }
 
-                if(defaultSubnets.Count != 0)
+                if (defaultSubnets.Count != 0)
                 {
                     subnets = defaultSubnets.ToArray();
                 }
@@ -698,20 +771,18 @@ namespace Amazon.ECS.Tools
                 }
             }
 
+            return new VpcSubnetWrapper {VpcId = defaultVpcId, Subnets = subnets};
+        }
 
-            if (subnets != null)
-            {
-                networkConfiguration.AwsvpcConfiguration.Subnets = new List<string>(subnets);
-            }
 
+        private static async Task<string[]> SetupAwsVpcNetworkConfigurationSecurityGroups(ECSBaseDeployCommand command, 
+            string defaultVpcId, bool noExistingSecurityGroups)
+        {
             var securityGroups = command.GetStringValuesOrDefault(command.ClusterProperties.SecurityGroupIds, ECSDefinedCommandOptions.ARGUMENT_LAUNCH_SECURITYGROUPS, false);
-
-            bool noExistingSecurityGroups = networkConfiguration == null || networkConfiguration.AwsvpcConfiguration == null || networkConfiguration.AwsvpcConfiguration.SecurityGroups.Count == 0;
-
-            if (securityGroups == null && noExistingSecurityGroups)
+            if ((securityGroups == null || securityGroups.Length==0) && noExistingSecurityGroups)
             {
                 command.Logger?.WriteLine("No security group specified, looking for default VPC and security group");
-                if(defaultVpcId == null)
+                if (defaultVpcId == null)
                 {
                     try
                     {
@@ -733,15 +804,15 @@ namespace Amazon.ECS.Tools
                     }
                 }
 
-                
+
                 if (defaultVpcId != null)
                 {
                     try
                     {
                         var describeSecurityGroupResponse = await command.EC2Client.DescribeSecurityGroupsAsync(new DescribeSecurityGroupsRequest
-                        {
-                            Filters = new List<Filter> { new Filter { Name = "vpc-id", Values = new List<string> { defaultVpcId } } }
-                        });
+                            {
+                                Filters = new List<Filter> { new Filter { Name = "vpc-id", Values = new List<string> { defaultVpcId } } }
+                            });
 
                         var defaultSecurityGroup = describeSecurityGroupResponse.SecurityGroups.FirstOrDefault(x => string.Equals(x.GroupName, "default", StringComparison.OrdinalIgnoreCase));
 
@@ -755,7 +826,7 @@ namespace Amazon.ECS.Tools
                             command.Logger?.WriteLine("Unable to determine default security group for VPC");
                         }
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         command.Logger?.WriteLine("Warning: Unable to determine default security group for VPC: " + e.Message);
                     }
@@ -767,23 +838,13 @@ namespace Amazon.ECS.Tools
                 }
             }
 
-
-            if (securityGroups != null)
-            {
-                networkConfiguration.AwsvpcConfiguration.SecurityGroups = new List<string>(securityGroups);
-            }
-
-            var assignPublicIp = command.GetBoolValueOrDefault(command.ClusterProperties.AssignPublicIpAddress, ECSDefinedCommandOptions.ARGUMENT_LAUNCH_ASSIGN_PUBLIC_IP, false);
-            if (assignPublicIp.HasValue)
-            {
-                networkConfiguration.AwsvpcConfiguration.AssignPublicIp = assignPublicIp.Value ? AssignPublicIp.ENABLED : AssignPublicIp.DISABLED;
-            }
-            else if(networkConfiguration?.AwsvpcConfiguration?.AssignPublicIp == null)
-            {
-                // Enable by default if not set to make the common case easier
-                networkConfiguration.AwsvpcConfiguration.AssignPublicIp = AssignPublicIp.ENABLED;
-                command.Logger?.WriteLine("Enabling \"Assign Public IP\" for tasks");
-            }
+            return securityGroups;
         }
+    }
+
+    public class VpcSubnetWrapper
+    {
+        public string VpcId { get; set; }
+        public string[] Subnets { get; set; }
     }
 }
