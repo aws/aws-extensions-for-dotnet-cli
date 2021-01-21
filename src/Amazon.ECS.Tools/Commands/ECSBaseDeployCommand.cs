@@ -64,5 +64,20 @@ namespace Amazon.ECS.Tools.Commands
             set { this._clusterProperties = value; }
         }
 
+
+        protected string GetDockerImageTag()
+        {
+            var tag = this.GetStringValueOrDefault(this.PushDockerImageProperties.DockerImageTag, CommonDefinedCommandOptions.ARGUMENT_DOCKER_TAG, false)?.ToLower();
+            if (string.IsNullOrEmpty(this.PushDockerImageProperties.DockerImageTag))
+            {
+                tag = this.GetStringValueOrDefault(this.PushDockerImageProperties.DockerImageTag, ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG, false)?.ToLower();
+                if (string.IsNullOrEmpty(this.PushDockerImageProperties.DockerImageTag))
+                {
+                    tag = this.GetStringValueOrDefault(this.PushDockerImageProperties.DockerImageTag, CommonDefinedCommandOptions.ARGUMENT_DOCKER_TAG, true).ToLower();
+                }
+            }
+
+            return tag;
+        }
     }
 }

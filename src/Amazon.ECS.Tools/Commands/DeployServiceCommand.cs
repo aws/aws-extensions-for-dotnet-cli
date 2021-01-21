@@ -100,7 +100,7 @@ namespace Amazon.ECS.Tools.Commands
             var ecsTaskDefinition = this.GetStringValueOrDefault(this.TaskDefinitionProperties.TaskDefinitionName, ECSDefinedCommandOptions.ARGUMENT_TD_NAME, true);
 
 
-            this.PushDockerImageProperties.DockerImageTag = this.GetStringValueOrDefault(this.PushDockerImageProperties.DockerImageTag, ECSDefinedCommandOptions.ARGUMENT_DOCKER_TAG, true).ToLower();
+            this.PushDockerImageProperties.DockerImageTag = GetDockerImageTag();
 
             if (!this.PushDockerImageProperties.DockerImageTag.Contains(":"))
                 this.PushDockerImageProperties.DockerImageTag += ":latest";
