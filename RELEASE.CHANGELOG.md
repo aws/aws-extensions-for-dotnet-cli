@@ -1,3 +1,10 @@
+### Release 2021-01-21
+* **Amazon.Lambda.Tools (5.0.1)**
+  * Fixed issue with handling Lambda projects that were multi targeting .NET versions
+* **Amazon.ECS.Tools (3.3.0)**
+  * Added support for deploying scheduled tasks using AWS Fargate.
+  * The docker image tag will be used from either the newer `--image-tag` switch or the deprecated `--tag` switch.
+
 ### Release 2020-12-01
 * **Amazon.Lambda.Tools (5.0.0)**
   * Updated deploy-function to have the following switches to support Lambda functions packaged as container images.
