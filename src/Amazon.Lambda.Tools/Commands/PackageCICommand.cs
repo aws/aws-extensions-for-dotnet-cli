@@ -128,7 +128,7 @@ namespace Amazon.Lambda.Tools.Commands
             };
             
             var templateProcessor = new TemplateProcessorManager(this, s3Bucket, s3Prefix, options);
-            templateBody = await templateProcessor.TransformTemplateAsync(templatePath, templateBody);            
+            templateBody = await templateProcessor.TransformTemplateAsync(templatePath, templateBody, OriginalCommandLineArguments);
             
             this.Logger.WriteLine($"Writing updated template: {outputTemplatePath}");
             File.WriteAllText(outputTemplatePath, templateBody);

@@ -164,7 +164,7 @@ namespace Amazon.Lambda.Tools.Commands
             };
             
             var templateProcessor = new TemplateProcessorManager(this, s3Bucket, s3Prefix, options);
-            templateBody = await templateProcessor.TransformTemplateAsync(templatePath, templateBody);
+            templateBody = await templateProcessor.TransformTemplateAsync(templatePath, templateBody, OriginalCommandLineArguments);
 
             // Upload the template to S3 instead of sending it straight to CloudFormation to avoid the size limitation
             string s3KeyTemplate;

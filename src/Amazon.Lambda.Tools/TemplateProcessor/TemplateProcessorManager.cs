@@ -65,7 +65,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// <param name="templateBody">The template to search for updatable resources. The file isn't just read from
         /// templateDirectory because template substitutions might have occurred before this was executed.</param>
         /// <returns></returns>
-        public async Task<string> TransformTemplateAsync(string templateDirectory, string templateBody)
+        public async Task<string> TransformTemplateAsync(string templateDirectory, string templateBody, string[] args)
         {
             // If templateDirectory is actually pointing the CloudFormation template then grab its root.
             if (File.Exists(templateDirectory))
@@ -92,7 +92,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                     {
                         this.Logger?.WriteLine(
                             $"Initiate packaging of {field.GetLocalPath()} for resource {updatableResource.Name}");
-                        updateResults = await ProcessUpdatableResourceAsync(templateDirectory, field);
+                        updateResults = await ProcessUpdatableResourceAsync(templateDirectory, field, args);
                         cacheOfLocalPathsToS3Keys[localPath] = updateResults;
                     }
                     else
@@ -134,7 +134,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// <param name="field"></param>
         /// <returns></returns>
         /// <exception cref="LambdaToolsException"></exception>
-        private async Task<UpdateResourceResults> ProcessUpdatableResourceAsync(string templateDirectory, IUpdateResourceField field)
+        private async Task<UpdateResourceResults> ProcessUpdatableResourceAsync(string templateDirectory, IUpdateResourceField field, string[] args)
         {
             UpdateResourceResults results;
             var localPath = field.GetLocalPath();
@@ -180,7 +180,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 // could be in a sub folder or be a self contained Docker build.
                 if (IsDotnetProjectDirectory(localPath) || field.Resource.UploadType == CodeUploadType.Image)
                 {
-                    results = await PackageDotnetProjectAsync(field, localPath);
+                    results = await PackageDotnetProjectAsync(field, localPath, args);
                 }
                 else
                 {
@@ -227,11 +227,11 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// <param name="location"></param>
         /// <returns></returns>
         /// <exception cref="LambdaToolsException"></exception>
-        private async Task<UpdateResourceResults> PackageDotnetProjectAsync(IUpdateResourceField field, string location)
+        private async Task<UpdateResourceResults> PackageDotnetProjectAsync(IUpdateResourceField field, string location, string[] args)
         {
             if (field.Resource.UploadType == CodeUploadType.Zip)
             {
-                var command = new Commands.PackageCommand(this.Logger, location, null);
+                var command = new Commands.PackageCommand(this.Logger, location, args);
 
                 command.LambdaClient = this.OriginatingCommand?.LambdaClient;
                 command.S3Client = this.OriginatingCommand?.S3Client;
@@ -278,7 +278,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             else if (field.Resource.UploadType == CodeUploadType.Image)
             {
                 this.Logger.WriteLine($"Building Docker image for {location}");
-                var pushCommand = new PushDockerImageCommand(Logger, location, new string[0]);
+                var pushCommand = new PushDockerImageCommand(Logger, location, args);
                 pushCommand.ECRClient = OriginatingCommand.ECRClient;
                 pushCommand.IAMClient = OriginatingCommand.IAMClient;
                 pushCommand.DisableInteractive = true;
