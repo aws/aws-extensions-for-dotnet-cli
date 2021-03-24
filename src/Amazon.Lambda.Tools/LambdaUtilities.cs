@@ -478,7 +478,17 @@ namespace Amazon.Lambda.Tools
                         continue;
                     }
 
-                    string filePath = Path.GetTempFileName();
+                    string GetLastArnComponent(string input)
+                    {
+                        return input.Substring(input.LastIndexOf(':') + 1);
+                    }
+
+                    var layerName = GetLastArnComponent(getLayerResponse.LayerArn);
+                    var layerVers = GetLastArnComponent(getLayerResponse.LayerVersionArn);
+
+                    var tempPath = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
+                    var filePath = Path.Combine(tempPath.FullName, $"{layerName}-v{layerVers}.xml");
+
                     using (var getResponse = await s3Client.GetObjectAsync(manifest.Buc, manifest.Key))
                     using (var reader = new StreamReader(getResponse.ResponseStream))
                     {
