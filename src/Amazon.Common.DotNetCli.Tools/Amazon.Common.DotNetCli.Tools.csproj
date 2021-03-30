@@ -2,15 +2,15 @@
   <Import Project="..\..\buildtools\common.props" />
   <PropertyGroup>
     <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
-    <AssemblyVersion>3.0.0.0</AssemblyVersion>
-    <FileVersion>3.0.0.0</FileVersion>
+    <AssemblyVersion>3.1.0.0</AssemblyVersion>
+    <FileVersion>3.1.0.0</FileVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="AWSSDK.Core" Version="3.5.2" />
-	<PackageReference Include="AWSSDK.ECR" Version="3.5.0.22" />
-    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.5.0.22" />
-    <PackageReference Include="AWSSDK.S3" Version="3.5.2" />
-    <PackageReference Include="AWSSDK.SecurityToken" Version="3.5.1.2" />
+    <PackageReference Include="AWSSDK.Core" Version="3.7.0.3" />
+    <PackageReference Include="AWSSDK.ECR" Version="3.7.0.2" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.1" />
+    <PackageReference Include="AWSSDK.S3" Version="3.7.0.3" />
+    <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.0.2" />
   </ItemGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1' ">
     <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
