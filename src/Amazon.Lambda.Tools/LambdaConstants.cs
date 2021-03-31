@@ -60,7 +60,11 @@ namespace Amazon.Lambda.Tools
             {"arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda","Provides CodeDeploy service access to perform a Lambda deployment on your behalf."},
             {"arn:aws:iam::aws:policy/service-role/AWSLambdaENIManagementAccess","Provides minimum permissions for a Lambda function to manage ENIs (create, describe, delete) used by a VPC-enabled Lambda Function."},
             {"arn:aws:iam::aws:policy/AWSDeepLensLambdaFunctionAccessPolicy","This policy specifies permissions required by DeepLens Administrative lambda functions that run on a DeepLens device"},
-            {"arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole","Provides minimum permissions for a Lambda function to execute while accessing a resource within a VPC"}
+            {"arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole","Provides minimum permissions for a Lambda function to execute while accessing a resource within a VPC"},
+            {"arn:aws:iam::aws:policy/aws-service-role/AWSLambdaReplicator","Grants Lambda Replicator necessary permissions to replicate functions across regions "},
+            {"arn:aws:iam::aws:policy/service-role/AWSLambdaMSKExecutionRole","Provides permissions required to access MSK Cluster within a VPC, manage ENIs (create, describe, delete) in the VPC and write permissions to CloudWatch Logs."},
+            {"arn:aws:iam::aws:policy/AWSLambda_ReadOnlyAccess","Grants read-only access to AWS Lambda service, AWS Lambda console features, and other related AWS services."},
+            {"arn:aws:iam::aws:policy/AWSLambda_FullAccess","Grants full access to AWS Lambda service, AWS Lambda console features, and other related AWS services."}
         };
 
 
