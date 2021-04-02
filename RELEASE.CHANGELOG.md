@@ -1,3 +1,11 @@
+### Release 2021-04-02
+* **Amazon.Lambda.Tools (5.1.0)**
+  * Update to latest version of the AWS SDK for .NET.
+* **Amazon.ECS.Tools (3.4.0)**
+  * Update to latest version of the AWS SDK for .NET.
+* **Amazon.ElasticBeanstalk.Tools (4.2.0)**
+  * Update to latest version of the AWS SDK for .NET.
+
 ### Release 2021-03-24
 * **Amazon.Lambda.Tools (5.0.2)**
   * Updated version of the AWS SDK for .NET used to include support for SSO.
@@ -7,7 +15,7 @@
   * Updated version of the AWS SDK for .NET used to include support for SSO.
 * **Amazon.ElasticBeanstalk.Tools (4.1.1)**
   * Updated version of the AWS SDK for .NET used to include support for SSO.
-  * 
+
 ### Release 2021-01-21
 * **Amazon.Lambda.Tools (5.0.1)**
   * Fixed issue with handling Lambda projects that were multi targeting .NET versions
