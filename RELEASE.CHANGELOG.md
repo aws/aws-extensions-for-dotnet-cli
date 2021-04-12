@@ -7,6 +7,14 @@
   * Update to latest version of the AWS SDK for .NET.
 
 ### Release 2021-03-24
+* **Amazon.Lambda.Tools (5.01.0)**
+  * Updated to version 3.7 of the AWS SDK for .NET
+* **Amazon.ECS.Tools (3.4.0)**
+  * Updated to version 3.7 of the AWS SDK for .NET
+* **Amazon.ElasticBeanstalk.Tools (4.2.0)**
+  * Updated to version 3.7 of the AWS SDK for .NET
+  
+### Release 2021-03-24
 * **Amazon.Lambda.Tools (5.0.2)**
   * Updated version of the AWS SDK for .NET used to include support for SSO.
   * Pull request [#163](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/163) Fixed random manifest names causing zip package hash refresh on every build. Thanks [aohotnik](https://github.com/aohotnik)
