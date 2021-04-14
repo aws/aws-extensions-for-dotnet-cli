@@ -1,3 +1,7 @@
+### Release 2021-04-14
+* **Amazon.Lambda.Tools (5.1.1)**
+  * Fixed an issue where relative paths in package-ci command were not working.
+
 ### Release 2021-04-02
 * **Amazon.Lambda.Tools (5.1.0)**
   * Update to latest version of the AWS SDK for .NET.
