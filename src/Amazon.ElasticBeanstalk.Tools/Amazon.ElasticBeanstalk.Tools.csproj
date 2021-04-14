@@ -8,9 +8,9 @@
     <PackageId>Amazon.ElasticBeanstalk.Tools</PackageId>
     <PackageTags>AWS;Amazon;Beanstalk</PackageTags>
     <PackAsTool>true</PackAsTool>
-	<ToolCommandName>dotnet-eb</ToolCommandName>
+    <ToolCommandName>dotnet-eb</ToolCommandName>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>4.1.1</Version>
+    <Version>4.2.0</Version>
     <AssemblyName>dotnet-eb</AssemblyName>
     <Authors>Amazon Web Services</Authors>
     <Copyright>Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
@@ -25,9 +25,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.ElasticBeanstalk" Version="3.5.0.22" />
-    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.5.0.22" />
-    <PackageReference Include="AWSSDK.S3" Version="3.5.2" />
+    <PackageReference Include="AWSSDK.ElasticBeanstalk" Version="3.7.0.2" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.1" />
+    <PackageReference Include="AWSSDK.S3" Version="3.7.0.3" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">

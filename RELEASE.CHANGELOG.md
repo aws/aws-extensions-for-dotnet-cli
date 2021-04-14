@@ -1,3 +1,29 @@
+### Release 2021-04-02
+* **Amazon.Lambda.Tools (5.1.0)**
+  * Update to latest version of the AWS SDK for .NET.
+* **Amazon.ECS.Tools (3.4.0)**
+  * Update to latest version of the AWS SDK for .NET.
+* **Amazon.ElasticBeanstalk.Tools (4.2.0)**
+  * Update to latest version of the AWS SDK for .NET.
+
+### Release 2021-03-24
+* **Amazon.Lambda.Tools (5.01.0)**
+  * Updated to version 3.7 of the AWS SDK for .NET
+* **Amazon.ECS.Tools (3.4.0)**
+  * Updated to version 3.7 of the AWS SDK for .NET
+* **Amazon.ElasticBeanstalk.Tools (4.2.0)**
+  * Updated to version 3.7 of the AWS SDK for .NET
+  
+### Release 2021-03-24
+* **Amazon.Lambda.Tools (5.0.2)**
+  * Updated version of the AWS SDK for .NET used to include support for SSO.
+  * Pull request [#163](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/163) Fixed random manifest names causing zip package hash refresh on every build. Thanks [aohotnik](https://github.com/aohotnik)
+  * Pull request [#152](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/152) Pass OriginalCommandLineArguments to Command constructor. Thanks [Vickram Ravichandran](https://github.com/vickramravichandran)
+* **Amazon.ECS.Tools (3.3.1)**
+  * Updated version of the AWS SDK for .NET used to include support for SSO.
+* **Amazon.ElasticBeanstalk.Tools (4.1.1)**
+  * Updated version of the AWS SDK for .NET used to include support for SSO.
+
 ### Release 2021-01-21
 * **Amazon.Lambda.Tools (5.0.1)**
   * Fixed issue with handling Lambda projects that were multi targeting .NET versions
