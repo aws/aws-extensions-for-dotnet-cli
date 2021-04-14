@@ -12,6 +12,7 @@ using Amazon.S3;
 using Amazon.S3.Transfer;
 using Newtonsoft.Json.Schema;
 using Amazon.Lambda.Tools.Commands;
+using Amazon.Common.DotNetCli.Tools.Options;
 
 namespace Amazon.Lambda.Tools.TemplateProcessor
 {    
@@ -67,6 +68,9 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// <returns></returns>
         public async Task<string> TransformTemplateAsync(string templateDirectory, string templateBody, string[] args)
         {
+            // Remove Project Location switch from arguments list since this should not be used for code base.
+            string[] modifiedArguments = RemoveProjectLocationArgument(args);
+
             // If templateDirectory is actually pointing the CloudFormation template then grab its root.
             if (File.Exists(templateDirectory))
                 templateDirectory = Path.GetDirectoryName(templateDirectory);
@@ -92,7 +96,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                     {
                         this.Logger?.WriteLine(
                             $"Initiate packaging of {field.GetLocalPath()} for resource {updatableResource.Name}");
-                        updateResults = await ProcessUpdatableResourceAsync(templateDirectory, field, args);
+                        updateResults = await ProcessUpdatableResourceAsync(templateDirectory, field, modifiedArguments);
                         cacheOfLocalPathsToS3Keys[localPath] = updateResults;
                     }
                     else
@@ -124,7 +128,6 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             var newTemplate = parser.GetUpdatedTemplate();
             return newTemplate;
         }
-
 
         /// <summary>
         /// Determine the action to be done for the local path, like building a .NET Core package, then uploading the
@@ -299,6 +302,29 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 throw new LambdaToolsException($"Unknown upload type for packaging: {field.Resource.UploadType}", LambdaToolsException.LambdaErrorCode.ServerlessTemplateParseError);
             }
 
+        }
+
+        private string[] RemoveProjectLocationArgument(string[] args)
+        {
+            List<string> argumentList;
+            if (args == null || args.Length == 0) return args;
+
+            argumentList = new List<string>();
+            for (int counter = 0; counter < args.Length; counter++)
+            {
+                // Skip project location switch and it's value.
+                if (string.Equals(args[counter], CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION.ShortSwitch, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(args[counter], CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION.Switch, StringComparison.OrdinalIgnoreCase))
+                {
+                    counter += 1;
+                }
+                else
+                {
+                    argumentList.Add(args[counter]);
+                }
+            }
+
+            return argumentList.ToArray();
         }
 
         private static string GenerateOutputZipFilename(IUpdateResourceField field)
