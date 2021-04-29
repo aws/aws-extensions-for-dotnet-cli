@@ -401,8 +401,8 @@ namespace Amazon.Lambda.Tools.Commands
                 different = true;
             }
 
-            var packageType = this.GetStringValueOrDefault(this.PackageType, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_TYPE, false);
-            if (string.Equals(packageType, Lambda.PackageType.Zip.Value, StringComparison.OrdinalIgnoreCase))
+            var packageType = DeterminePackageType();
+            if (packageType == Lambda.PackageType.Zip)
             {
                 var handler = this.GetStringValueOrDefault(this.Handler, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER, false);
                 if (!string.IsNullOrEmpty(handler) && !string.Equals(handler, existingConfiguration.Handler, StringComparison.Ordinal))
@@ -418,7 +418,7 @@ namespace Amazon.Lambda.Tools.Commands
                     different = true;
                 }
             }
-            else if (string.Equals(packageType, Lambda.PackageType.Image.Value, StringComparison.OrdinalIgnoreCase))
+            else if (packageType == Lambda.PackageType.Image)
             {
                 {
                     var imageEntryPoints = this.GetStringValuesOrDefault(this.ImageEntryPoint, LambdaDefinedCommandOptions.ARGUMENT_IMAGE_ENTRYPOINT, false);
@@ -476,6 +476,12 @@ namespace Amazon.Lambda.Tools.Commands
                 return null;
 
             return request;
+        }
+
+        private Lambda.PackageType DeterminePackageType()
+        {
+            var strPackageType = this.GetStringValueOrDefault(this.PackageType, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_TYPE, false);
+            return LambdaUtilities.DeterminePackageType(strPackageType);
         }
 
         public Dictionary<string, string> GetEnvironmentVariables(Dictionary<string, string> existingEnvironmentVariables)
