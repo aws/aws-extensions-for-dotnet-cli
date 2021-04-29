@@ -312,7 +312,7 @@ namespace Amazon.Lambda.Tools.Commands
             var subnetIds = this.GetStringValuesOrDefault(this.SubnetIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SUBNETS, false);
             if (subnetIds != null)
             {
-                if(request.VpcConfig == null)
+                if(existingConfiguration.VpcConfig == null)
                 {
                     request.VpcConfig = new VpcConfig
                     {
@@ -320,7 +320,7 @@ namespace Amazon.Lambda.Tools.Commands
                     };
                     different = true;
                 }
-                else if(AreDifferent(subnetIds, request.VpcConfig.SubnetIds))
+                else if(AreDifferent(subnetIds, existingConfiguration.VpcConfig.SubnetIds))
                 {
                     request.VpcConfig.SubnetIds = subnetIds.ToList();
                     different = true;
@@ -330,7 +330,7 @@ namespace Amazon.Lambda.Tools.Commands
             var securityGroupIds = this.GetStringValuesOrDefault(this.SecurityGroupIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SECURITY_GROUPS, false);
             if (securityGroupIds != null)
             {
-                if (request.VpcConfig == null)
+                if (existingConfiguration.VpcConfig == null)
                 {
                     request.VpcConfig = new VpcConfig
                     {
@@ -338,7 +338,7 @@ namespace Amazon.Lambda.Tools.Commands
                     };
                     different = true;
                 }
-                else if (AreDifferent(securityGroupIds, request.VpcConfig.SecurityGroupIds))
+                else if (AreDifferent(securityGroupIds, existingConfiguration.VpcConfig.SecurityGroupIds))
                 {
                     request.VpcConfig.SecurityGroupIds = securityGroupIds.ToList();
                     different = true;
