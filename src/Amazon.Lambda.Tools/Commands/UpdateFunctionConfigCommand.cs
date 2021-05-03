@@ -28,8 +28,6 @@ namespace Amazon.Lambda.Tools.Commands
         {
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_DESCRIPTION,
-            LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_TYPE,
-
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_PUBLISH,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_MEMORY_SIZE,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE,
@@ -107,8 +105,6 @@ namespace Amazon.Lambda.Tools.Commands
                 this.FunctionName = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_DESCRIPTION.Switch)) != null)
                 this.Description = tuple.Item2.StringValue;
-            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_TYPE.Switch)) != null)
-                this.PackageType = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_PUBLISH.Switch)) != null)
                 this.Publish = tuple.Item2.BoolValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER.Switch)) != null)
