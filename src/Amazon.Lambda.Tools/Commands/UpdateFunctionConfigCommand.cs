@@ -312,17 +312,14 @@ namespace Amazon.Lambda.Tools.Commands
             var subnetIds = this.GetStringValuesOrDefault(this.SubnetIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SUBNETS, false);
             if (subnetIds != null)
             {
-                if(request.VpcConfig == null)
+                if (request.VpcConfig == null)
                 {
-                    request.VpcConfig = new VpcConfig
-                    {
-                        SubnetIds = subnetIds.ToList()
-                    };
-                    different = true;
+                    request.VpcConfig = new VpcConfig();
                 }
-                else if(AreDifferent(subnetIds, request.VpcConfig.SubnetIds))
+
+                request.VpcConfig.SubnetIds = subnetIds.ToList();
+                if (existingConfiguration.VpcConfig == null || AreDifferent(subnetIds, existingConfiguration.VpcConfig.SubnetIds))
                 {
-                    request.VpcConfig.SubnetIds = subnetIds.ToList();
                     different = true;
                 }
             }
@@ -332,15 +329,12 @@ namespace Amazon.Lambda.Tools.Commands
             {
                 if (request.VpcConfig == null)
                 {
-                    request.VpcConfig = new VpcConfig
-                    {
-                        SecurityGroupIds = securityGroupIds.ToList()
-                    };
-                    different = true;
+                    request.VpcConfig = new VpcConfig();
                 }
-                else if (AreDifferent(securityGroupIds, request.VpcConfig.SecurityGroupIds))
+
+                request.VpcConfig.SecurityGroupIds = securityGroupIds.ToList();
+                if (existingConfiguration.VpcConfig == null || AreDifferent(securityGroupIds, existingConfiguration.VpcConfig.SecurityGroupIds))
                 {
-                    request.VpcConfig.SecurityGroupIds = securityGroupIds.ToList();
                     different = true;
                 }
             }
