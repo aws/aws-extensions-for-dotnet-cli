@@ -1,3 +1,8 @@
+### Release 2021-05-03
+* **Amazon.Lambda.Tools (5.1.2)**
+  * Pull request [#170](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/170) Fixed issue with unnecessary function config update when using VPC settings. Thanks [Abubaker Bashir](https://github.com/AbubakerB)
+  * Pull request [#169](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/169) Fixed issue with runtime and handler fields not being updated. Thanks [Abubaker Bashir](https://github.com/AbubakerB)
+  
 ### Release 2021-04-14
 * **Amazon.Lambda.Tools (5.1.1)**
   * Fixed an issue where relative paths in package-ci command were not working.
