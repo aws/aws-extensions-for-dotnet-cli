@@ -1,3 +1,14 @@
+### Release 2021-06-02
+* **Amazon.Lambda.Tools (5.1.3)**
+  * Updated to version 3.7.0.27 of AWSSDK.Core
+  * Updated to version 3.7.1.15 of AWSSDK.SecurityToken
+* **Amazon.ECS.Tools (3.4.1)**
+  * Updated to version 3.7.0.27 of AWSSDK.Core
+  * Updated to version 3.7.1.15 of AWSSDK.SecurityToken
+* **Amazon.ElasticBeanstalk.Tools (4.2.1)**
+  * Updated to version 3.7.0.27 of AWSSDK.Core
+  * Updated to version 3.7.1.15 of AWSSDK.SecurityToken
+
 ### Release 2021-05-03
 * **Amazon.Lambda.Tools (5.1.2)**
   * Pull request [#170](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/170) Fixed issue with unnecessary function config update when using VPC settings. Thanks [Abubaker Bashir](https://github.com/AbubakerB)
