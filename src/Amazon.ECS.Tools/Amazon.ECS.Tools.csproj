@@ -10,7 +10,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dotnet-ecs</ToolCommandName>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>3.4.0</Version>
+    <Version>3.4.1</Version>
     <AssemblyName>dotnet-ecs</AssemblyName>
     <Company>Amazon.com, Inc</Company>
     <Authors>Amazon Web Services</Authors>
@@ -22,7 +22,7 @@
   <ItemGroup>
     <PackageReference Include="AWSSDK.CloudWatchEvents" Version="3.7.1.1" />
     <PackageReference Include="AWSSDK.CloudWatchLogs" Version="3.7.0.2" />
-    <PackageReference Include="AWSSDK.Core" Version="3.7.0.3" />
+    <PackageReference Include="AWSSDK.Core" Version="3.7.0.27" />
     <PackageReference Include="AWSSDK.EC2" Version="3.7.0.2" />
     <PackageReference Include="AWSSDK.ECS" Version="3.7.0.2" />
     <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.1" />
