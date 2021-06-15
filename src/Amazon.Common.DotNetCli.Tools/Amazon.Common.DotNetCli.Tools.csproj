@@ -11,6 +11,8 @@
     <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.1" />
     <PackageReference Include="AWSSDK.S3" Version="3.7.0.3" />
     <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.1.15" />
+    <PackageReference Include="AWSSDK.SSO" Version="3.7.0.26" />
+    <PackageReference Include="AWSSDK.SSOOIDC" Version="3.7.0.26" />
   </ItemGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1' ">
     <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
