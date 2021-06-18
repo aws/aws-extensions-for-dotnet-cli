@@ -1,3 +1,11 @@
+### Release 2021-06-17
+* **Amazon.Lambda.Tools (5.1.4)**
+  * Added reference to AWSSDK.SSO and AWSSDK.SSOOIDC for SSO flow.
+* **Amazon.ECS.Tools (3.4.2)**
+  * Added reference to AWSSDK.SSO and AWSSDK.SSOOIDC for SSO flow.
+* **Amazon.ElasticBeanstalk.Tools (4.2.2)**
+  * Added reference to AWSSDK.SSO and AWSSDK.SSOOIDC for SSO flow.
+
 ### Release 2021-06-02
 * **Amazon.Lambda.Tools (5.1.3)**
   * Updated to version 3.7.0.27 of AWSSDK.Core
