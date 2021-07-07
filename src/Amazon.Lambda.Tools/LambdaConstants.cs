@@ -38,10 +38,9 @@ namespace Amazon.Lambda.Tools
         internal const string PRUNE_LIST_SDK_XML = "publish-layer-31sdk-prunelist.xml";
         
         internal const string PRUNE_LIST_SDKWEB_XML = "publish-layer-31sdkweb-prunelist.xml";
-
-        // The runtime identifier used for older Lambda runtimes running on Amazon Linux 1.
-        internal const string LEGACY_RUNTIME_HIERARCHY_STARTING_POINT = "rhel.7.2-x64";
-
+        
+        // The runtime identifier provides the most compatibility with Amazon Linux as most of the plain linux-x64 runtimes in reality target ubuntu/debian distros.
+        internal const string RUNTIME_HIERARCHY_STARTING_POINT = "rhel.7.2-x64";
 
         public const string AWS_LAMBDA_MANAGED_POLICY_PREFIX = "AWSLambda";
 
