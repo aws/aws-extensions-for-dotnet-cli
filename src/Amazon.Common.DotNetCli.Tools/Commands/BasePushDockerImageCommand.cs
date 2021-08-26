@@ -60,7 +60,12 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
         public string ImageTagUniqueSeed { get; set; }
 
         public BasePushDockerImageCommand(IToolLogger logger, string workingDirectory, string[] args)
-            : base(logger, workingDirectory, CommandOptions, args)
+            : this(logger, workingDirectory, CommandOptions, args)
+        {
+        }
+
+        protected BasePushDockerImageCommand(IToolLogger logger, string workingDirectory, IList<CommandOption> commandOptions, string[] args)
+            : base(logger, workingDirectory, commandOptions, args)
         {
         }
 
@@ -238,10 +243,15 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
                 throw new ToolsException($"Error failed to find file \"{fullDockerfilePath}\" to build the Docker image", ToolsException.CommonErrorCode.DockerBuildFailed);
             }
 
-            if (dockerCli.Build(dockerBuildWorkingDirectory, fullDockerfilePath, dockerImageTag, dockerBuildOptions) != 0)
+            if (ExecuteDockerBuild(dockerCli, dockerBuildWorkingDirectory, fullDockerfilePath, dockerImageTag, dockerBuildOptions) != 0)
             {
                 throw new ToolsException("Error executing \"docker build\"", ToolsException.CommonErrorCode.DockerBuildFailed);
             }
+        }
+
+        protected virtual int ExecuteDockerBuild(DockerCLIWrapper dockerCli, string dockerBuildWorkingDirectory, string fullDockerfilePath, string dockerImageTag, string dockerBuildOptions)
+        {
+            return dockerCli.Build(dockerBuildWorkingDirectory, fullDockerfilePath, dockerImageTag, dockerBuildOptions);
         }
 
         private async Task PushToECR(DockerCLIWrapper dockerCli, string sourceDockerImageTag, string destinationDockerImageTag)
@@ -491,11 +501,17 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
                 var tag = command.GetStringValueOrDefault(this.DockerImageTag, CommonDefinedCommandOptions.ARGUMENT_DOCKER_TAG, false);
                 if (!string.IsNullOrEmpty(tag))
                 {
-                    // Strip the full ECR URL name.
-                    int pos = tag.LastIndexOf('/');
-                    if (pos != -1)
+                    // Strip the full ECR URL name of form - protocol://aws_account_id.dkr.ecr.region.amazonaws.domain/repository:tag
+                    // irrespective of domain
+                    int dkrPos = tag.IndexOf(".dkr.ecr");
+                    if (dkrPos != -1)
                     {
-                        tag = tag.Substring(pos + 1);
+                        tag = tag.Substring(dkrPos + 1);
+                        int pos = tag.IndexOf('/');
+                        if (pos != -1)
+                        {
+                            tag = tag.Substring(pos + 1);
+                        }
                     }
 
                     data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_DOCKER_TAG.ConfigFileKey, tag);

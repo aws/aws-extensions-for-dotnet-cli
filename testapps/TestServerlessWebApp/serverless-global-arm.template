@@ -1,0 +1,42 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Transform" : "AWS::Serverless-2016-10-31",
+  "Description" : "Starting template for an AWS Serverless Application.",
+  "Parameters" : {
+  },
+  "Globals" : {
+    "Function" : {
+        "Architectures" : ["arm64"]
+    }
+  },
+  "Resources" : {
+    "DefaultFunction" : {
+      "Type" : "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "TestServerlessWebApp::TestServerlessWebApp.LambdaFunction::FunctionHandlerAsync",
+        "Runtime": "dotnetcore2.1",
+        "CodeUri": "",
+        "Description": "Default function",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [ "AWSLambda_FullAccess" ],
+        "Events": {
+          "PutResource": {
+            "Type": "Api",
+            "Properties": {
+              "Path": "/{proxy+}",
+              "Method": "ANY"
+            }
+          }
+        }
+      }
+    },
+
+    "UploadsBucket" : {
+        "Type" : "AWS::S3::Bucket"
+    }
+  },
+  "Outputs" : {
+  }
+}

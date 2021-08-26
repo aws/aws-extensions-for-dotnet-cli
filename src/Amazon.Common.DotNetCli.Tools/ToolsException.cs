@@ -15,6 +15,7 @@ namespace Amazon.Common.DotNetCli.Tools
             ProfileNotFound,
             ProfileNotCreateable,
             RegionNotConfigured,
+            InvalidParameterValue,
             MissingRequiredParameter,
             MissingConfigFile,
             PersistConfigError,

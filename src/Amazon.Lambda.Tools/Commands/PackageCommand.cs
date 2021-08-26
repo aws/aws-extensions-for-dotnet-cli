@@ -19,6 +19,7 @@ namespace Amazon.Lambda.Tools.Commands
         {
             CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION,
             CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK,
+            LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE,
             CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS,
             CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION,
@@ -35,6 +36,7 @@ namespace Amazon.Lambda.Tools.Commands
             CommonDefinedCommandOptions.ARGUMENT_HOST_BUILD_OUTPUT
         });
 
+        public string Architecture { get; set; }
         public string Configuration { get; set; }
         public string TargetFramework { get; set; }
         public string OutputPackageFileName { get; set; }
@@ -105,6 +107,9 @@ namespace Amazon.Lambda.Tools.Commands
                 this.MSBuildParameters = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS.Switch)) != null)
                 this.LayerVersionArns = tuple.Item2.StringValues;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE.Switch)) != null)
+                this.Architecture = tuple.Item2.StringValue;
+
 
             if (!string.IsNullOrEmpty(values.MSBuildParameters))
             {
@@ -204,12 +209,23 @@ namespace Amazon.Lambda.Tools.Commands
                 }
 
                 var msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
+                var architecture = this.GetStringValueOrDefault(this.Architecture, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE, false);
                 var disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
 
                 var zipArchivePath = GetStringValueOrDefault(this.OutputPackageFileName, LambdaDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE, false);
 
                 string publishLocation;
-                var success = LambdaPackager.CreateApplicationBundle(this.DefaultConfig, this.Logger, this.WorkingDirectory, projectLocation, configuration, targetFramework, msbuildParameters, disableVersionCheck, layerPackageInfo, out publishLocation, ref zipArchivePath);
+                var success = LambdaPackager.CreateApplicationBundle(defaults: this.DefaultConfig,
+                                                                     logger: this.Logger,
+                                                                     workingDirectory: this.WorkingDirectory,
+                                                                     projectLocation: projectLocation,
+                                                                     configuration: configuration,
+                                                                     targetFramework: targetFramework,
+                                                                     msbuildParameters: msbuildParameters,
+                                                                     architecture: architecture,
+                                                                     disableVersionCheck: disableVersionCheck,
+                                                                     layerPackageInfo: layerPackageInfo,
+                                                                     publishLocation: out publishLocation, zipArchivePath: ref zipArchivePath);
                 if (!success)
                 {
                     this.Logger.WriteLine("Failed to create application package");
@@ -276,12 +292,13 @@ namespace Amazon.Lambda.Tools.Commands
 
         protected override void SaveConfigFile(JsonData data)
         {
-            data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION.ConfigFileKey, this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false));    
-            data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION.ConfigFileKey, this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false));    
-            data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK.ConfigFileKey, this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false));    
-            data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS.ConfigFileKey, this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false));    
-            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE.ConfigFileKey, this.GetStringValueOrDefault(this.OutputPackageFileName, LambdaDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE, false));    
-            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK.ConfigFileKey, this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false));    
+            data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION.ConfigFileKey, this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false));
+            data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION.ConfigFileKey, this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false));
+            data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK.ConfigFileKey, this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE.ConfigFileKey, this.GetStringValueOrDefault(this.Architecture, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE, false));
+            data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS.ConfigFileKey, this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE.ConfigFileKey, this.GetStringValueOrDefault(this.OutputPackageFileName, LambdaDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK.ConfigFileKey, this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false));
         }
     }
 }

@@ -42,6 +42,12 @@ namespace Amazon.Lambda.Tools
         // The runtime identifier used for older Lambda runtimes running on Amazon Linux 1.
         internal const string LEGACY_RUNTIME_HIERARCHY_STARTING_POINT = "rhel.7.2-x64";
 
+        public const string RUNTIME_LINUX_X64 = "linux-x64";
+        public const string RUNTIME_LINUX_ARM64 = "linux-arm64";
+
+        public const string ARCHITECTURE_X86_64 = "x86_64";
+        public const string ARCHITECTURE_ARM64 = "arm64";
+
 
         public const string AWS_LAMBDA_MANAGED_POLICY_PREFIX = "AWSLambda";
 
@@ -51,10 +57,8 @@ namespace Amazon.Lambda.Tools
             {"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole","Provides write permissions to CloudWatch Logs."},
             {"arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole","Provides list and read access to DynamoDB streams and write permissions to CloudWatch Logs."},
             {"arn:aws:iam::aws:policy/AWSLambdaExecute","Provides Put, Get access to S3 and full access to CloudWatch Logs."},
-            {"arn:aws:iam::aws:policy/AWSLambdaFullAccess","Provides full access to Lambda, S3, DynamoDB, CloudWatch Metrics and Logs."},
             {"arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB","Provides read access to DynamoDB Streams."},
             {"arn:aws:iam::aws:policy/service-role/AWSLambdaKinesisExecutionRole","Provides list and read access to Kinesis streams and write permissions to CloudWatch Logs."},
-            {"arn:aws:iam::aws:policy/AWSLambdaReadOnlyAccess","Provides read only access to Lambda, S3, DynamoDB, CloudWatch Metrics and Logs."},
             {"arn:aws:iam::aws:policy/service-role/AWSLambdaRole","Default policy for AWS Lambda service role."},
             {"arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole","Provides receive message, delete message, and read attribute access to SQS queues, and write permissions to CloudWatch logs."},
             {"arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda","Provides CodeDeploy service access to perform a Lambda deployment on your behalf."},

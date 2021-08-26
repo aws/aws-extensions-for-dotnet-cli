@@ -108,6 +108,15 @@ namespace Amazon.Lambda.Tools
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = "The runtime environment for the Lambda function"
             };
+        public static readonly CommandOption ARGUMENT_FUNCTION_ARCHITECTURE =
+            new CommandOption
+            {
+                Name = "Architecture",
+                ShortSwitch = "-farch",
+                Switch = "--function-architecture",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = $"The architecture of the Lambda function. Valid values: {LambdaConstants.ARCHITECTURE_X86_64} or {LambdaConstants.ARCHITECTURE_ARM64}. Default is {LambdaConstants.ARCHITECTURE_X86_64}"
+            };
         public static readonly CommandOption ARGUMENT_FUNCTION_SUBNETS =
             new CommandOption
             {
