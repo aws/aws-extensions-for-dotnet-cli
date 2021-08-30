@@ -156,6 +156,10 @@ namespace Amazon.Common.DotNetCli.Tools
         public static string LookupTargetFrameworkFromProjectFile(string projectLocation)
         {
             var projectFile = FindProjectFileInDirectory(projectLocation);
+            if (projectFile == null)
+            {
+                return null;
+            }
 
             var project = AnalyzerManager.GetProject(projectFile);
             var environmentOpts = new EnvironmentOptions
