@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>TestFunctionImportTargetFramework</AssemblyName>
+    <OutputType>Library</OutputType>
+    <PackageId>TestFunctionImportTargetFramework</PackageId>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)TargetFramework.props" />
+
+  <ItemGroup>
+    <PackageReference Include="Amazon.Lambda.Serialization.Json" Version="1.1.0" />
+  </ItemGroup>
+</Project>

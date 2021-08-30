@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.IO;
+using System.Reflection;
 
 using Xunit;
 
@@ -8,6 +8,17 @@ namespace Amazon.Common.DotNetCli.Tools.Test
 {
     public class UtilitiesTests
     {
+        [Theory]
+        [InlineData("../../../../../testapps/TestFunction", "netcoreapp2.1")]
+        [InlineData("../../../../../testapps/TestFunctionTargetFrameworks", "netcoreapp2.1")]
+        [InlineData("../../../../../testapps/TestFunctionImportTargetFramework", "netcoreapp2.1")]
+        [InlineData("../../../../../testapps/ServerlessWithYamlFunction", "netcoreapp2.1")]
+        [InlineData("../../../../../testapps/TestBeanstalkWebApp", "netcoreapp2.1")]
+        public void CheckFramework(string projectPath, string expectedFramework)
+        {
+            Assert.Equal(expectedFramework, Utilities.LookupTargetFrameworkFromProjectFile(projectPath));
+        }
+
         [Fact]
         public void TestExecuteShellCommandSuccess()
         {

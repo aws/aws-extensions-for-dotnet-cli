@@ -2,6 +2,8 @@
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
+using Buildalyzer;
+using Buildalyzer.Environment;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,8 +14,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Linq;
-using System.Xml.XPath;
 using Amazon.Util;
 using System.Text.RegularExpressions;
 using System.Collections;
@@ -26,6 +26,11 @@ namespace Amazon.Common.DotNetCli.Tools
         /// Compiled Regex for $(Variable) token searches
         /// </summary>
         private readonly static Regex EnvironmentVariableTokens = new Regex(@"[$][(].*?[)]", RegexOptions.Compiled);
+
+        /// <summary>
+        /// Analyzer for *.*proj files. (Whatever is supported by MSBuild.)
+        /// </summary>
+        private readonly static AnalyzerManager AnalyzerManager = new AnalyzerManager();
 
         /// <summary>
         /// Replaces $(Variable) tokens with environment variables
@@ -152,10 +157,15 @@ namespace Amazon.Common.DotNetCli.Tools
         {
             var projectFile = FindProjectFileInDirectory(projectLocation);
 
-            var xdoc = XDocument.Load(projectFile);
+            var project = AnalyzerManager.GetProject(projectFile);
+            var environmentOpts = new EnvironmentOptions
+            {
+                Restore = false,
+            };
+            var analyzerResults = project.Build(environmentOpts);
 
-            var element = xdoc.XPathSelectElement("//PropertyGroup/TargetFramework");
-            return element?.Value;
+            var targetFrameworks = analyzerResults.TargetFrameworks.ToList();
+            return targetFrameworks.Count == 1 ? targetFrameworks[0] : null;
         }
 
         public static string FindProjectFileInDirectory(string directory)
