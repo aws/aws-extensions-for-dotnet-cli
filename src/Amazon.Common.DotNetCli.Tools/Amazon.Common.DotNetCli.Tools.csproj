@@ -13,7 +13,8 @@
     <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.1.140" />
     <PackageReference Include="AWSSDK.SSO" Version="3.7.0.148" />
     <PackageReference Include="AWSSDK.SSOOIDC" Version="3.7.0.148" />
-    <PackageReference Include="Buildalyzer" Version="3.2.2" />
+    <PackageReference Include="Microsoft.Build" Version="16.9.0" ExcludeAssets="Runtime" />
+    <PackageReference Include="Microsoft.Build.Locator" Version="1.4.1" />
   </ItemGroup>
   <PropertyGroup>
     <NoWarn>1701;1702;1705;1591</NoWarn>

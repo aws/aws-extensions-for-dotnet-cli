@@ -2,14 +2,11 @@
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
-using Buildalyzer;
-using Buildalyzer.Environment;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -17,6 +14,11 @@ using System.Threading.Tasks;
 using Amazon.Util;
 using System.Text.RegularExpressions;
 using System.Collections;
+using Microsoft.Build.Definition;
+using Microsoft.Build.Evaluation;
+using Microsoft.Build.Evaluation.Context;
+using static Microsoft.Build.Evaluation.ProjectLoadSettings;
+using static Microsoft.Build.Evaluation.Context.EvaluationContext.SharingPolicy;
 
 namespace Amazon.Common.DotNetCli.Tools
 {
@@ -26,11 +28,6 @@ namespace Amazon.Common.DotNetCli.Tools
         /// Compiled Regex for $(Variable) token searches
         /// </summary>
         private readonly static Regex EnvironmentVariableTokens = new Regex(@"[$][(].*?[)]", RegexOptions.Compiled);
-
-        /// <summary>
-        /// Analyzer for *.*proj files. (Whatever is supported by MSBuild.)
-        /// </summary>
-        private readonly static AnalyzerManager AnalyzerManager = new AnalyzerManager();
 
         /// <summary>
         /// Replaces $(Variable) tokens with environment variables
@@ -161,15 +158,31 @@ namespace Amazon.Common.DotNetCli.Tools
                 return null;
             }
 
-            var project = AnalyzerManager.GetProject(projectFile);
-            var environmentOpts = new EnvironmentOptions
+            var projectOpts = new ProjectOptions
             {
-                Restore = false,
+                ProjectCollection = new ProjectCollection(),
+                EvaluationContext = EvaluationContext.Create(Shared),
+                LoadSettings = IgnoreMissingImports
             };
-            var analyzerResults = project.Build(environmentOpts);
 
-            var targetFrameworks = analyzerResults.TargetFrameworks.ToList();
-            return targetFrameworks.Count == 1 ? targetFrameworks[0] : null;
+            var project = Project.FromFile(projectFile, projectOpts);
+            var singularPropertyValue = project.GetPropertyValue("TargetFramework");
+            if (!string.IsNullOrEmpty(singularPropertyValue))
+            {
+                return singularPropertyValue;
+            }
+
+            var pluralPropertyValue = project.GetPropertyValue("TargetFrameworks");
+            if (string.IsNullOrEmpty(pluralPropertyValue))
+            {
+                return null;
+            }
+
+            var targetFrameworks = pluralPropertyValue.Split(';', StringSplitOptions.RemoveEmptyEntries);
+
+            /* We need one unambiguous target framework. Otherwise, leave it indeterminate
+             * so that we can fall back to the setting. */
+            return targetFrameworks.Length == 1 ? targetFrameworks[0] : null;
         }
 
         public static string FindProjectFileInDirectory(string directory)
