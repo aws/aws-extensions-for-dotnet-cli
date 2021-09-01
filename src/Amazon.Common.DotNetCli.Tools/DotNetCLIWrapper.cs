@@ -43,11 +43,7 @@ namespace Amazon.Common.DotNetCli.Tools
 
             _logger?.WriteLine($"... invoking 'dotnet publish'");
 
-            var dotnetCLI = FindExecutableInPath("dotnet.exe");
-            if (dotnetCLI == null)
-                dotnetCLI = FindExecutableInPath("dotnet");
-            if (string.IsNullOrEmpty(dotnetCLI))
-                throw new Exception("Failed to locate dotnet CLI executable. Make sure the dotnet CLI is installed in the environment PATH.");
+            var dotnetCLI = LocateDotNetCli();
 
             StringBuilder arguments = new StringBuilder("publish");
             if (!string.IsNullOrEmpty(projectLocation))
@@ -121,6 +117,54 @@ namespace Amazon.Common.DotNetCli.Tools
             return 0;
         }
 
+        /// <summary>
+        /// Runs a design-time build with a custom target to export the target frameworks
+        /// of a project.
+        /// </summary>
+        /// <param name="projectFile">The project file to build, which is in the working directory.</param>
+        /// <returns>
+        /// The project's single, unambiguous target framework, if such a thing can be determined;
+        /// otherwise, <see langword="null"/>.
+        /// </returns>
+        public string ExportTargetFramework(string projectFile)
+        {
+            var outputFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            var targetsFile = FindTargetsFile();
+            var args = new[]
+            {
+                "msbuild",
+                projectFile,
+                "/nologo",
+                "/t:_AmazonCommonToolsExtractTargetFrameworks", // as defined in AmazonCommonDotNetCliTools.targets
+                $"/p:_AmazonCommonToolsTargetFrameworksFile={outputFile}",
+                "/p:Configuration=Debug",
+                $"\"/p:CustomAfterMicrosoftCommonTargets={targetsFile}\"",
+                $"\"/p:CustomAfterMicrosoftCommonCrossTargetingTargets={targetsFile}\"",
+                "-verbosity:quiet",
+            };
+            var dotnetCLI = LocateDotNetCli();
+            var psi = new ProcessStartInfo
+            {
+                FileName = dotnetCLI,
+                WorkingDirectory = this._workingDirectory,
+                Arguments = string.Join(" ", args),
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            int exitCode = base.ExecuteCommand(psi, "design-time build");
+            if (exitCode != 0)
+            {
+                return null;
+            }
+
+            var lines = File.ReadAllLines(outputFile);
+            /* We need one unambiguous target framework. Otherwise, leave it indeterminate
+             * so that we can use the setting. */
+            return lines.Length == 1 ? lines[0] : null;
+        }
+
         public static Version GetSdkVersion()
         {
             var dotnetCLI = FindExecutableInPath("dotnet.exe");
@@ -164,6 +208,31 @@ namespace Amazon.Common.DotNetCli.Tools
             }
 
             return null;
+        }
+
+        private static string LocateDotNetCli()
+        {
+            var dotnetCLI = FindExecutableInPath("dotnet.exe");
+            if (dotnetCLI == null)
+                dotnetCLI = FindExecutableInPath("dotnet");
+            if (string.IsNullOrEmpty(dotnetCLI))
+                throw new Exception("Failed to locate dotnet CLI executable. Make sure the dotnet CLI is installed in the environment PATH.");
+
+            return dotnetCLI;
+        }
+
+        private static string FindTargetsFile()
+        {
+            var assemblyDir = Path.GetDirectoryName(typeof(DotNetCLIWrapper).Assembly.Location);
+            var searchPaths = new[]
+            {
+                Path.Combine(AppContext.BaseDirectory, "Assets"),
+                Path.Combine(assemblyDir, "Assets"),
+                AppContext.BaseDirectory,
+                assemblyDir,
+            };
+
+            return searchPaths.Select(p => Path.Combine(p, "AmazonCommonDotNetCliTools.targets")).FirstOrDefault(File.Exists);
         }
     }
 }

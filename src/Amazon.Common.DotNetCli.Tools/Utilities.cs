@@ -14,11 +14,6 @@ using System.Threading.Tasks;
 using Amazon.Util;
 using System.Text.RegularExpressions;
 using System.Collections;
-using Microsoft.Build.Definition;
-using Microsoft.Build.Evaluation;
-using Microsoft.Build.Evaluation.Context;
-using static Microsoft.Build.Evaluation.ProjectLoadSettings;
-using static Microsoft.Build.Evaluation.Context.EvaluationContext.SharingPolicy;
 
 namespace Amazon.Common.DotNetCli.Tools
 {
@@ -158,31 +153,8 @@ namespace Amazon.Common.DotNetCli.Tools
                 return null;
             }
 
-            var projectOpts = new ProjectOptions
-            {
-                ProjectCollection = new ProjectCollection(),
-                EvaluationContext = EvaluationContext.Create(Shared),
-                LoadSettings = IgnoreMissingImports
-            };
-
-            var project = Project.FromFile(projectFile, projectOpts);
-            var singularPropertyValue = project.GetPropertyValue("TargetFramework");
-            if (!string.IsNullOrEmpty(singularPropertyValue))
-            {
-                return singularPropertyValue;
-            }
-
-            var pluralPropertyValue = project.GetPropertyValue("TargetFrameworks");
-            if (string.IsNullOrEmpty(pluralPropertyValue))
-            {
-                return null;
-            }
-
-            var targetFrameworks = pluralPropertyValue.Split(';', StringSplitOptions.RemoveEmptyEntries);
-
-            /* We need one unambiguous target framework. Otherwise, leave it indeterminate
-             * so that we can fall back to the setting. */
-            return targetFrameworks.Length == 1 ? targetFrameworks[0] : null;
+            var cliWrapper = new DotNetCLIWrapper(new ConsoleToolLogger(), projectLocation);
+            return cliWrapper.ExportTargetFramework(projectFile);
         }
 
         public static string FindProjectFileInDirectory(string directory)
@@ -195,7 +167,7 @@ namespace Amazon.Common.DotNetCli.Tools
                 var files = Directory.GetFiles(directory, ext, SearchOption.TopDirectoryOnly);
                 if (files.Length == 1)
                 {
-                    return files[0];
+                    return Path.GetFileName(files[0]);
                 }
             }
 

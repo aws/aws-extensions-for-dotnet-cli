@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.CLi;
 using Amazon.Common.DotNetCli.Tools.Commands;
 using Amazon.Lambda.Tools.Commands;
@@ -11,8 +10,6 @@ namespace Amazon.Lambda.Tools
     {
         static void Main(string[] args)
         {
-            MSBuildInitializer.Initialize();
-
             var application = new Application("lambda", "Amazon Lambda Tools for .NET Core applications", "https://github.com/aws/aws-extensions-for-dotnet-cli, https://github.com/aws/aws-lambda-dotnet",
                 new List<ICommandInfo>()
                 {

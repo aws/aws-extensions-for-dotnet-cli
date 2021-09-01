@@ -4,7 +4,6 @@ using Amazon.Common.DotNetCli.Tools.CLi;
 using Amazon.Common.DotNetCli.Tools.Commands;
 using System.Collections.Generic;
 using Amazon.ElasticBeanstalk.Tools.Commands;
-using Amazon.Common.DotNetCli.Tools;
 
 namespace Amazon.ElasticBeanstalk.Tools
 {
@@ -12,8 +11,6 @@ namespace Amazon.ElasticBeanstalk.Tools
     {
         static void Main(string[] args)
         {
-            MSBuildInitializer.Initialize();
-
             var application = new Application("eb", "Amazon Elastic Beanstalk Tools for .NET Core applications", "https://github.com/aws/aws-extensions-for-dotnet-cli",
                 new List<ICommandInfo>()
                 {

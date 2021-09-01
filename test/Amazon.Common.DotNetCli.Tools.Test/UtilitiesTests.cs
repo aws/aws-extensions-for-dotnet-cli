@@ -4,22 +4,7 @@ using Xunit;
 namespace Amazon.Common.DotNetCli.Tools.Test
 {
     public class UtilitiesTests
-        : IClassFixture<UtilitiesTests.MSBuildTestFixture>
     {
-        // Used to ensure that MSBuild is only initialized once per test run.
-        // This is slightly safer than a static constructor, and it gives nicer error messages.
-        public sealed class MSBuildTestFixture
-        {
-            public MSBuildTestFixture()
-            {
-                MSBuildInitializer.Initialize();
-            }
-        }
-
-        public UtilitiesTests(MSBuildTestFixture _)
-        {
-        }
-
         [Theory]
         [InlineData("../../../../../testapps/TestFunction", "netcoreapp2.1")]
         [InlineData("../../../../../testapps/TestFunctionTargetFrameworks", "netcoreapp2.1")]

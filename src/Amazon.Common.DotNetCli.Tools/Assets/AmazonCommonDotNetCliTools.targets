@@ -1,0 +1,6 @@
+<Project>
+  <Target Name="_AmazonCommonToolsExtractTargetFrameworks">
+    <WriteLinesToFile File="$(_AmazonCommonToolsTargetFrameworksFile)" Lines="$(TargetFramework)" Condition=" '$(TargetFramework)' != '' " />
+    <WriteLinesToFile File="$(_AmazonCommonToolsTargetFrameworksFile)" Lines="$(TargetFrameworks)" Condition=" '$(TargetFrameworks)' != '' " />
+  </Target>
+</Project>
