@@ -14,7 +14,7 @@
     <PackageReference Include="AWSSDK.SSO" Version="3.7.0.148" />
     <PackageReference Include="AWSSDK.SSOOIDC" Version="3.7.0.148" />
 
-    <None Include="assets\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="Assets\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <PropertyGroup>
     <NoWarn>1701;1702;1705;1591</NoWarn>
