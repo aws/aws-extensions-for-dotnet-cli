@@ -43,7 +43,7 @@ namespace Amazon.Common.DotNetCli.Tools
 
             _logger?.WriteLine($"... invoking 'dotnet publish'");
 
-            var dotnetCLI = LocateDotNetCli();
+            var dotnetCLI = FindDotNetCli();
 
             StringBuilder arguments = new StringBuilder("publish");
             if (!string.IsNullOrEmpty(projectLocation))
@@ -118,15 +118,14 @@ namespace Amazon.Common.DotNetCli.Tools
         }
 
         /// <summary>
-        /// Runs a design-time build with a custom target to export the target frameworks
-        /// of a project.
+        /// Runs a build with a custom target to export the target frameworks of a project.
         /// </summary>
         /// <param name="projectFile">The project file to build, which is in the working directory.</param>
         /// <returns>
-        /// The project's single, unambiguous target framework, if such a thing can be determined;
+        /// The project's target frameworks, if such can be determined;
         /// otherwise, <see langword="null"/>.
         /// </returns>
-        public string ExportTargetFramework(string projectFile)
+        public string[] GetTargetFrameworks(string projectFile)
         {
             var outputFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             var targetsFile = FindTargetsFile();
@@ -140,39 +139,18 @@ namespace Amazon.Common.DotNetCli.Tools
                 "/p:Configuration=Debug",
                 $"\"/p:CustomAfterMicrosoftCommonTargets={targetsFile}\"",
                 $"\"/p:CustomAfterMicrosoftCommonCrossTargetingTargets={targetsFile}\"",
-                "-verbosity:quiet",
             };
-            var dotnetCLI = LocateDotNetCli();
-            var psi = new ProcessStartInfo
-            {
-                FileName = dotnetCLI,
-                WorkingDirectory = this._workingDirectory,
-                Arguments = string.Join(" ", args),
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-            int exitCode = base.ExecuteCommand(psi, "design-time build");
-            if (exitCode != 0)
-            {
-                return null;
-            }
+            var dotnetCLI = FindDotNetCli();
+            var results = Utilities.ExecuteShellCommand(this._workingDirectory, dotnetCLI, string.Join(" ", args));
+            if (results.ExitCode != 0)
+                throw new Exception("Failed to export target frameworks, captured output: \n" + results.Stdout);
 
-            var lines = File.ReadAllLines(outputFile);
-            /* We need one unambiguous target framework. Otherwise, leave it indeterminate
-             * so that we can use the setting. */
-            return lines.Length == 1 ? lines[0] : null;
+            return File.ReadAllLines(outputFile);
         }
 
         public static Version GetSdkVersion()
         {
-            var dotnetCLI = FindExecutableInPath("dotnet.exe");
-            if (dotnetCLI == null)
-                dotnetCLI = FindExecutableInPath("dotnet");
-            if (string.IsNullOrEmpty(dotnetCLI))
-                throw new Exception("Failed to locate dotnet CLI executable. Make sure the dotnet CLI is installed in the environment PATH.");
-
+            var dotnetCLI = FindDotNetCli();
             var results = Utilities.ExecuteShellCommand(null, dotnetCLI, "--list-sdks");
             if(results.ExitCode != 0)
                 throw new Exception("Command \"dotnet --list-sdks\" failed, captured output: \n" + results.Stdout);
@@ -210,7 +188,7 @@ namespace Amazon.Common.DotNetCli.Tools
             return null;
         }
 
-        private static string LocateDotNetCli()
+        private static string FindDotNetCli()
         {
             var dotnetCLI = FindExecutableInPath("dotnet.exe");
             if (dotnetCLI == null)

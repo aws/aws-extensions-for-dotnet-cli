@@ -154,7 +154,10 @@ namespace Amazon.Common.DotNetCli.Tools
             }
 
             var cliWrapper = new DotNetCLIWrapper(new ConsoleToolLogger(), projectLocation);
-            return cliWrapper.ExportTargetFramework(projectFile);
+            var targetFrameworks = cliWrapper.GetTargetFrameworks(projectFile);
+            /* We need one unambiguous target framework. Otherwise, leave it indeterminate
+             * so that we can use the setting. */
+            return targetFrameworks.Length == 1 ? targetFrameworks[0] : null;
         }
 
         public static string FindProjectFileInDirectory(string directory)
