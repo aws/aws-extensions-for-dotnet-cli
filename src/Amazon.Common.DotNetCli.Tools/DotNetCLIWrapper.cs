@@ -122,8 +122,7 @@ namespace Amazon.Common.DotNetCli.Tools
         /// </summary>
         /// <param name="projectFile">The project file to build, which is in the working directory.</param>
         /// <returns>
-        /// The project's target frameworks, if such can be determined;
-        /// otherwise, <see langword="null"/>.
+        /// The project's target frameworks, if such can be determined.
         /// </returns>
         public string[] GetTargetFrameworks(string projectFile)
         {
