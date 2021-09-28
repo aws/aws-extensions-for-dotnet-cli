@@ -379,7 +379,18 @@ namespace Amazon.ECS.Tools
                     if (data != null)
                     {
                         containerDefinition.LogConfiguration = new LogConfiguration();
-                        containerDefinition.LogConfiguration.LogDriver = data["containerPath"] != null ? data["containerPath"].ToString() : null;
+                        containerDefinition.LogConfiguration.LogDriver = null;
+
+                        // Added support for logDriver JSON key as fix for legacy bug where JSON key containerPath was used. 
+                        if (data["logDriver"] != null)
+                        {
+                            containerDefinition.LogConfiguration.LogDriver = data["logDriver"].ToString();
+                        }
+                        else if (data["containerPath"] != null) // Retained legacy containerPath JSON key support. Removing this would break existing customers.
+                        {
+                            containerDefinition.LogConfiguration.LogDriver = data["containerPath"].ToString();
+                        }
+                        
                         if (data["options"] != null)
                         {
                             foreach (var key in data["options"].PropertyNames)
@@ -559,19 +570,25 @@ namespace Amazon.ECS.Tools
                     registerRequest.RequiresCompatibilities.Clear();
                 }
 
-                var logGroup = "/ecs/" + ecsTaskDefinition + "/" + containerDefinition.Name;
-                await EnsureLogGroupExistsAsync(logger, command.CWLClient, logGroup);
-                containerDefinition.LogConfiguration = new LogConfiguration
+                if (containerDefinition.LogConfiguration == null || containerDefinition.LogConfiguration.LogDriver == LogDriver.Awslogs)
                 {
-                    LogDriver = "awslogs",
-                    Options = new Dictionary<string, string>
-                    {
-                        {"awslogs-group", logGroup },
-                        {"awslogs-region", command.DetermineAWSRegion().SystemName },
-                        {"awslogs-stream-prefix", "ecs" }
-                    }
-                };
-                logger?.WriteLine("Configured ECS to log to the CloudWatch Log Group " + logGroup);
+                    string defaultLogGroup = "/ecs/" + ecsTaskDefinition + "/" + containerDefinition.Name;
+
+                    if (containerDefinition.LogConfiguration == null)
+                        containerDefinition.LogConfiguration = new LogConfiguration() { LogDriver = "awslogs" };
+
+                    if (containerDefinition.LogConfiguration.Options == null)
+                        containerDefinition.LogConfiguration.Options = new Dictionary<string, string>();
+
+                    var options = containerDefinition.LogConfiguration.Options;
+                    options["awslogs-group"] = (options.ContainsKey("awslogs-group") && !string.IsNullOrWhiteSpace(options["awslogs-group"]) ? options["awslogs-group"] : defaultLogGroup);
+                    options["awslogs-region"] = (options.ContainsKey("awslogs-region") && !string.IsNullOrWhiteSpace(options["awslogs-region"]) ? options["awslogs-region"] : command.DetermineAWSRegion().SystemName);
+                    options["awslogs-stream-prefix"] = (options.ContainsKey("awslogs-stream-prefix") && !string.IsNullOrWhiteSpace(options["awslogs-stream-prefix"]) ? options["awslogs-stream-prefix"] : "ecs");
+
+                    await EnsureLogGroupExistsAsync(logger, command.CWLClient, options["awslogs-group"]);
+
+                    logger?.WriteLine("Configured ECS to log to the CloudWatch Log Group " + options["awslogs-group"]);
+                }
 
                 var registerResponse = await ecsClient.RegisterTaskDefinitionAsync(registerRequest);
                 logger?.WriteLine($"Registered new task definition revision {registerResponse.TaskDefinition.Revision}");
