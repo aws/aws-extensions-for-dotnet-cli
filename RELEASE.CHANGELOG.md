@@ -1,3 +1,7 @@
+### Release 2021-09-28
+* **Amazon.ECS.Tools (3.4.3)**
+  * Fixed an issue where ECS log configuration argument is overwritten with awslogs defaults.
+
 ### Release 2021-06-17
 * **Amazon.Lambda.Tools (5.1.4)**
   * Added reference to AWSSDK.SSO and AWSSDK.SSOOIDC for SSO flow.
