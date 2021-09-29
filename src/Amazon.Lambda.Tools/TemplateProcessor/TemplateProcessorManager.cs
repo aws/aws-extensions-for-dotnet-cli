@@ -247,6 +247,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 command.TargetFramework =
                     LambdaUtilities.DetermineTargetFrameworkFromLambdaRuntime(field.Resource.LambdaRuntime, location);
 
+                command.Architecture = field.Resource.LambdaArchitecture;
                 command.LayerVersionArns = field.Resource.LambdaLayers;
 
                 // If the project is in the same directory as the CloudFormation template then use any parameters

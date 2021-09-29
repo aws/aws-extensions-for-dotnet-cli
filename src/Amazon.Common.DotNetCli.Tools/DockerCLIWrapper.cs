@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Amazon.Common.DotNetCli.Tools
@@ -20,12 +21,28 @@ namespace Amazon.Common.DotNetCli.Tools
                 throw new Exception("Failed to locate docker CLI executable. Make sure the docker CLI is installed in the environment PATH.");
         }
 
-        public int Build(string workingDirectory, string dockerFile, string imageTag, string additionalBuildOptions)
+        public int Build(string workingDirectory, string dockerFile, string imageTag, string additionalBuildOptions, bool arm64Build = false)
         {
             _logger?.WriteLine($"... invoking 'docker build', working folder '{workingDirectory}, docker file {dockerFile}, image name {imageTag}'");
 
+            var arguments = new StringBuilder();
 
-            StringBuilder arguments = new StringBuilder($"build -f \"{dockerFile}\" -t {imageTag}");
+#if NETCORE
+            var runningOnLinuxArm64 = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
+#else
+            var runningOnLinuxArm64 = false;
+#endif
+            if (arm64Build && !runningOnLinuxArm64)
+            {
+                _logger?.WriteLine("The docker CLI \"buildx\" command is used to build ARM64 images. This requires version 20 or later of the docker CLI.");
+                arguments.Append($"buildx build --platform linux/arm64 ");
+            }
+            else
+            {
+                arguments.Append($"build ");
+            }
+
+            arguments.Append($" -f \"{dockerFile}\" -t {imageTag}");
 
             if(!string.IsNullOrEmpty(additionalBuildOptions))
             {

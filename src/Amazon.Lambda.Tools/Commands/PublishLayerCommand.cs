@@ -20,6 +20,7 @@ namespace Amazon.Lambda.Tools.Commands
         public static readonly IList<CommandOption> PublishLayerCommandOptions = BuildLineOptions(new List <CommandOption>
         {
             CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK,
+            LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE,
             LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET,
             LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX,
             LambdaDefinedCommandOptions.ARGUMENT_LAYER_NAME,
@@ -30,6 +31,7 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_ENABLE_PACKAGE_OPTIMIZATION
         });
 
+        public string Architecture { get; set; }
         public string TargetFramework { get; set; }
         public string S3Bucket { get; set; }
         public string S3Prefix { get; set; }
@@ -79,6 +81,8 @@ namespace Amazon.Lambda.Tools.Commands
                 this.OptDirectory = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_ENABLE_PACKAGE_OPTIMIZATION.Switch)) != null)
                 this.EnablePackageOptimization = tuple.Item2.BoolValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE.Switch)) != null)
+                this.Architecture = tuple.Item2.StringValue;
         }
 
         protected override async Task<bool> PerformActionAsync()
@@ -130,6 +134,12 @@ namespace Amazon.Lambda.Tools.Commands
                 CompatibleRuntimes = createResult.CompatibleRuntimes,
                 LicenseInfo = this.GetStringValueOrDefault(this.LayerLicenseInfo, LambdaDefinedCommandOptions.ARGUMENT_LAYER_LICENSE_INFO, false)
             };
+
+            var architecture = this.GetStringValueOrDefault(this.Architecture, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE, false);
+            if (!string.IsNullOrEmpty(architecture))
+            {
+                request.CompatibleArchitectures = new List<string> { architecture };
+            }
 
             try
             {
@@ -234,8 +244,15 @@ namespace Amazon.Lambda.Tools.Commands
                 {
                     this.Logger?.WriteLine("Converted ASP.NET Core project file to temporary package manifest file.");
                 }
+                var architecture = this.GetStringValueOrDefault(this.Architecture, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE, false);
                 var cliWrapper = new LambdaDotNetCLIWrapper(this.Logger, this.WorkingDirectory);
-                if(cliWrapper.Store(this.DefaultConfig, projectLocation, storeOutputDirectory, targetFramework, convertResult.PackageManifest, enableOptimization) != 0)
+                if(cliWrapper.Store(defaults: this.DefaultConfig, 
+                                        projectLocation: projectLocation,
+                                        outputLocation: storeOutputDirectory, 
+                                        targetFramework: targetFramework,
+                                        packageManifest: convertResult.PackageManifest,
+                                        architecture: architecture,
+                                        enableOptimization: enableOptimization) != 0)
                 {
                     throw new LambdaToolsException($"Error executing the 'dotnet store' command", LambdaToolsException.LambdaErrorCode.StoreCommandError);
                 }
@@ -315,6 +332,7 @@ namespace Amazon.Lambda.Tools.Commands
         protected override void SaveConfigFile(JsonData data)
         {
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK.ConfigFileKey, this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE.ConfigFileKey, this.GetStringValueOrDefault(this.Architecture, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET.ConfigFileKey, this.GetStringValueOrDefault(this.S3Bucket, LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX.ConfigFileKey, this.GetStringValueOrDefault(this.S3Prefix, LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_LAYER_NAME.ConfigFileKey, this.GetStringValueOrDefault(this.LayerName, LambdaDefinedCommandOptions.ARGUMENT_LAYER_NAME, false));

@@ -45,6 +45,10 @@ namespace Amazon.Lambda.Tools
 
         public string FunctionName => GetValueAsString(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME);
 
+        public string FunctionRuntime => GetValueAsString(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME);
+
+        public string FunctionArchitecture => GetValueAsString(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE);
+
         public string FunctionRole => GetValueAsString(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE);
 
         public int? FunctionMemory

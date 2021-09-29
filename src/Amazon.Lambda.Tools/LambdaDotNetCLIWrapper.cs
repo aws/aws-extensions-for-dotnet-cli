@@ -34,7 +34,7 @@ namespace Amazon.Lambda.Tools
         /// <param name="packageManifest"></param>
         /// <param name="enableOptimization"></param>
         /// <returns></returns>
-        public int Store(LambdaToolsDefaults defaults, string projectLocation, string outputLocation, string targetFramework, string packageManifest, bool enableOptimization)
+        public int Store(LambdaToolsDefaults defaults, string projectLocation, string outputLocation, string targetFramework, string packageManifest, string architecture, bool enableOptimization)
         {
             if (outputLocation == null)
                 throw new ArgumentNullException(nameof(outputLocation));
@@ -84,7 +84,7 @@ namespace Amazon.Lambda.Tools
             arguments.Append($" --manifest \"{fullPackageManifest}\"");
 
 
-            arguments.Append($" --runtime {LambdaUtilities.DetermineRuntimeParameter(targetFramework)}");
+            arguments.Append($" --runtime {LambdaUtilities.DetermineRuntimeParameter(targetFramework, architecture)}");
 
             if(!enableOptimization)
             {
@@ -149,7 +149,7 @@ namespace Amazon.Lambda.Tools
         /// <param name="configuration"></param>
         /// <param name="msbuildParameters"></param>
         /// <param name="deploymentTargetPackageStoreManifestContent"></param>
-        public int Publish(LambdaToolsDefaults defaults, string projectLocation, string outputLocation, string targetFramework, string configuration, string msbuildParameters, IList<string> publishManifests)
+        public int Publish(LambdaToolsDefaults defaults, string projectLocation, string outputLocation, string targetFramework, string configuration, string msbuildParameters, string architecture, IList<string> publishManifests)
         {
             if(outputLocation == null)
                 throw new ArgumentNullException(nameof(outputLocation));
@@ -216,7 +216,7 @@ namespace Amazon.Lambda.Tools
                     if (msbuildParameters == null ||
                         msbuildParameters.IndexOf("--runtime", StringComparison.InvariantCultureIgnoreCase) == -1)
                     {
-                        arguments.Append($" --runtime {LambdaUtilities.DetermineRuntimeParameter(targetFramework)}");
+                        arguments.Append($" --runtime {LambdaUtilities.DetermineRuntimeParameter(targetFramework, architecture)}");
                     }
 
                     if (msbuildParameters == null ||

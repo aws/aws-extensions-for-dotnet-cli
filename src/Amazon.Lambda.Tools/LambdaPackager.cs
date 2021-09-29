@@ -44,11 +44,17 @@ namespace Amazon.Lambda.Tools
         /// <param name="publishLocation"></param>
         /// <param name="zipArchivePath"></param>
         public static bool CreateApplicationBundle(LambdaToolsDefaults defaults, IToolLogger logger, string workingDirectory, 
-            string projectLocation, string configuration, string targetFramework, string msbuildParameters,
+            string projectLocation, string configuration, string targetFramework, string msbuildParameters, string architecture,
             bool disableVersionCheck, LayerPackageInfo layerPackageInfo,
             out string publishLocation, ref string zipArchivePath)
         {
             LogDeprecationMessagesIfNecessary(logger, targetFramework);
+
+            if(string.Equals(architecture, LambdaConstants.ARCHITECTURE_ARM64) && msbuildParameters != null && msbuildParameters.Contains("--self-contained true"))
+            {
+                logger.WriteLine("WARNING: There is an issue with self contained ARM based .NET Lambda functions using custom runtimes that causes functions to fail to run. The following GitHub issue has further information and workaround.");
+                logger.WriteLine("https://github.com/aws/aws-lambda-dotnet/issues/920");
+            }
 
             if (string.IsNullOrEmpty(configuration))
                 configuration = LambdaConstants.DEFAULT_BUILD_CONFIGURATION;
@@ -77,8 +83,17 @@ namespace Amazon.Lambda.Tools
 
             publishLocation = Utilities.DeterminePublishLocation(workingDirectory, projectLocation, configuration, targetFramework);
             logger?.WriteLine("Executing publish command");
-            if (cli.Publish(defaults, projectLocation, publishLocation, targetFramework, configuration, msbuildParameters, publishManifestPath) != 0)
+            if (cli.Publish(defaults: defaults,
+                projectLocation: projectLocation,
+                outputLocation: publishLocation,
+                targetFramework: targetFramework,
+                configuration: configuration,
+                msbuildParameters: msbuildParameters,
+                architecture: architecture,
+                publishManifests: publishManifestPath) != 0)
+            {
                 return false;
+            }
 
             var buildLocation = Utilities.DetermineBuildLocation(workingDirectory, projectLocation, configuration, targetFramework);
 

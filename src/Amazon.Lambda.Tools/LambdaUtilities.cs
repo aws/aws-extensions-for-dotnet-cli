@@ -758,16 +758,27 @@ namespace Amazon.Lambda.Tools
         /// </summary>
         /// <param name="targetFramework"></param>
         /// <returns></returns>
-        public static string DetermineRuntimeParameter(string targetFramework)
+        public static string DetermineRuntimeParameter(string targetFramework, string architecture)
         {
-            switch (targetFramework)
+            if (string.Equals(LambdaConstants.ARCHITECTURE_ARM64, architecture, StringComparison.InvariantCultureIgnoreCase))
             {
-                case "netcoreapp1.0":
-                case "netcoreapp2.0":
-                case "netcoreapp2.1":
-                    return LambdaConstants.LEGACY_RUNTIME_HIERARCHY_STARTING_POINT;
-                default:
-                    return "linux-x64";
+                return LambdaConstants.RUNTIME_LINUX_ARM64;
+            }
+            else if(string.IsNullOrEmpty(architecture) || string.Equals(LambdaConstants.ARCHITECTURE_X86_64, architecture, StringComparison.InvariantCultureIgnoreCase))
+            {
+                switch (targetFramework)
+                {
+                    case "netcoreapp1.0":
+                    case "netcoreapp2.0":
+                    case "netcoreapp2.1":
+                        return LambdaConstants.LEGACY_RUNTIME_HIERARCHY_STARTING_POINT;
+                    default:
+                        return LambdaConstants.RUNTIME_LINUX_X64;
+                }
+            }
+            else
+            {
+                throw new LambdaToolsException($"Value of {architecture} is invalid for function architecture", ToolsException.CommonErrorCode.InvalidParameterValue);
             }
         }
 

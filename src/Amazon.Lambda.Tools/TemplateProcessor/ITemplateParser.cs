@@ -47,7 +47,12 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// If the resource is a AWS::Lambda::Function or AWS::Serverless::Function get the Lambda runtime for it.
         /// </summary>
         string LambdaRuntime { get; }
-        
+
+        /// <summary>
+        /// If the resource is a AWS::Lambda::Function or AWS::Serverless::Function get the Lambda architecture for it.
+        /// </summary>
+        string LambdaArchitecture { get; }
+
         /// <summary>
         /// Gets the list of layers specified if this is a Lambda function.
         /// </summary>

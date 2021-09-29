@@ -47,6 +47,31 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             }
         }
 
+        public string LambdaArchitecture
+        {
+            get
+            {
+                var architectures = this.DataSource.GetValueList("Architectures");
+                if(architectures == null || architectures.Length == 0)
+                {
+                    architectures = this.DataSource.GetValueListFromRoot("Globals", "Function", "Architectures");
+                }
+
+                if(architectures == null || architectures.Length == 0)
+                {
+                    return LambdaConstants.ARCHITECTURE_X86_64;
+                }
+                else if(architectures.Length == 1)
+                {
+                    return architectures[0];
+                }
+                else
+                {
+                    throw new LambdaToolsException("More then one architecture was specified. .NET Lambda functions only support a single architecture value for creating a deployment bundle for the specific architecture.", Common.DotNetCli.Tools.ToolsException.CommonErrorCode.InvalidParameterValue);
+                }
+            }
+        }
+
         public string[] LambdaLayers
         {
             get
