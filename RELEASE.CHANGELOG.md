@@ -1,3 +1,7 @@
+### Release 2021-09-29
+* **Amazon.Lambda.Tools (5.2.0)**
+  * Added support for deploying ARM based Lambda functions with the new `--function-architecture` switch.
+  
 ### Release 2021-09-28
 * **Amazon.ECS.Tools (3.4.3)**
   * Fixed an issue where ECS log configuration argument is overwritten with awslogs defaults.
