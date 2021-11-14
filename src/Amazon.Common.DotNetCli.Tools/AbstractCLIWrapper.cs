@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-#if NETCORE
+#if NETCOREAPP3_1_OR_GREATER
 using System.Runtime.InteropServices;
 #endif
 
@@ -78,7 +78,7 @@ namespace Amazon.Common.DotNetCli.Tools
             if (File.Exists(command))
                 return Path.GetFullPath(command);
 
-#if NETCORE
+#if NETCOREAPP3_1_OR_GREATER
             if (string.Equals(command, "dotnet.exe"))
             {
                 if(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

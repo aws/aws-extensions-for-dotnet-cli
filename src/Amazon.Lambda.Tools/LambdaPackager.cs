@@ -148,7 +148,7 @@ namespace Amazon.Lambda.Tools
 
         public static void BundleDirectory(string zipArchivePath, string sourceDirectory, bool flattenRuntime, IToolLogger logger)
         {
-#if NETCORE
+#if NETCOREAPP3_1_OR_GREATER
             if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 BundleWithBuildLambdaZip(zipArchivePath, sourceDirectory, flattenRuntime, logger);
@@ -175,7 +175,7 @@ namespace Amazon.Lambda.Tools
         {
             var includedFiles = ConvertToMapOfFiles(rootDirectory, files);
 
-#if NETCORE
+#if NETCOREAPP3_1_OR_GREATER
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 BundleWithBuildLambdaZip(zipArchivePath, rootDirectory, includedFiles, logger);

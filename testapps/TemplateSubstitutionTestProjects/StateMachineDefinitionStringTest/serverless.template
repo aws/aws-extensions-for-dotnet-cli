@@ -77,7 +77,7 @@
         "Properties" : {
             "Handler" : "StateMachineDefinitionStringTest::StateMachineDefinitionStringTest.Functions::Processor",
             "Role"    : {"Fn::GetAtt" : [ "LambdaRole", "Arn"]},
-            "Runtime" : "dotnetcore2.1",
+            "Runtime" : "dotnetcore3.1",
             "MemorySize" : 256,
             "Timeout" : 30,
             "Code" : {

@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
     <PackageId>Amazon.ECS.Tools</PackageId>
     <PackageTags>AWS;Amazon;Docker;ECS</PackageTags>
     <PackAsTool>true</PackAsTool>
@@ -35,9 +35,6 @@
     </ProjectReference>
   </ItemGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
-    <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
-  </PropertyGroup>
   <PropertyGroup>
     <NoWarn>1701;1702;1705;1591</NoWarn>
   </PropertyGroup>

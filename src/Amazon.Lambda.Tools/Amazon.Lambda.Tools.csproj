@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Description>Amazon.Lambda.Tools adds commands to the dotnet cli to deploy AWS Lambda functions.</Description>
     <AssemblyTitle>Amazon.Lambda.Tools</AssemblyTitle>
-    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
     <AssemblyName>dotnet-lambda</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>Amazon.Lambda.Tools</PackageId>
@@ -42,9 +42,6 @@
     <PackageReference Include="AWSSDK.S3" Version="3.7.0.3" />
     <PackageReference Include="YamlDotNet.Signed" Version="5.2.1" />
   </ItemGroup>
-  <PropertyGroup>
-    <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
-  </PropertyGroup>
   <PropertyGroup>
     <NoWarn>1701;1702;1705;1591</NoWarn>
   </PropertyGroup>

@@ -11,7 +11,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// 
         public string Configuration { get; set; }
         /// <summary>
-        /// .NET Target Framework e.g. netcoreapp2.1
+        /// .NET Target Framework e.g. netcoreapp3.1
         /// </summary>
         public string TargetFramework { get; set; }
 

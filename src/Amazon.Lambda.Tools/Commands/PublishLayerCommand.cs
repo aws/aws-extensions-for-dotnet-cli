@@ -177,7 +177,7 @@ namespace Amazon.Lambda.Tools.Commands
                 }
             }
 
-#if NETCORE
+#if NETCOREAPP3_1_OR_GREATER
             if (enableOptimization)
             {
                 if(!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
