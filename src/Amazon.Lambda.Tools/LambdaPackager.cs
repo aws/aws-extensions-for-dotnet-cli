@@ -20,10 +20,15 @@ namespace Amazon.Lambda.Tools
         private const string Shebang = "#!";
         private const char LinuxLineEnding = '\n';
         private const string BootstrapFilename = "bootstrap";
+#if NETCOREAPP3_1_OR_GREATER        
+        private static readonly string BuildLambdaZipCliPath = Path.Combine(
+            Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().Location).LocalPath),
+            "Resources\\build-lambda-zip.exe");
+#else
         private static readonly string BuildLambdaZipCliPath = Path.Combine(
             Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath),
             "Resources\\build-lambda-zip.exe");
-
+#endif
         static IDictionary<string, Version> NETSTANDARD_LIBRARY_VERSIONS = new Dictionary<string, Version>
         {
             { "netcoreapp1.0", Version.Parse("1.6.0") },
@@ -148,7 +153,7 @@ namespace Amazon.Lambda.Tools
 
         public static void BundleDirectory(string zipArchivePath, string sourceDirectory, bool flattenRuntime, IToolLogger logger)
         {
-#if NETCORE
+#if NETCOREAPP3_1_OR_GREATER
             if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 BundleWithBuildLambdaZip(zipArchivePath, sourceDirectory, flattenRuntime, logger);
@@ -175,7 +180,7 @@ namespace Amazon.Lambda.Tools
         {
             var includedFiles = ConvertToMapOfFiles(rootDirectory, files);
 
-#if NETCORE
+#if NETCOREAPP3_1_OR_GREATER
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 BundleWithBuildLambdaZip(zipArchivePath, rootDirectory, includedFiles, logger);

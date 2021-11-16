@@ -402,7 +402,7 @@ namespace Amazon.Lambda.Tools
             if (File.Exists(command))
                 return Path.GetFullPath(command);
 
-#if NETCORE
+#if NETCOREAPP3_1_OR_GREATER
             if (string.Equals(command, "dotnet.exe"))
             {
                 if(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

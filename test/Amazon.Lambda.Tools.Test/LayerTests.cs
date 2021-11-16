@@ -56,7 +56,7 @@ namespace Amazon.Lambda.Tools.Test
 
             var command = new PublishLayerCommand(logger, _singleLayerFunctionPath, new string[0]);
             command.Region = "us-east-1";
-            command.TargetFramework = "netcoreapp2.1";
+            command.TargetFramework = "netcoreapp3.1";
             command.S3Bucket = this._testFixture.Bucket;
             command.DisableInteractive = true;
             command.LayerName = "DotnetTest-CreateLayer";
@@ -106,7 +106,7 @@ namespace Amazon.Lambda.Tools.Test
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestLayerExample");
             var command = new PublishLayerCommand(logger, fullPath, new string[] { "--enable-package-optimization", "true"});
             command.Region = "us-east-1";
-            command.TargetFramework = "netcoreapp2.1";
+            command.TargetFramework = "netcoreapp3.1";
             command.S3Bucket = this._testFixture.Bucket;
             command.DisableInteractive = true;
             command.LayerName = "DotnetTest-AttemptToCreateAnOptmizedLayer";
@@ -179,8 +179,8 @@ namespace Amazon.Lambda.Tools.Test
                 deployCommand.MemorySize = 512;
                 deployCommand.Role = await TestHelper.GetTestRoleArnAsync();
                 deployCommand.Configuration = "Release";
-                deployCommand.TargetFramework = "netcoreapp2.1";
-                deployCommand.Runtime = "dotnetcore2.1";
+                deployCommand.TargetFramework = "netcoreapp3.1";
+                deployCommand.Runtime = "dotnetcore3.1";
                 deployCommand.LayerVersionArns = new string[] { publishLayerCommand.NewLayerVersionArn };
                 deployCommand.DisableInteractive = true;
 
@@ -470,7 +470,7 @@ namespace Amazon.Lambda.Tools.Test
             
             var publishLayerCommand = new PublishLayerCommand(logger, projectDirectory, new string[0]);
             publishLayerCommand.Region = "us-east-1";
-            publishLayerCommand.TargetFramework = "netcoreapp2.1";
+            publishLayerCommand.TargetFramework = "netcoreapp3.1";
             publishLayerCommand.S3Bucket = this._testFixture.Bucket;
             publishLayerCommand.DisableInteractive = true;
             publishLayerCommand.LayerName = "Dotnet-IntegTest-";

@@ -21,7 +21,7 @@
       "Description" : "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789",
       "Properties": {
         "Handler": "TestServerlessWebApp::TestServerlessWebApp.LambdaFunction::FunctionHandlerAsync",
-        "Runtime": "dotnetcore2.1",
+        "Runtime": "dotnetcore3.1",
         "CodeUri": "",
         "Description": "Default function",
         "MemorySize": 256,

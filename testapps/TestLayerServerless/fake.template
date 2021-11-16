@@ -9,7 +9,7 @@
       "Type" : "AWS::Serverless::Function",
       "Properties": {
         "Handler": "TestLayerServerless::TestLayerServerless.Functions::ToUpper",
-        "Runtime": "dotnetcore2.1",
+        "Runtime": "dotnetcore3.1",
         "CodeUri": "",
         "MemorySize": 256,
         "Timeout": 30,
@@ -26,7 +26,7 @@
       "Description" : "Add second function using the same source to make sure DOTNET_SHARED_STORE env is set even though not rebuilt",
       "Properties": {
         "Handler": "TestLayerServerless::TestLayerServerless.Functions::ToUpper",
-        "Runtime": "dotnetcore2.1",
+        "Runtime": "dotnetcore3.1",
         "CodeUri": "",
         "MemorySize": 256,
         "Timeout": 30,

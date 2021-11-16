@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 
 using Xunit;
@@ -129,6 +130,12 @@ namespace Amazon.Lambda.Tools.Test
         [InlineData(@"c:\par1\Dockerfile.custom", @"c:\par1\par2", "../Dockerfile.custom")]
         public void TestSavingDockerfileInDefaults(string dockerfilePath, string projectLocation, string expected)
         {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                dockerfilePath = dockerfilePath.Replace(@"c:\", "/").Replace(@"\", "/");
+                projectLocation = projectLocation?.Replace(@"c:\", "/").Replace(@"\", "/");
+                expected = expected.Replace(@"c:\", "/").Replace(@"\", "/");
+            }
             var rootData = new ThirdParty.Json.LitJson.JsonData();
             rootData.SetFilePathIfNotNull("Dockerfile", dockerfilePath, projectLocation);
 

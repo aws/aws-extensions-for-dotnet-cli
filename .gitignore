@@ -25,3 +25,4 @@
 **/.idea
 **/.ionide
 *.userprefs
+.DS_Store

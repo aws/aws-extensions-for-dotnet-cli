@@ -339,7 +339,7 @@ namespace Amazon.Common.DotNetCli.Tools
                 new DirectoryInfo(zipArchiveParentDirectory).Create();
             }
 
-#if NETCORE
+#if NETCOREAPP3_1_OR_GREATER
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 BundleWithDotNetCompression(zipArchivePath, directory, logger);

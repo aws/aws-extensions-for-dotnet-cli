@@ -12,7 +12,7 @@ namespace TestServerlessWebApp
         protected override void Init(IWebHostBuilder builder)
         {
             builder
-                .UseApiGateway()
+                .UseLambdaServer()
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseStartup<Startup>();
         }

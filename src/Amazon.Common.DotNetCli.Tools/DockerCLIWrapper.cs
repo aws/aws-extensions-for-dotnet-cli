@@ -27,7 +27,7 @@ namespace Amazon.Common.DotNetCli.Tools
 
             var arguments = new StringBuilder();
 
-#if NETCORE
+#if NETCOREAPP3_1_OR_GREATER
             var runningOnLinuxArm64 = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
 #else
             var runningOnLinuxArm64 = false;
