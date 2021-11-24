@@ -63,6 +63,7 @@ namespace Amazon.Lambda.Tools.Test
             {
                 Assert.True(created);
 
+                await LambdaUtilities.WaitTillFunctionAvailableAsync(new TestToolLogger(_testOutputHelper), command.LambdaClient, command.FunctionName);
                 var invokeRequest = new InvokeRequest
                 {
                     FunctionName = command.FunctionName,
@@ -105,6 +106,7 @@ namespace Amazon.Lambda.Tools.Test
             {
                 Assert.True(created);
 
+                await LambdaUtilities.WaitTillFunctionAvailableAsync(new TestToolLogger(_testOutputHelper), command.LambdaClient, command.FunctionName);
                 var invokeRequest = new InvokeRequest
                 {
                     FunctionName = command.FunctionName,
@@ -149,6 +151,7 @@ namespace Amazon.Lambda.Tools.Test
             {
                 Assert.True(created);
 
+                await LambdaUtilities.WaitTillFunctionAvailableAsync(new TestToolLogger(_testOutputHelper), command.LambdaClient, command.FunctionName);
                 var invokeRequest = new InvokeRequest
                 {
                     FunctionName = command.FunctionName,
@@ -202,6 +205,7 @@ namespace Amazon.Lambda.Tools.Test
             {
                 Assert.True(created);
 
+                await LambdaUtilities.WaitTillFunctionAvailableAsync(new TestToolLogger(_testOutputHelper), deployCommand.LambdaClient, deployCommand.FunctionName);
                 var invokeRequest = new InvokeRequest
                 {
                     FunctionName = deployCommand.FunctionName,
