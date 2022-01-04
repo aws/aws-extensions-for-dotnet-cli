@@ -131,7 +131,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
                 string configuration = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false) ?? "Release";
                 string targetFramework = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
-                string publishOptions = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.PublishOptions, CommonDefinedCommandOptions.ARGUMENT_PUBLISH_OPTIONS, false);
 
                 if (string.IsNullOrEmpty(targetFramework))
                 {
@@ -147,19 +146,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 var publishLocation = Utilities.DeterminePublishLocation(null, projectLocation, configuration, targetFramework);
                 this.Logger?.WriteLine("Determine publish location: " + publishLocation);
 
-                if (!isWindowsEnvironment)
-                {
-                    
-                    if(publishOptions == null || !publishOptions.Contains("-r ") && !publishOptions.Contains("--runtime "))
-                    {
-                        publishOptions += " --runtime linux-x64";
-                    }
-                    if(publishOptions == null || !publishOptions.Contains("--self-contained"))
-                    {
-                        var selfContained = this.GetBoolValueOrDefault(this.DeployEnvironmentOptions.SelfContained, CommonDefinedCommandOptions.ARGUMENT_SELF_CONTAINED, false);
-                        publishOptions += $" --self-contained {selfContained.GetValueOrDefault().ToString(CultureInfo.InvariantCulture).ToLowerInvariant()}"; 
-                    }
-                }
+                var publishOptions = GetPublishOptions(isWindowsEnvironment);
 
                 this.Logger?.WriteLine("Executing publish command");
                 if (dotnetCli.Publish(projectLocation, publishLocation, targetFramework, configuration, publishOptions) != 0)
@@ -290,6 +277,13 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             }
 
             return true;
+        }
+
+        public string GetPublishOptions(bool isWindowsEnvironment)
+        {
+            var initialOptions = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.PublishOptions, CommonDefinedCommandOptions.ARGUMENT_PUBLISH_OPTIONS, false);
+            var selfContained = this.GetBoolValueOrDefault(this.DeployEnvironmentOptions.SelfContained, CommonDefinedCommandOptions.ARGUMENT_SELF_CONTAINED, false) ?? false;
+            return new PublishOptions(initialOptions, isWindowsEnvironment, selfContained).ToCliString();
         }
 
         private async Task CreateEBApplicationIfNotExist(string application, bool doesApplicationExist)
