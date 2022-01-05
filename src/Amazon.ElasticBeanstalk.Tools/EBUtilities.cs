@@ -90,7 +90,17 @@ namespace Amazon.ElasticBeanstalk.Tools
 
         public static bool IsSolutionStackLinuxNETCore(string solutionStackName)
         {
-            return solutionStackName.StartsWith("64bit Amazon Linux 2") && (solutionStackName.Contains(".NET Core") || solutionStackName.Contains("DotNetCore"));
+            return IsSolutionStackLinux(solutionStackName) && IsSolutionStackNETCore(solutionStackName);
+        }
+
+        public static bool IsSolutionStackLinux(string solutionStackName)
+        {
+            return solutionStackName.StartsWith("64bit Amazon Linux 2");
+        }
+
+        public static bool IsSolutionStackNETCore(string solutionStackName)
+        {
+            return solutionStackName.Contains(".NET Core") || solutionStackName.Contains("DotNetCore");
         }
 
         public static bool IsLoadBalancedEnvironmentType(string environmentType)
