@@ -9,7 +9,7 @@
     "profile"     : "default",
     "region"      : "us-east-1",
     "configuration" : "Release",
-    "framework"     : "netcoreapp2.1",
+    "framework"     : "netcoreapp3.1",
     "s3-prefix"     : "CurrentDirectoryTest/",
     "template"      : "serverless.template",
     "template-parameters" : ""
