@@ -90,7 +90,7 @@ namespace Amazon.Lambda.Tools.Test
         [Fact]
         public async Task TestServerlessPackage()
         {
-            var logger = new TestToolLogger();
+            var logger = new TestToolLogger(_testOutputHelper);
             var assembly = this.GetType().GetTypeInfo().Assembly;
 
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestServerlessWebApp");
@@ -136,7 +136,7 @@ namespace Amazon.Lambda.Tools.Test
         [Fact]
         public async Task TestServerlessPackageWithGlobalArchitectures()
         {
-            var logger = new TestToolLogger();
+            var logger = new TestToolLogger(_testOutputHelper);
             var assembly = this.GetType().GetTypeInfo().Assembly;
 
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestServerlessWebApp");
@@ -155,7 +155,11 @@ namespace Amazon.Lambda.Tools.Test
             await command.S3Client.PutBucketAsync(command.S3Bucket);
             try
             {
-                Assert.True(await command.ExecuteAsync());
+                if(!await command.ExecuteAsync())
+                {
+                    throw new Exception("Failed to publish:\n" + logger.Buffer, command.LastToolsException);
+                }
+
                 Assert.True(File.Exists(command.CloudFormationOutputTemplate));
 
                 var templateJson = File.ReadAllText(command.CloudFormationOutputTemplate);
