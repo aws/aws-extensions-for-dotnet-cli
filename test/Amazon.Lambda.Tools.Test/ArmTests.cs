@@ -22,6 +22,7 @@ using Amazon.S3.Transfer;
 
 namespace Amazon.Lambda.Tools.Test
 {
+    [Collection("ARM Tests")]
     public class ArmTests
     {
         private readonly ITestOutputHelper _testOutputHelper;
