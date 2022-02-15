@@ -1,3 +1,12 @@
+### Release 2022-02-14
+* **Amazon.Lambda.Tools (5.3.0)**
+  * Package the tool targeting .NET 6 as well as the previous .NET Core 3.1 to support Mac M1 developers.
+  * In preparation of the upcoming .NET 6 Lambda runtime added the .NET 6 target framework moniker to .NET 6 Lambda runtime enum mapping. This is not a signal for the .NET 6 Lambda runtime release.
+* **Amazon.ECS.Tools (3.5.0)**
+  * Package the tool targeting .NET 6 as well as the previous .NET Core 3.1 to support Mac M1 developers.
+* **Amazon.ElasticBeanstalk.Tools (4.3.0)**
+  * Package the tool targeting .NET 6 as well as the previous .NET Core 3.1 to support Mac M1 developers.
+  
 ### Release 2021-09-29
 * **Amazon.Lambda.Tools (5.2.0)**
   * Added support for deploying ARM based Lambda functions with the new `--function-architecture` switch.
