@@ -25,9 +25,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.ElasticBeanstalk" Version="3.7.0.2" />
-    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.1" />
-    <PackageReference Include="AWSSDK.S3" Version="3.7.0.3" />
+    <PackageReference Include="AWSSDK.ElasticBeanstalk" Version="3.7.0.148" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.2.128" />
+    <PackageReference Include="AWSSDK.S3" Version="3.7.8.20" />
   </ItemGroup>
   
   <PropertyGroup>

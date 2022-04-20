@@ -2,6 +2,7 @@ using Amazon.Lambda.Model;
 using Amazon.Lambda.Tools.Commands;
 using System;
 using System.IO;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using Xunit;
@@ -218,7 +219,6 @@ namespace Amazon.Lambda.Tools.Integ.Tests
             }
         }
 
-
         [Fact]
         public async Task PackageFunctionAsLocalImageThenDeployWithDifferentECRTag()
         {
@@ -276,6 +276,154 @@ namespace Amazon.Lambda.Tools.Integ.Tests
                 {
                     await deployCommand.LambdaClient.DeleteFunctionAsync(deployCommand.FunctionName);
                 }
+            }
+        }
+
+        [Fact]
+        public async Task SetAndClearEnvironmentVariables()
+        {
+            var toolLogger = new TestToolLogger(_testOutputHelper);
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location) + "../../../../../../testapps/TestHttpFunction");
+            var functionName = "SetAndClearEnvironmentVariables-" + DateTime.Now.Ticks;
+
+            // Initial deployment with Function Url enabled and Auth will default to NONE.
+            var command = new DeployFunctionCommand(toolLogger, fullPath, new string[0]);
+            command.FunctionName = functionName;
+            command.Role = await TestHelper.GetTestRoleArnAsync();
+            command.Runtime = "dotnet6";
+            command.EphemeralStorageSize = 750;
+            command.EnvironmentVariables = new System.Collections.Generic.Dictionary<string, string> { { "Key1", "Value1" } };
+            command.DisableInteractive = true;
+            var created = await command.ExecuteAsync();
+
+            try
+            {
+                Assert.True(created);
+                var getConfigResponse = await command.LambdaClient.GetFunctionConfigurationAsync(functionName);
+                Assert.Equal(750, getConfigResponse.EphemeralStorage.Size);
+                Assert.Single(getConfigResponse.Environment.Variables);
+
+                // Redeploy changing the ephemeral size and clearning environment variables.
+                command = new DeployFunctionCommand(toolLogger, fullPath, new string[0]);
+                command.FunctionName = functionName;
+                command.Role = await TestHelper.GetTestRoleArnAsync();
+                command.Runtime = "dotnet6";
+                command.EphemeralStorageSize = 800;
+                command.EnvironmentVariables = new System.Collections.Generic.Dictionary<string, string> ();
+                command.DisableInteractive = true;
+
+                created = await command.ExecuteAsync();
+                Assert.True(created);
+
+                getConfigResponse = await command.LambdaClient.GetFunctionConfigurationAsync(functionName);
+                Assert.Equal(800, getConfigResponse.EphemeralStorage.Size);
+                Assert.Null(getConfigResponse.Environment);
+            }
+            finally
+            {
+                try
+                {
+                    await command.LambdaClient.DeleteFunctionAsync(functionName);
+                }
+                catch { }
+            }
+        }
+
+        [Fact]
+        public async Task DeployWithFunctionUrl()
+        {
+            using var httpClient = new HttpClient();
+            var toolLogger = new TestToolLogger(_testOutputHelper);
+
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location) + "../../../../../../testapps/TestHttpFunction");
+            var functionName = "DeployWithFunctionUrl-" + DateTime.Now.Ticks;
+
+            async Task TestFunctionUrl(string functionUrl, bool expectSuccess)
+            {
+                var httpResponse = await httpClient.GetAsync(functionUrl);
+                Assert.Equal(expectSuccess, httpResponse.IsSuccessStatusCode);
+                httpResponse.Dispose();
+            }
+
+            async Task TestPublicPermissionStatement(IAmazonLambda lambdaClient, bool expectExist)
+            {
+                if(expectExist)
+                {
+                    var policy = (await lambdaClient.GetPolicyAsync(new GetPolicyRequest { FunctionName = functionName })).Policy;
+                    Assert.Contains(LambdaConstants.FUNCTION_URL_PUBLIC_PERMISSION_STATEMENT_ID, policy);
+                }
+                else
+                {
+                    try
+                    {
+                        var policy = (await lambdaClient.GetPolicyAsync(new GetPolicyRequest { FunctionName = functionName })).Policy;
+                        Assert.DoesNotContain(LambdaConstants.FUNCTION_URL_PUBLIC_PERMISSION_STATEMENT_ID, policy);
+                    }
+                    catch (ResourceNotFoundException)
+                    {
+                        // If the last statement is deleted from the policy then a ResourceNotFoundException is thrown which is also proof the statement id has been removed.
+                    }
+                }
+            }
+
+            async Task<DeployFunctionCommand> TestDeployProjectAsync(bool enableUrl, string authType = null)
+            {
+                var command = new DeployFunctionCommand(toolLogger, fullPath, new string[0]);
+                command.FunctionName = functionName;
+                command.Role = await TestHelper.GetTestRoleArnAsync();
+                command.Runtime = "dotnet6";
+                command.FunctionUrlEnable = enableUrl;
+                command.DisableInteractive = true;
+                
+                if(authType != null)
+                {
+                    command.FunctionUrlAuthType = authType;
+                }
+
+                var created = await command.ExecuteAsync();
+                Assert.True(created);
+                await LambdaUtilities.WaitTillFunctionAvailableAsync(toolLogger, command.LambdaClient, functionName);
+                return command;
+            }
+
+            // Initial deployment with Function Url enabled and Auth will default to NONE.
+            var command = await TestDeployProjectAsync(enableUrl: true);
+            try
+            {
+                // Ensure initial deployment was successful with function URL and NONE authtype
+                Assert.NotNull(command.FunctionUrlLink);
+                var functionUrl = command.FunctionUrlLink;
+                await TestPublicPermissionStatement(command.LambdaClient, expectExist: true);
+                await TestFunctionUrl(functionUrl, expectSuccess: true);
+
+                // Redeploy turning off Function Url
+                command = await TestDeployProjectAsync(enableUrl: false);
+                Assert.Null(command.FunctionUrlLink);
+                await TestPublicPermissionStatement(command.LambdaClient, expectExist: false);
+                await TestFunctionUrl(functionUrl, expectSuccess: false);
+
+                // Redeploy turning Function Url back on using AWS_IAM. (Not public
+                command = await TestDeployProjectAsync(enableUrl: true, authType: "AWS_IAM");
+                Assert.NotNull(command.FunctionUrlLink);
+                await TestPublicPermissionStatement(command.LambdaClient, expectExist: false);
+
+                // Redeploy switching auth to NONE (Public)
+                command = await TestDeployProjectAsync(enableUrl: true, authType: "NONE");
+                Assert.NotNull(command.FunctionUrlLink);
+                await TestPublicPermissionStatement(command.LambdaClient, expectExist: true);
+
+                // Redeploy switching back to AWS_IAM and prove public statement removed.
+                command = await TestDeployProjectAsync(enableUrl: true, authType: "AWS_IAM");
+                Assert.NotNull(command.FunctionUrlLink);
+                await TestPublicPermissionStatement(command.LambdaClient, expectExist: false);
+            }
+            finally
+            {
+                try
+                {
+                    await command.LambdaClient.DeleteFunctionAsync(functionName);
+                }
+                catch { }
             }
         }
     }

@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
+using Amazon.Lambda;
 using Amazon.Lambda.Model;
 
 using ThirdParty.Json.LitJson;
@@ -36,6 +36,11 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS,
+
+            LambdaDefinedCommandOptions.ARGUMENT_EPHEMERAL_STORAGE_SIZE,
+
+            LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE,
+            LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_AUTH,
 
             LambdaDefinedCommandOptions.ARGUMENT_IMAGE_ENTRYPOINT,
             LambdaDefinedCommandOptions.ARGUMENT_IMAGE_COMMAND,
@@ -75,6 +80,13 @@ namespace Amazon.Lambda.Tools.Commands
         public string ImageWorkingDirectory { get; set; }
 
         public string PackageType { get; set; }
+
+        public int? EphemeralStorageSize { get; set; }
+
+        public bool? FunctionUrlEnable { get; set; }
+        public string FunctionUrlAuthType { get; set; }
+
+        public string FunctionUrlLink { get; private set; }
 
         public UpdateFunctionConfigCommand(IToolLogger logger, string workingDirectory, string[] args)
             : base(logger, workingDirectory, UpdateCommandOptions, args)
@@ -141,6 +153,14 @@ namespace Amazon.Lambda.Tools.Commands
                 this.ImageCommand = tuple.Item2.StringValues;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_IMAGE_WORKING_DIRECTORY.Switch)) != null)
                 this.ImageWorkingDirectory = tuple.Item2.StringValue;
+
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_EPHEMERAL_STORAGE_SIZE.Switch)) != null)
+                this.EphemeralStorageSize = tuple.Item2.IntValue;
+
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE.Switch)) != null)
+                this.FunctionUrlEnable = tuple.Item2.BoolValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_AUTH.Switch)) != null)
+                this.FunctionUrlAuthType = tuple.Item2.StringValue;
         }
 
 
@@ -226,6 +246,31 @@ namespace Amazon.Lambda.Tools.Commands
                     throw new LambdaToolsException($"Error updating configuration for Lambda function: {e.Message}", LambdaToolsException.LambdaErrorCode.LambdaUpdateFunctionConfiguration, e);
                 }
             }
+
+            var urlConfig = await this.GetFunctionUrlConfig(existingConfiguration.FunctionName);
+            var enableUrlConfig = this.GetBoolValueOrDefault(this.FunctionUrlEnable, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE, false).GetValueOrDefault();
+            var authType = this.GetStringValueOrDefault(this.FunctionUrlAuthType, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_AUTH, false);
+
+            if (urlConfig != null)
+            {
+                this.FunctionUrlLink = urlConfig.FunctionUrl;
+            }
+
+            if (urlConfig != null && !enableUrlConfig)
+            {
+                await this.DeleteFunctionUrlConfig(existingConfiguration.FunctionName, urlConfig.AuthType);
+                this.Logger.WriteLine("Removing function url config");
+            }
+            else if(urlConfig == null && enableUrlConfig)
+            {
+                await this.CreateFunctionUrlConfig(existingConfiguration.FunctionName, authType);
+                this.Logger.WriteLine($"Creating function url config: {this.FunctionUrlLink}");
+            }
+            else if (urlConfig != null && enableUrlConfig && !string.Equals(authType, urlConfig.AuthType.Value, StringComparison.Ordinal))
+            {
+                await this.UpdateFunctionUrlConfig(existingConfiguration.FunctionName, urlConfig.AuthType, authType);
+                this.Logger.WriteLine($"Updating function url config: {this.FunctionUrlLink}");
+            }
         }
 
         public async Task<GetFunctionConfigurationResponse> GetFunctionConfigurationAsync()
@@ -293,7 +338,11 @@ namespace Amazon.Lambda.Tools.Commands
                 different = true;
             }
 
-
+            var ephemeralSize = this.GetIntValueOrDefault(this.EphemeralStorageSize, LambdaDefinedCommandOptions.ARGUMENT_EPHEMERAL_STORAGE_SIZE, false);
+            if (ephemeralSize.HasValue && ephemeralSize.Value != existingConfiguration.EphemeralStorage?.Size)
+            {
+                request.EphemeralStorage = new EphemeralStorage { Size = ephemeralSize.Value };
+            }
 
             var timeout = this.GetIntValueOrDefault(this.Timeout, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT, false);
             if (timeout.HasValue && timeout.Value != existingConfiguration.Timeout)
@@ -306,6 +355,7 @@ namespace Amazon.Lambda.Tools.Commands
             if(layerVersionArns != null && AreDifferent(layerVersionArns, existingConfiguration.Layers?.Select(x => x.Arn)))
             {
                 request.Layers = layerVersionArns.ToList();
+                request.IsLayersSet = true;
                 different = true;
             }
 
@@ -318,6 +368,7 @@ namespace Amazon.Lambda.Tools.Commands
                 }
 
                 request.VpcConfig.SubnetIds = subnetIds.ToList();
+                request.VpcConfig.IsSubnetIdsSet = true;
                 if (existingConfiguration.VpcConfig == null || AreDifferent(subnetIds, existingConfiguration.VpcConfig.SubnetIds))
                 {
                     different = true;
@@ -333,6 +384,7 @@ namespace Amazon.Lambda.Tools.Commands
                 }
 
                 request.VpcConfig.SecurityGroupIds = securityGroupIds.ToList();
+                request.VpcConfig.IsSecurityGroupIdsSet = true;
                 if (existingConfiguration.VpcConfig == null || AreDifferent(securityGroupIds, existingConfiguration.VpcConfig.SecurityGroupIds))
                 {
                     different = true;
@@ -392,6 +444,7 @@ namespace Amazon.Lambda.Tools.Commands
             if (environmentVariables != null && AreDifferent(environmentVariables, existingConfiguration?.Environment?.Variables))
             {
                 request.Environment = new Model.Environment { Variables = environmentVariables };
+                request.Environment.IsVariablesSet = true;
                 different = true;
             }
 
@@ -547,7 +600,152 @@ namespace Amazon.Lambda.Tools.Commands
 
             return false;
         }
-        
+
+        protected async Task<GetFunctionUrlConfigResponse> GetFunctionUrlConfig(string functionName)
+        {
+            var request = new GetFunctionUrlConfigRequest
+            {
+                FunctionName = functionName
+            };
+
+            try
+            {
+                var response = await this.LambdaClient.GetFunctionUrlConfigAsync(request);
+                return response;
+            }
+            catch (ResourceNotFoundException)
+            {
+                return null;
+            }
+            catch (Exception e)
+            {
+                throw new LambdaToolsException($"Error creating function url config for function {request.FunctionName}: {e.Message}", LambdaToolsException.LambdaErrorCode.LambdaFunctionUrlGet, e);
+            }
+        }
+
+        protected async Task CreateFunctionUrlConfig(string functionName, FunctionUrlAuthType authType)
+        {
+            if (authType == null)
+                authType = Amazon.Lambda.FunctionUrlAuthType.NONE;
+
+            var request = new CreateFunctionUrlConfigRequest
+            {
+                FunctionName = functionName,
+                AuthType = authType
+            };
+
+            try
+            {
+                this.FunctionUrlLink = (await this.LambdaClient.CreateFunctionUrlConfigAsync(request)).FunctionUrl;
+
+                if(authType == Amazon.Lambda.FunctionUrlAuthType.NONE)
+                {
+                    await AddFunctionUrlPublicPermissionStatement(functionName);
+                }
+            }
+            catch (Exception e)
+            {
+                throw new LambdaToolsException($"Error creating function url config for function {request.FunctionName}: {e.Message}", LambdaToolsException.LambdaErrorCode.LambdaFunctionUrlCreate, e);
+            }
+        }
+
+        protected async Task UpdateFunctionUrlConfig(string functionName, FunctionUrlAuthType oldAuthType, FunctionUrlAuthType newAuthType)
+        {
+            if (newAuthType == null)
+                newAuthType = Amazon.Lambda.FunctionUrlAuthType.NONE;
+
+            var request = new UpdateFunctionUrlConfigRequest
+            {
+                FunctionName = functionName,
+                AuthType = newAuthType
+            };
+
+            try
+            {
+                this.FunctionUrlLink = (await this.LambdaClient.UpdateFunctionUrlConfigAsync(request)).FunctionUrl;
+
+                if(oldAuthType != newAuthType)
+                {
+                    if(newAuthType == Amazon.Lambda.FunctionUrlAuthType.NONE)
+                    {
+                        await AddFunctionUrlPublicPermissionStatement(functionName);
+                    }
+                    else
+                    {
+                        await RemoveFunctionUrlPublicPermissionStatement(functionName);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                throw new LambdaToolsException($"Error updating function url config for function {request.FunctionName}: {e.Message}", LambdaToolsException.LambdaErrorCode.LambdaFunctionUrlUpdate, e);
+            }
+        }
+
+        protected async Task DeleteFunctionUrlConfig(string functionName, FunctionUrlAuthType oldAuthType)
+        {
+            var request = new DeleteFunctionUrlConfigRequest
+            {
+                FunctionName = functionName
+            };
+
+            try
+            {
+                await this.LambdaClient.DeleteFunctionUrlConfigAsync(request);
+                if (oldAuthType == Lambda.FunctionUrlAuthType.NONE)
+                {
+                    await RemoveFunctionUrlPublicPermissionStatement(functionName);
+                }
+
+                this.FunctionUrlLink = null;
+            }
+            catch (Exception e)
+            {
+                throw new LambdaToolsException($"Error deleting function url config for function {request.FunctionName}: {e.Message}", LambdaToolsException.LambdaErrorCode.LambdaFunctionUrlDelete, e);
+            }
+        }
+
+        private async Task AddFunctionUrlPublicPermissionStatement(string functionName)
+        {
+            var request = new AddPermissionRequest
+            {
+                StatementId = LambdaConstants.FUNCTION_URL_PUBLIC_PERMISSION_STATEMENT_ID,
+                FunctionName = functionName,
+                Principal = "*",
+                Action = "lambda:InvokeFunctionUrl",
+                FunctionUrlAuthType = Amazon.Lambda.FunctionUrlAuthType.NONE
+            };
+
+            try
+            {
+                this.Logger.WriteLine("Adding Lambda permission statement to public access for Function Url");
+                await LambdaClient.AddPermissionAsync(request);
+            }
+            catch(Amazon.Lambda.Model.ResourceConflictException)
+            {
+                this.Logger.WriteLine($"Lambda permission with statement id {LambdaConstants.FUNCTION_URL_PUBLIC_PERMISSION_STATEMENT_ID} for public access already exists");
+            }
+        }
+
+        private async Task RemoveFunctionUrlPublicPermissionStatement(string functionName)
+        {
+            var request = new RemovePermissionRequest
+            {
+                FunctionName = functionName,
+                StatementId = LambdaConstants.FUNCTION_URL_PUBLIC_PERMISSION_STATEMENT_ID
+            };
+
+            try
+            {
+                this.Logger.WriteLine("Removing Lambda permission statement to allow public access for Function Url");
+                await LambdaClient.RemovePermissionAsync(request);
+            }
+            catch(Amazon.Lambda.Model.ResourceNotFoundException)
+            {
+                this.Logger.WriteLine($"Lambda permission with statement id {LambdaConstants.FUNCTION_URL_PUBLIC_PERMISSION_STATEMENT_ID} for public access not found to be removed");
+            }
+        }
+
         protected override void SaveConfigFile(JsonData data)
         {
             

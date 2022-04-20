@@ -51,6 +51,11 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_IMAGE_WORKING_DIRECTORY,
             CommonDefinedCommandOptions.ARGUMENT_DOCKER_TAG,
 
+            LambdaDefinedCommandOptions.ARGUMENT_EPHEMERAL_STORAGE_SIZE,
+
+            LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE,
+            LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_AUTH,
+
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TAGS,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SUBNETS,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SECURITY_GROUPS,
@@ -283,7 +288,16 @@ namespace Amazon.Lambda.Tools.Commands
                         }
                     };
 
-                    if(!string.IsNullOrEmpty(architecture))
+                    var ephemeralSize = this.GetIntValueOrDefault(this.EphemeralStorageSize, LambdaDefinedCommandOptions.ARGUMENT_EPHEMERAL_STORAGE_SIZE, false);
+                    if(ephemeralSize.HasValue)
+                    {
+                        createRequest.EphemeralStorage = new EphemeralStorage
+                        {
+                            Size = ephemeralSize.Value
+                        };
+                    }
+
+                    if (!string.IsNullOrEmpty(architecture))
                     {
                         createRequest.Architectures = new List<string> { architecture };
                     }
@@ -373,6 +387,13 @@ namespace Amazon.Lambda.Tools.Commands
                     catch (Exception e)
                     {
                         throw new LambdaToolsException($"Error creating Lambda function: {e.Message}", LambdaToolsException.LambdaErrorCode.LambdaCreateFunction, e);
+                    }
+
+                    if(this.GetBoolValueOrDefault(this.FunctionUrlEnable, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE, false).GetValueOrDefault())
+                    {
+                        var authType = this.GetStringValueOrDefault(this.FunctionUrlAuthType, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_AUTH, false);
+                        await base.CreateFunctionUrlConfig(createRequest.FunctionName, authType);
+                        this.Logger.WriteLine($"Function url config created: {this.FunctionUrlLink}");
                     }
                 }
                 else
@@ -517,6 +538,11 @@ namespace Amazon.Lambda.Tools.Commands
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME.ConfigFileKey, this.GetStringValueOrDefault(this.Runtime, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE.ConfigFileKey, this.GetStringValueOrDefault(this.Architecture, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS.ConfigFileKey, LambdaToolsDefaults.FormatCommaDelimitedList(this.GetStringValuesOrDefault(this.LayerVersionArns, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_LAYERS, false)));
+
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_EPHEMERAL_STORAGE_SIZE.ConfigFileKey, this.GetIntValueOrDefault(this.EphemeralStorageSize, LambdaDefinedCommandOptions.ARGUMENT_EPHEMERAL_STORAGE_SIZE, false));
+
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE.ConfigFileKey, this.GetBoolValueOrDefault(this.FunctionUrlEnable, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_AUTH.ConfigFileKey, this.GetStringValueOrDefault(this.FunctionUrlAuthType, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_AUTH, false));
 
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_IMAGE_ENTRYPOINT.ConfigFileKey, LambdaToolsDefaults.FormatCommaDelimitedList(this.GetStringValuesOrDefault(this.ImageEntryPoint, LambdaDefinedCommandOptions.ARGUMENT_IMAGE_ENTRYPOINT, false)));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_IMAGE_COMMAND.ConfigFileKey, LambdaToolsDefaults.FormatCommaDelimitedList(this.GetStringValuesOrDefault(this.ImageCommand, LambdaDefinedCommandOptions.ARGUMENT_IMAGE_COMMAND, false)));
