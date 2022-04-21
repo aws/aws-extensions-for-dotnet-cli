@@ -31,6 +31,10 @@ namespace Amazon.Lambda.Tools
             IAMCreateRole,
             IAMGetRole,
 
+            LambdaFunctionUrlGet,
+            LambdaFunctionUrlCreate,
+            LambdaFunctionUrlUpdate,
+            LambdaFunctionUrlDelete,
 
             LambdaCreateFunction,
             LambdaDeleteFunction,

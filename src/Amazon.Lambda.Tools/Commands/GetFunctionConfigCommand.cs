@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Amazon.Common.DotNetCli.Tools;
@@ -53,9 +54,10 @@ namespace Amazon.Lambda.Tools.Commands
         {
             GetFunctionConfigurationResponse response;
 
+            var functionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true);
             try
             {
-                response = await this.LambdaClient.GetFunctionConfigurationAsync(this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true));
+                response = await this.LambdaClient.GetFunctionConfigurationAsync(functionName);
             }
             catch (Exception e)
             {
@@ -86,6 +88,12 @@ namespace Amazon.Lambda.Tools.Commands
             }
             this.Logger.WriteLine("Last Modified:".PadRight(PAD_SIZE) + response.LastModified);
             this.Logger.WriteLine("Memory Size:".PadRight(PAD_SIZE) + response.MemorySize);
+
+            if(response.EphemeralStorage != null)
+            {
+                this.Logger.WriteLine("Ephemeral Storage Size:".PadRight(PAD_SIZE) + response.EphemeralStorage.Size);
+            }
+
             this.Logger.WriteLine("Role:".PadRight(PAD_SIZE) + response.Role);
             this.Logger.WriteLine("Timeout:".PadRight(PAD_SIZE) + response.Timeout);
             this.Logger.WriteLine("Version:".PadRight(PAD_SIZE) + response.Version);
@@ -130,8 +138,32 @@ namespace Amazon.Lambda.Tools.Commands
                 this.Logger.WriteLine("   Subnets: ".PadRight(22) + string.Join(",", response.VpcConfig?.SubnetIds));
             }
 
+            var urlConfig = await GetFunctionUrlConfigAsync(functionName);
+            if(urlConfig != null)
+            {
+                this.Logger.WriteLine("Function Url Config");
+                this.Logger.WriteLine("   Url: ".PadRight(PAD_SIZE) + urlConfig.FunctionUrl);
+                this.Logger.WriteLine("   Auth: ".PadRight(PAD_SIZE) + urlConfig.AuthType.Value);
+            }
 
             return true;
+        }
+
+        private async Task<GetFunctionUrlConfigResponse> GetFunctionUrlConfigAsync(string functionName)
+        {
+            try
+            {
+                var urlConfig = (await this.LambdaClient.GetFunctionUrlConfigAsync(new GetFunctionUrlConfigRequest { FunctionName = functionName }));
+                return urlConfig;
+            }
+            catch (AmazonLambdaException ex) when (ex.StatusCode == HttpStatusCode.NotFound || ex.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                return null;
+            }
+            catch (Exception e)
+            {
+                throw new LambdaToolsException("Error getting configuration url config for Lambda function: " + e.Message, LambdaToolsException.LambdaErrorCode.LambdaGetConfiguration, e);
+            }
         }
         
         private static string FormatAsJsonStringArray(IList<string> items)

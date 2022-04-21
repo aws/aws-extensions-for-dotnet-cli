@@ -6,13 +6,13 @@
     <FileVersion>3.1.0.0</FileVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="AWSSDK.Core" Version="3.7.0.27" />
-    <PackageReference Include="AWSSDK.ECR" Version="3.7.0.2" />
-    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.1" />
-    <PackageReference Include="AWSSDK.S3" Version="3.7.0.3" />
-    <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.1.15" />
-    <PackageReference Include="AWSSDK.SSO" Version="3.7.0.26" />
-    <PackageReference Include="AWSSDK.SSOOIDC" Version="3.7.0.26" />
+    <PackageReference Include="AWSSDK.Core" Version="3.7.10.8" />
+    <PackageReference Include="AWSSDK.ECR" Version="3.7.4.10" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.2.128" />
+    <PackageReference Include="AWSSDK.S3" Version="3.7.8.20" />
+    <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.1.140" />
+    <PackageReference Include="AWSSDK.SSO" Version="3.7.0.148" />
+    <PackageReference Include="AWSSDK.SSOOIDC" Version="3.7.0.148" />
   </ItemGroup>
   <PropertyGroup>
     <NoWarn>1701;1702;1705;1591</NoWarn>

@@ -417,5 +417,29 @@ namespace Amazon.Lambda.Tools
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = "Docker image name and tag in the 'name:tag' format."
             };
+        public static readonly CommandOption ARGUMENT_EPHEMERAL_STORAGE_SIZE =
+            new CommandOption
+            {
+                Name = "Ephemerals Storage Size",
+                Switch = "--ephemerals-storage-size",
+                ValueType = CommandOption.CommandOptionValueType.IntValue,
+                Description = "The size of the function's /tmp directory in MB. The default value is 512, but can be any whole number between 512 and 10240 MB"
+            };
+        public static readonly CommandOption ARGUMENT_FUNCTION_URL_ENABLE =
+            new CommandOption
+            {
+                Name = "Function Url Enable",
+                Switch = "--function-url-enable",
+                ValueType = CommandOption.CommandOptionValueType.BoolValue,
+                Description = "Enable function URL. A function URL is a dedicated HTTP(S) endpoint for your Lambda function."
+            };
+        public static readonly CommandOption ARGUMENT_FUNCTION_URL_AUTH =
+            new CommandOption
+            {
+                Name = "Function Url Auth Type",
+                Switch = "--function-url-auth",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = $"The type of authentication that your function URL uses, default value is NONE. Valid values: {FunctionUrlAuthType.NONE} or {FunctionUrlAuthType.AWS_IAM}"
+            };
     }
 }

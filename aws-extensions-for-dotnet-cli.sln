@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30608.117
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32228.430
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A5EA2C7D-846F-4266-8423-EFC4BA0FE4B6}"
 EndProject
@@ -59,7 +59,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ImageBasedProjects", "Image
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestSimpleImageProject", "testapps\ImageBasedProjects\TestSimpleImageProject\TestSimpleImageProject.csproj", "{4FA5B55F-BE55-42F7-A2DE-1924B10296A2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amazon.Lambda.Tools.Integ.Tests", "test\Amazon.Lambda.Tools.Integ.Tests\Amazon.Lambda.Tools.Integ.Tests.csproj", "{7B2AE176-8AB5-4050-8E22-A2A80E88BB92}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amazon.Lambda.Tools.Integ.Tests", "test\Amazon.Lambda.Tools.Integ.Tests\Amazon.Lambda.Tools.Integ.Tests.csproj", "{7B2AE176-8AB5-4050-8E22-A2A80E88BB92}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestHttpFunction", "testapps\TestHttpFunction\TestHttpFunction.csproj", "{AD31D053-97C5-4262-B187-EC42BFD51A9F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -151,6 +153,10 @@ Global
 		{7B2AE176-8AB5-4050-8E22-A2A80E88BB92}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B2AE176-8AB5-4050-8E22-A2A80E88BB92}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7B2AE176-8AB5-4050-8E22-A2A80E88BB92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD31D053-97C5-4262-B187-EC42BFD51A9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD31D053-97C5-4262-B187-EC42BFD51A9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD31D053-97C5-4262-B187-EC42BFD51A9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD31D053-97C5-4262-B187-EC42BFD51A9F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -179,6 +185,7 @@ Global
 		{7C227173-0F21-44DD-93A7-5D3693240271} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 		{4FA5B55F-BE55-42F7-A2DE-1924B10296A2} = {7C227173-0F21-44DD-93A7-5D3693240271}
 		{7B2AE176-8AB5-4050-8E22-A2A80E88BB92} = {BB0A8314-3127-4159-8B6A-64F97FEF9474}
+		{AD31D053-97C5-4262-B187-EC42BFD51A9F} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DBFC70D6-49A2-40A1-AB08-5D9504AB7112}
