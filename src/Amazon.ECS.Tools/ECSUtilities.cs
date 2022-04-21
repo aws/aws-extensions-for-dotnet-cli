@@ -533,7 +533,7 @@ namespace Amazon.ECS.Tools
                 {
                     if (registerRequest.NetworkMode != null && registerRequest.NetworkMode != NetworkMode.Awsvpc)
                     {
-                        logger?.WriteLine("Setting metwork mode to \"awsvpc\" which is required to launch fargate based tasks");
+                        logger?.WriteLine("Setting network mode to \"awsvpc\" which is required to launch fargate based tasks");
                     }
 
                     registerRequest.NetworkMode = NetworkMode.Awsvpc;
