@@ -1,3 +1,9 @@
+### Release 2022-04-25
+* **Amazon.Lambda.Tools (5.4.0)**
+  * Added `--function-url-enable` and `--function-url-auth` switches to configure Lambda Function Url.
+  * Added `--ephemerals-storage-size` switch to configure the size of writable the `/tmp` folder.
+  * Fixed issue with removing all values from the following collection properties: Environment Variables, Layers and VPC subnets and security groups.
+
 ### Release 2022-02-14
 * **Amazon.Lambda.Tools (5.3.0)**
   * Package the tool targeting .NET 6 as well as the previous .NET Core 3.1 to support Mac M1 developers.
