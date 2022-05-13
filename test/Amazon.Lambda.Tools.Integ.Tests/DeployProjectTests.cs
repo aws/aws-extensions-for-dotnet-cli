@@ -366,16 +366,21 @@ namespace Amazon.Lambda.Tools.Integ.Tests
                 }
             }
 
-            async Task<DeployFunctionCommand> TestDeployProjectAsync(bool enableUrl, string authType = null)
+            async Task<DeployFunctionCommand> TestDeployProjectAsync(bool? enableUrl, string authType = null)
             {
                 var command = new DeployFunctionCommand(toolLogger, fullPath, new string[0]);
                 command.FunctionName = functionName;
                 command.Role = await TestHelper.GetTestRoleArnAsync();
                 command.Runtime = "dotnet6";
-                command.FunctionUrlEnable = enableUrl;
+
                 command.DisableInteractive = true;
                 
-                if(authType != null)
+                if(enableUrl.HasValue)
+                {
+                    command.FunctionUrlEnable = enableUrl;
+                }
+
+                if (authType != null)
                 {
                     command.FunctionUrlAuthType = authType;
                 }
@@ -393,6 +398,12 @@ namespace Amazon.Lambda.Tools.Integ.Tests
                 // Ensure initial deployment was successful with function URL and NONE authtype
                 Assert.NotNull(command.FunctionUrlLink);
                 var functionUrl = command.FunctionUrlLink;
+                await TestPublicPermissionStatement(command.LambdaClient, expectExist: true);
+                await TestFunctionUrl(functionUrl, expectSuccess: true);
+
+                // Redeploy without making any changes to FunctionUrl. Make sure we don't unintended remove function url config
+                // when just updating bits.
+                command = await TestDeployProjectAsync(enableUrl: null);
                 await TestPublicPermissionStatement(command.LambdaClient, expectExist: true);
                 await TestFunctionUrl(functionUrl, expectSuccess: true);
 
