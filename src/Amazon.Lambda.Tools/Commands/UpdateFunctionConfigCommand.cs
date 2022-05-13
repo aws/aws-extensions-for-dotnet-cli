@@ -248,7 +248,13 @@ namespace Amazon.Lambda.Tools.Commands
             }
 
             var urlConfig = await this.GetFunctionUrlConfig(existingConfiguration.FunctionName);
-            var enableUrlConfig = this.GetBoolValueOrDefault(this.FunctionUrlEnable, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE, false).GetValueOrDefault();
+
+            // To determine what is the state of the function url check to see if the user explicitly set a value. If they did set a value then use that 
+            // to either add or remove the url config. If the user didn't set a value check to see if there is an existing config to make sure we don't remove
+            // the config url if the user didn't set a value.
+            bool enableUrlConfig = this.GetBoolValueOrDefault(this.FunctionUrlEnable, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE, false).HasValue ? 
+                                        this.GetBoolValueOrDefault(this.FunctionUrlEnable, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE, false).Value : urlConfig != null;
+
             var authType = this.GetStringValueOrDefault(this.FunctionUrlAuthType, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_AUTH, false);
 
             if (urlConfig != null)
