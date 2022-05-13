@@ -1,4 +1,8 @@
 ### Release 2022-04-25
+* **Amazon.Lambda.Tools (5.4.1)**
+  * Fixed issue when `--function-url-enable` is absent the function url config was unintendedly removed. 
+
+### Release 2022-04-25
 * **Amazon.Lambda.Tools (5.4.0)**
   * Added `--function-url-enable` and `--function-url-auth` switches to configure Lambda Function Url.
   * Added `--ephemerals-storage-size` switch to configure the size of writable the `/tmp` folder.
