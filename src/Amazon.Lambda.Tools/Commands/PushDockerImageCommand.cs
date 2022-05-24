@@ -17,7 +17,7 @@ namespace Amazon.Lambda.Tools.Commands
         public static readonly IList<CommandOption> LambdaPushCommandOptions = BuildLineOptions(new List<CommandOption>
         {
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE,
-        }, CommonOptions);
+        }, BasePushDockerImageCommand<LambdaToolsDefaults>.CommandOptions);
 
         protected override string ToolName => LambdaConstants.TOOLNAME;
 
