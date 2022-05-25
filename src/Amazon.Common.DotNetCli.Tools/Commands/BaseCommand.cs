@@ -4,6 +4,7 @@ using Amazon.Runtime.CredentialManagement;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,7 +14,6 @@ using Amazon.ECR;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 using Amazon.S3;
-
 
 namespace Amazon.Common.DotNetCli.Tools.Commands
 {
@@ -104,10 +104,21 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
         {
             var list = new List<CommandOption>();
             list.AddRange(CommonOptions);
-            if(optionCollections != null)
+            if (optionCollections != null)
             {
                 foreach (var options in optionCollections)
-                    list.AddRange(options);
+                {
+                    if (options != null)
+                    {
+                        foreach (var option in options)
+                        {
+                            if (!list.Any(x => string.Equals(x.Switch, option.Switch)))
+                            {
+                                list.Add(option);
+                            }
+                        }
+                    }
+                }
             }
 
             return list;
