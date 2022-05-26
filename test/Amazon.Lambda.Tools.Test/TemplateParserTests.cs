@@ -9,6 +9,9 @@ using Xunit;
 using Amazon.Lambda.Tools.TemplateProcessor;
 using ThirdParty.Json.LitJson;
 using YamlDotNet.RepresentationModel;
+using System.Linq;
+using static Amazon.Lambda.Tools.TemplateProcessor.JsonTemplateParser;
+using static Amazon.Lambda.Tools.TemplateProcessor.YamlTemplateParser;
 
 namespace Amazon.Lambda.Tools.Test
 {
@@ -500,8 +503,50 @@ namespace Amazon.Lambda.Tools.Test
 
             resource.Fields[0].SetS3Location("my-bucket", "swagger.yml");
             Assert.Equal("s3://my-bucket/swagger.yml", dataSource.GetValue("TemplateUrl"));
-        }     
-        
+        }
+
+        [Fact]
+        public void TestGetDictionaryFromResourceForJsonTemplate()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/ImageBasedProjects/ServerlessTemplateExamples");
+            var cloudFormationTemplate = "serverless-resource-dockerbuildargs-json.template";
+            string templateBody = File.ReadAllText(Path.Combine(fullPath, cloudFormationTemplate));
+            var root = JsonMapper.ToObject(templateBody);
+            var firstResource = root["Resources"][0];
+            var jsonDataSource = new JsonUpdatableResourceDataSource(null, firstResource, null);
+            var valueDictionaryFromResource = jsonDataSource.GetValueDictionaryFromResource("Metadata", "DockerBuildArgs");
+
+            Assert.NotNull(valueDictionaryFromResource);
+            Assert.Equal(2, valueDictionaryFromResource.Count);
+            Assert.Equal("/src/path-to/project", valueDictionaryFromResource["PROJECT_PATH"]);
+            Assert.Equal("project.csproj", valueDictionaryFromResource["PROJECT_FILE"]);
+        }
+
+        [Fact]
+        public void TestGetDictionaryFromResourceForYamlTemplate()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/ImageBasedProjects/ServerlessTemplateExamples");
+            var cloudFormationTemplate = "serverless-resource-dockerbuildargs-yaml.template";
+            string templateBody = File.ReadAllText(Path.Combine(fullPath, cloudFormationTemplate));
+            YamlStream yamlStream = new YamlStream();
+            yamlStream.Load(new StringReader(templateBody));
+
+            var root = (YamlMappingNode)yamlStream.Documents[0].RootNode;
+            var resourcesKey = new YamlScalarNode("Resources");
+            var resources = (YamlMappingNode)root.Children[resourcesKey];
+
+            var firstResource = (YamlMappingNode)resources.Children.First().Value;
+            var yamlDataSource = new YamlUpdatableResourceDataSource(null, firstResource, null);
+            var valueDictionaryFromResource = yamlDataSource.GetValueDictionaryFromResource("Metadata", "DockerBuildArgs");
+
+            Assert.NotNull(valueDictionaryFromResource);
+            Assert.Equal(2, valueDictionaryFromResource.Count);
+            Assert.Equal("/src/path-to/project", valueDictionaryFromResource["PROJECT_PATH"]);
+            Assert.Equal("project.csproj", valueDictionaryFromResource["PROJECT_FILE"]);
+        }
+
         public class FakeUpdatableResourceDataSource : IUpdatableResourceDataSource
         {
             IDictionary<string, string> Root { get; }
@@ -567,6 +612,11 @@ namespace Amazon.Lambda.Tools.Test
             }
 
             public string GetValueFromResource(params string[] keyPath)
+            {
+                throw new System.NotImplementedException();
+            }
+
+            public Dictionary<string, string> GetValueDictionaryFromResource(params string[] keyPath)
             {
                 throw new System.NotImplementedException();
             }

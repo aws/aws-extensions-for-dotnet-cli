@@ -289,8 +289,27 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 pushCommand.PushDockerImageProperties.DockerFile = field.GetMetadataDockerfile();
                 pushCommand.PushDockerImageProperties.DockerImageTag = field.GetMetadataDockerTag();
                 pushCommand.ImageTagUniqueSeed = field.Resource.Name;
-                
 
+                // Refer https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg
+                Dictionary<string, string> dockerBuildArgs = field.GetMetadataDockerBuildArgs();
+                if (dockerBuildArgs != null && dockerBuildArgs.Count > 0)
+                {
+                    StringBuilder buildArgs = new StringBuilder();
+                    foreach (var keyValuePair in dockerBuildArgs)
+                    {
+                        if (keyValuePair.Value != null)
+                        {
+                            buildArgs.Append($"--build-arg {keyValuePair.Key}={keyValuePair.Value} ");
+                        }
+                        else
+                        {
+                            // --build-arg flag could be used without a value, in which case the value from the local environment will be propagated into the Docker container.
+                            buildArgs.Append($"--build-arg {keyValuePair.Key} ");
+                        }
+                    }
+
+                    pushCommand.PushDockerImageProperties.DockerBuildOptions = buildArgs.ToString().TrimEnd();
+                }
 
                 await pushCommand.PushImageAsync();
                 if (pushCommand.LastToolsException != null)

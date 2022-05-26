@@ -128,6 +128,12 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// </summary>
         /// <returns></returns>
         string GetMetadataDockerTag();
+
+        /// <summary>
+        /// Gets the Docker build args specified for an AWS::Serverless::Function
+        /// </summary>
+        /// <returns></returns>
+        Dictionary<string, string> GetMetadataDockerBuildArgs();
     }
 
     /// <summary>
@@ -176,6 +182,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// <param name="keyPath"></param>
         /// <returns></returns>
         string[] GetValueList(params string[] keyPath);
-        
+
+        Dictionary<string, string> GetValueDictionaryFromResource(params string[] keyPath);
     }
 }

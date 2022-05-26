@@ -133,6 +133,11 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 return GetValueList(this.Properties, keyPath);
             }
 
+            public Dictionary<string, string> GetValueDictionaryFromResource(params string[] keyPath)
+            {
+                return GetValueDictionaryFromResource(this.Resource, keyPath);
+            }
+
             private static string[] GetValueList(YamlNode node, params string[] keyPath)
             {
                 foreach (var key in keyPath)
@@ -179,6 +184,46 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
 
                 node.Children.Remove(keyPath[keyPath.Length - 1]);
                 node.Children.Add(keyPath[keyPath.Length - 1], new YamlScalarNode(value));
+            }
+
+            private static Dictionary<string, string> GetValueDictionaryFromResource(YamlNode node, params string[] keyPath)
+            {
+                foreach (var key in keyPath)
+                {
+                    if (node == null || !(node is YamlMappingNode))
+                        return null;
+
+                    var mappingNode = ((YamlMappingNode)node);
+                    if (!mappingNode.Children.ContainsKey(key))
+                        return null;
+
+                    node = mappingNode.Children[key];
+                }
+
+                if (node is YamlMappingNode)
+                {
+                    var mappingNode = (YamlMappingNode)node;
+
+                    if (mappingNode.Children.Count == 0)
+                        return null;
+
+                    Dictionary<string, string> dictionary = new Dictionary<string, string>(mappingNode.Children.Count);
+                    foreach (var key in mappingNode.Children.Keys)
+                    {
+                        if (dictionary.ContainsKey(key.ToString()))
+                        {
+                            dictionary[key.ToString()] = mappingNode.Children[key]?.ToString();
+                        }
+                        else
+                        {
+                            dictionary.Add(key.ToString(), mappingNode.Children[key]?.ToString());
+                        }
+                    }
+
+                    return dictionary;
+                }
+
+                return null;
             }
         }
     }

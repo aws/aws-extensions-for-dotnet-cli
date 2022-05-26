@@ -133,5 +133,49 @@ namespace Amazon.Lambda.Tools.Integ.Tests
                 Assert.Contains("aws-extensions-tests:usedefaultdocker", useDefaultDockerFunction["Code"]["ImageUri"]?.ToString());
             }
         }
+
+        [Fact]
+        public async Task TestDockerBuildArgsMetadataJsonTemplate()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+
+            var toolLogger = new TestToolLogger(_testOutputHelper);
+
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/ImageBasedProjects/ServerlessTemplateExamples");
+
+            var command = new PackageCICommand(toolLogger, fullPath, new string[0]);
+            command.Region = TEST_REGION;
+            command.DisableInteractive = true;
+            command.S3Bucket = this._testFixture.Bucket;
+            command.CloudFormationTemplate = "serverless-resource-dockerbuildargs-json.template";
+            command.CloudFormationOutputTemplate = Path.GetTempFileName();
+
+            var created = await command.ExecuteAsync();
+            Assert.True(created);
+            Assert.Contains("--build-arg PROJECT_PATH=/src/path-to/project", toolLogger.Buffer);
+            Assert.Contains("--build-arg PROJECT_FILE=project.csproj", toolLogger.Buffer);
+        }
+
+        [Fact]
+        public async Task TestDockerBuildArgsMetadataYamlTemplate()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+
+            var toolLogger = new TestToolLogger(_testOutputHelper);
+
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/ImageBasedProjects/ServerlessTemplateExamples");
+
+            var command = new PackageCICommand(toolLogger, fullPath, new string[0]);
+            command.Region = TEST_REGION;
+            command.DisableInteractive = true;
+            command.S3Bucket = this._testFixture.Bucket;
+            command.CloudFormationTemplate = "serverless-resource-dockerbuildargs-yaml.template";
+            command.CloudFormationOutputTemplate = Path.GetTempFileName();
+
+            var created = await command.ExecuteAsync();
+            Assert.True(created);
+            Assert.Contains("--build-arg PROJECT_PATH=/src/path-to/project", toolLogger.Buffer);
+            Assert.Contains("--build-arg PROJECT_FILE=project.csproj", toolLogger.Buffer);
+        }
     }
 }
