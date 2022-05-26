@@ -110,6 +110,11 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 return GetValueList(this.Properties, keyPath);
             }
 
+            public Dictionary<string, string> GetValueDictionaryFromResource(params string[] keyPath)
+            {
+                return GetValueDictionaryFromResource(this.Resource, keyPath);
+            }
+
             private static string[] GetValueList(JsonData node, params string[] keyPath)
             {
                 foreach (var key in keyPath)
@@ -147,6 +152,35 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 }
 
                 node[keyPath[keyPath.Length - 1]] = value;
+            }
+
+            private static Dictionary<string, string> GetValueDictionaryFromResource(JsonData node, params string[] keyPath)
+            {
+                foreach (var key in keyPath)
+                {
+                    if (node == null)
+                        return null;
+
+                    node = node[key];
+                }
+
+                if (node == null || !node.IsObject || node.Count == 0)
+                    return null;
+
+                var dictionary = new Dictionary<string, string>(node.Count);
+                foreach (string key in node.PropertyNames)
+                {
+                    if (dictionary.ContainsKey(key))
+                    {
+                        dictionary[key] = node[key]?.ToString();
+                    }
+                    else
+                    {
+                        dictionary.Add(key, node[key]?.ToString());
+                    }
+                }
+
+                return dictionary;
             }
         }
     }
