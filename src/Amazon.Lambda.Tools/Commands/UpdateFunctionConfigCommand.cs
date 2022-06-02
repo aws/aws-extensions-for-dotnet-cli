@@ -247,35 +247,40 @@ namespace Amazon.Lambda.Tools.Commands
                 }
             }
 
-            var urlConfig = await this.GetFunctionUrlConfig(existingConfiguration.FunctionName);
-
-            // To determine what is the state of the function url check to see if the user explicitly set a value. If they did set a value then use that 
-            // to either add or remove the url config. If the user didn't set a value check to see if there is an existing config to make sure we don't remove
-            // the config url if the user didn't set a value.
-            bool enableUrlConfig = this.GetBoolValueOrDefault(this.FunctionUrlEnable, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE, false).HasValue ? 
-                                        this.GetBoolValueOrDefault(this.FunctionUrlEnable, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE, false).Value : urlConfig != null;
-
-            var authType = this.GetStringValueOrDefault(this.FunctionUrlAuthType, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_AUTH, false);
-
-            if (urlConfig != null)
+            // only attempt to modify function url if the user has explicitly opted-in to use FunctionUrl
+            if (GetBoolValueOrDefault(FunctionUrlEnable, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE, false).HasValue)
             {
-                this.FunctionUrlLink = urlConfig.FunctionUrl;
-            }
+                var urlConfig = await this.GetFunctionUrlConfig(existingConfiguration.FunctionName);
 
-            if (urlConfig != null && !enableUrlConfig)
-            {
-                await this.DeleteFunctionUrlConfig(existingConfiguration.FunctionName, urlConfig.AuthType);
-                this.Logger.WriteLine("Removing function url config");
-            }
-            else if(urlConfig == null && enableUrlConfig)
-            {
-                await this.CreateFunctionUrlConfig(existingConfiguration.FunctionName, authType);
-                this.Logger.WriteLine($"Creating function url config: {this.FunctionUrlLink}");
-            }
-            else if (urlConfig != null && enableUrlConfig && !string.Equals(authType, urlConfig.AuthType.Value, StringComparison.Ordinal))
-            {
-                await this.UpdateFunctionUrlConfig(existingConfiguration.FunctionName, urlConfig.AuthType, authType);
-                this.Logger.WriteLine($"Updating function url config: {this.FunctionUrlLink}");
+                // To determine what is the state of the function url check to see if the user explicitly set a value. If they did set a value then use that 
+                // to either add or remove the url config. If the user didn't set a value check to see if there is an existing config to make sure we don't remove
+                // the config url if the user didn't set a value.
+                bool enableUrlConfig = this.GetBoolValueOrDefault(this.FunctionUrlEnable, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE, false).HasValue ? 
+                                            this.GetBoolValueOrDefault(this.FunctionUrlEnable, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE, false).Value : urlConfig != null;
+
+                var authType = this.GetStringValueOrDefault(this.FunctionUrlAuthType, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_AUTH, false);
+
+                if (urlConfig != null)
+                {
+                    this.FunctionUrlLink = urlConfig.FunctionUrl;
+                }
+
+                if (urlConfig != null && !enableUrlConfig)
+                {
+                    await this.DeleteFunctionUrlConfig(existingConfiguration.FunctionName, urlConfig.AuthType);
+                    this.Logger.WriteLine("Removing function url config");
+                }
+                else if(urlConfig == null && enableUrlConfig)
+                {
+                    await this.CreateFunctionUrlConfig(existingConfiguration.FunctionName, authType);
+                    this.Logger.WriteLine($"Creating function url config: {this.FunctionUrlLink}");
+                }
+                else if (urlConfig != null && enableUrlConfig &&
+                         !string.Equals(authType, urlConfig.AuthType.Value, StringComparison.Ordinal))
+                {
+                    await this.UpdateFunctionUrlConfig(existingConfiguration.FunctionName, urlConfig.AuthType, authType);
+                    this.Logger.WriteLine($"Updating function url config: {this.FunctionUrlLink}");
+                }
             }
         }
 
