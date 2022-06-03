@@ -1,6 +1,7 @@
 ### Release 2022-06-02
 * **Amazon.Lambda.Tools (5.4.2)**
   * Only modify Function Url if `--function-url-enable` flag is set.
+  * Fixed an issue where lambda push-image command was ignoring Docker options.
   
 ### Release 2022-04-25
 * **Amazon.Lambda.Tools (5.4.1)**
