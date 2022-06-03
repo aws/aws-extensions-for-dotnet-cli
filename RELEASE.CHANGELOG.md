@@ -1,3 +1,7 @@
+### Release 2022-06-02
+* **Amazon.Lambda.Tools (5.4.2)**
+  * Only modify Function Url if `--function-url-enable` flag is set.
+  
 ### Release 2022-04-25
 * **Amazon.Lambda.Tools (5.4.1)**
   * Fixed issue when `--function-url-enable` is absent the function url config was unintendedly removed. 
