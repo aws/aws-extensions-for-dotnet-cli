@@ -195,6 +195,7 @@ namespace Amazon.ECS.Tools
                     JsonData volumes = command.GetJsonValueOrDefault(properties.TaskDefinitionVolumes, ECSDefinedCommandOptions.ARGUMENT_TD_VOLUMES);
                     if (volumes != null)
                     {
+                        registerRequest.Volumes = new List<Model.Volume>();
                         foreach (JsonData item in volumes)
                         {
                             var volume = new Amazon.ECS.Model.Volume();
@@ -204,7 +205,36 @@ namespace Amazon.ECS.Tools
                                 volume.Host = new HostVolumeProperties();
                                 volume.Host.SourcePath = item["host"]["sourcePath"] != null ? item["host"]["sourcePath"].ToString() : null;
                             }
+                            if (item["efsVolumeConfiguration"] != null)
+                            {
+                                volume.EfsVolumeConfiguration = new EFSVolumeConfiguration();
+                                volume.EfsVolumeConfiguration.FileSystemId = item["efsVolumeConfiguration"]["fileSystemId"]?.ToString();
+                                volume.EfsVolumeConfiguration.RootDirectory = item["efsVolumeConfiguration"]["rootDirectory"]?.ToString();
+                                var transitEncryption = item["efsVolumeConfiguration"]["transitEncryption"]?.ToString();
+                                if (transitEncryption != null)
+                                {
+                                    volume.EfsVolumeConfiguration.TransitEncryption = EFSTransitEncryption.FindValue(transitEncryption);
+                                }
+                                var transitEncryptionPort = item["efsVolumeConfiguration"]["transitEncryptionPort"];
+                                if (transitEncryptionPort != null && transitEncryptionPort.IsInt)
+                                {
+                                    volume.EfsVolumeConfiguration.TransitEncryptionPort = (int)transitEncryptionPort;
+                                }
+                                var authorizationConfig = item["efsVolumeConfiguration"]["authorizationConfig"];
+                                if (authorizationConfig != null)
+                                {
+                                    volume.EfsVolumeConfiguration.AuthorizationConfig = new EFSAuthorizationConfig();
+                                    volume.EfsVolumeConfiguration.AuthorizationConfig.AccessPointId = authorizationConfig["accessPointId"]?.ToString();
+                                    var iam = authorizationConfig["iam"]?.ToString();
+                                    if (iam != null)
+                                    {
+                                        volume.EfsVolumeConfiguration.AuthorizationConfig.Iam = EFSAuthorizationConfigIAM.FindValue(iam);
+                                    }
+                                }
+                            }
                             volume.Name = item["name"] != null ? item["name"].ToString() : null;
+                            
+                            registerRequest.Volumes.Add(volume);
                         }
                     }
                 }
@@ -425,7 +455,7 @@ namespace Amazon.ECS.Tools
                         {
                             var mountPoint = new MountPoint();
                             mountPoint.ContainerPath = item["containerPath"] != null ? item["containerPath"].ToString() : null;
-                            mountPoint.ContainerPath = item["sourceVolume"] != null ? item["sourceVolume"].ToString() : null;
+                            mountPoint.SourceVolume = item["sourceVolume"] != null ? item["sourceVolume"].ToString() : null;
                             if (item["readOnly"] != null && item["readOnly"].IsBoolean)
                             {
                                 mountPoint.ReadOnly = (bool)item["readOnly"];
