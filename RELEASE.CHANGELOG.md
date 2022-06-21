@@ -1,3 +1,7 @@
+### Release 2022-06-21
+* **Amazon.Lambda.Tools (5.4.3)**
+  * Added ability to use DockerBuildArgs in Amazon.Lambda.Tools serverless template.
+
 ### Release 2022-06-02
 * **Amazon.Lambda.Tools (5.4.2)**
   * Only modify Function Url if `--function-url-enable` flag is set.
