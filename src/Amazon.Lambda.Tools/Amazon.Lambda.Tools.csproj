@@ -15,7 +15,7 @@
     <Copyright>Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
     <Product>AWS Lambda Tools for .NET CLI</Product>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <Version>5.4.3</Version>
+    <Version>5.4.4</Version>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Resources\build-lambda-zip.exe">
@@ -35,7 +35,7 @@
     <EmbeddedResource Include="Resources\publish-layer-31sdk-prunelist.xml" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="AWSSDK.CloudFormation" Version="3.7.9.26" />
     <PackageReference Include="AWSSDK.Lambda" Version="3.7.12.4" />
     <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.2.128" />
