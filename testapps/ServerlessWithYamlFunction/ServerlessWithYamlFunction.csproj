@@ -12,8 +12,4 @@
     <PackageReference Include="Amazon.Lambda.APIGatewayEvents" Version="2.4.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <DotNetCliToolReference Include="Amazon.Lambda.Tools" Version="2.1.4" />
-  </ItemGroup>
-
 </Project>
