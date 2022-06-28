@@ -1,3 +1,7 @@
+### Release 2022-06027
+* **Amazon.Lambda.Tools (5.4.4)**
+  * Bump Newtonsoft.Json to 13.0.1
+  
 ### Release 2022-06-21
 * **Amazon.Lambda.Tools (5.4.3)**
   * Added ability to use DockerBuildArgs in Amazon.Lambda.Tools serverless template.
