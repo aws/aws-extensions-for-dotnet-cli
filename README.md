@@ -309,6 +309,9 @@ where the application bundle was uploaded. In an AWS CodePipeline this command c
 stage returning the transformed template as the build artifact. Later in the pipeline that transformed serverless.template can
 be used with a CloudFormation stage to deploy the application.
 
+![Tip] This is my tip
+
+
 ##### Package
 ```
 dotnet lambda package
