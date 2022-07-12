@@ -309,6 +309,84 @@ where the application bundle was uploaded. In an AWS CodePipeline this command c
 stage returning the transformed template as the build artifact. Later in the pipeline that transformed serverless.template can
 be used with a CloudFormation stage to deploy the application.
 
+##### Notes
+
+`dotnet lambda package-ci` inspects and uses the [`Architectures` property of `AWS::Serverless::Function`](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html#sam-function-architectures) to determine the runtime of the package.
+
+For example:
+
+```
+      "Architectures": [
+        "arm64"
+      ],
+```
+
+will execute `dotnet publish` with a `--runtime` argument of value `linux-arm64`:
+
+The default is `linux-x64` (which will execute `dotnet publish` with a `--runtime` argument of value `linux-x64`: )
+
+The `Architectures` array can be specified either by:
+1. Directly with the path `AWS::Serverless::Function` 
+2. Within the [AWS SAM Template syntax `Globals`](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-specification-template-anatomy-globals.html)
+
+Example of directly with the path `AWS::Serverless::Funaction` in a `serverless.template`:
+
+```
+  ...
+  "Resources": {
+    "ApiFnMFS3hGenerated": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Architectures": [
+          "arm64"
+        ],
+        "CodeUri": ".",
+        "MemorySize": 10240,
+        "Timeout": 900,
+        "Role": {
+          "Ref": "LambdaExecutionRole"
+        },
+        "PackageType": "Zip",
+        "Handler": "MyAssembly.MyNamespace::MyAssembly.MyNamespace.MyClass::MyFunction"
+      }
+    }
+  },
+  "Parameters" ...
+```
+
+Example of within the AWS SAM Template syntax `Globals` in a `serverless.template`:
+
+```
+...
+  "Globals": {
+    "Function": {
+      "Runtime": "dotnet6",
+      "Architectures": [
+        "arm64"
+      ]
+    }
+  },
+  "Resources": {
+    "ApiFnMFS3hGenerated": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Architectures": [
+          "arm64"
+        ],
+        "CodeUri": ".",
+        "MemorySize": 10240,
+        "Timeout": 900,
+        "Role": {
+          "Ref": "LambdaExecutionRole"
+        },
+        "PackageType": "Zip",
+        "Handler": "MyAssembly.MyNamespace::MyAssembly.MyNamespace.MyClass::MyFunction"
+      }
+    }
+  },
+  "Parameters" ...
+```
+
 ##### Package
 ```
 dotnet lambda package
