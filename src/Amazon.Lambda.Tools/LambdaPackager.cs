@@ -51,7 +51,7 @@ namespace Amazon.Lambda.Tools
         public static bool CreateApplicationBundle(LambdaToolsDefaults defaults, IToolLogger logger, string workingDirectory, 
             string projectLocation, string configuration, string targetFramework, string msbuildParameters, string architecture,
             bool disableVersionCheck, LayerPackageInfo layerPackageInfo,
-            out string publishLocation, ref string zipArchivePath)
+            out string publishLocation, ref string zipArchivePath, bool? buildZipInDocker)
         {
             LogDeprecationMessagesIfNecessary(logger, targetFramework);
 
@@ -82,6 +82,43 @@ namespace Amazon.Lambda.Tools
                 {
                     publishManifestPath.Add(info.ManifestPath);
                 }
+            }
+
+            // Switch for Docker
+
+            if (buildZipInDocker.Value == true)
+            {
+                // TODO in the future, these values can't be hardcoded. 
+                var imageId = "lambda-docker-build-image";
+                var dockerFile = "DockerfileBuildOnly"; // This is manually pulled from https://github.com/awslabs/dotnet-nativeaot-labs/tree/main/Samples/BuildAndRunWithContainers (and updated for .NET 7)
+                var dockerCli = new DockerCLIWrapper(logger, workingDirectory);
+                var buildResult = dockerCli.Build(workingDirectory, dockerFile, imageId, "");
+                if (buildResult != 0)
+                {
+                    logger?.WriteLine($"ERROR: docker build returned {buildResult}");
+                }
+                var containerName = imageId + "-container";
+
+                // TODO: Handle case where docker image or container already exist. 
+                var runResult = dockerCli.Run(imageId, containerName);
+                if (runResult != 0)
+                {
+                    logger?.WriteLine($"ERROR: docker run returned {runResult}");
+                }
+
+                // TODO: Handle case where package.zip already exists.
+                // TODO: Parameterize '/source/package.zip' maybe use publishLocation? But that would have to modify the dockerfile, so maybe not.
+                var copyResult = dockerCli.Copy(containerName, "/source/package.zip", ".");
+                if (copyResult != 0)
+                {
+                    logger?.WriteLine($"ERROR: docker copy returned {copyResult}");
+                }
+
+                // TODO: Clean up Docker image and container now that we're done with them.
+
+                zipArchivePath = Path.Combine(workingDirectory, "package.zip");
+                publishLocation = ""; // TODO, what is this out parameter used for in calling methods
+                return true;
             }
 
             var cli = new LambdaDotNetCLIWrapper(logger, workingDirectory);

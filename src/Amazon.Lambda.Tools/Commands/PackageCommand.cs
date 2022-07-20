@@ -225,6 +225,7 @@ namespace Amazon.Lambda.Tools.Commands
                                                                      architecture: architecture,
                                                                      disableVersionCheck: disableVersionCheck,
                                                                      layerPackageInfo: layerPackageInfo,
+                                                                     buildZipInDocker: false,
                                                                      publishLocation: out publishLocation, zipArchivePath: ref zipArchivePath);
                 if (!success)
                 {

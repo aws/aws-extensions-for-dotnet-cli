@@ -151,5 +151,39 @@ namespace Amazon.Common.DotNetCli.Tools
 
             return base.ExecuteCommand(psi, "docker push");
         }
+
+        public int Run(string imageId, string containerName)
+        {
+            _logger?.WriteLine($"... invoking 'docker run --name {containerName} {imageId}'");
+
+            var arguments = $"run --name {containerName} {imageId}";
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = this._dockerCLI,
+                Arguments = arguments.ToString(),
+                WorkingDirectory = this._workingDirectory
+            };
+
+
+            return base.ExecuteCommand(psi, "docker run");
+        }
+
+        public int Copy(string containerName, string internalContainerPathToExtract, string outputPath)
+        {
+            _logger?.WriteLine($"... invoking 'docker cp {containerName}:{internalContainerPathToExtract} .'");
+
+            var arguments = $"cp {containerName}:{internalContainerPathToExtract} {outputPath}";
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = this._dockerCLI,
+                Arguments = arguments.ToString(),
+                WorkingDirectory = this._workingDirectory
+            };
+
+
+            return base.ExecuteCommand(psi, "docker cp");
+        }
     }
 }

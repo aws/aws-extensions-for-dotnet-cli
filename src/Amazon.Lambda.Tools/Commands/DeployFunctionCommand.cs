@@ -73,7 +73,8 @@ namespace Amazon.Lambda.Tools.Commands
             CommonDefinedCommandOptions.ARGUMENT_DOCKERFILE,
             CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_OPTIONS,
             CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_WORKING_DIRECTORY,
-            CommonDefinedCommandOptions.ARGUMENT_HOST_BUILD_OUTPUT
+            CommonDefinedCommandOptions.ARGUMENT_HOST_BUILD_OUTPUT,
+            LambdaDefinedCommandOptions.BUILD_ZIP_IN_DOCKER
         });
 
         public string Architecture { get; set; }
@@ -94,6 +95,7 @@ namespace Amazon.Lambda.Tools.Commands
 
         public string HostBuildOutput { get; set; }
         public string LocalDockerImage { get; set; }
+        public bool? BuildZipInDocker { get; set; }
 
 
         public DeployFunctionCommand(IToolLogger logger, string workingDirectory, string[] args)
@@ -157,6 +159,8 @@ namespace Amazon.Lambda.Tools.Commands
                 this.HostBuildOutput = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_LOCAL_DOCKER_IMAGE.Switch)) != null)
                 this.LocalDockerImage = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.BUILD_ZIP_IN_DOCKER.Switch)) != null)
+                this.BuildZipInDocker = tuple.Item2.BoolValue;
 
         }
 
@@ -172,6 +176,8 @@ namespace Amazon.Lambda.Tools.Commands
             var layerPackageInfo = await LambdaUtilities.LoadLayerPackageInfos(this.Logger, this.LambdaClient, this.S3Client, layerVersionArns);
 
             var architecture = this.GetStringValueOrDefault(this.Architecture, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE, false);
+
+            bool? buildZipInDocker = this.GetBoolValueOrDefault(this.BuildZipInDocker, LambdaDefinedCommandOptions.BUILD_ZIP_IN_DOCKER, false);
 
             Lambda.PackageType packageType = DeterminePackageType();
             string ecrImageUri = null;
@@ -227,7 +233,9 @@ namespace Amazon.Lambda.Tools.Commands
                                                             architecture: architecture,
                                                             disableVersionCheck: disableVersionCheck,
                                                             layerPackageInfo: layerPackageInfo,
-                                                            publishLocation: out publishLocation, zipArchivePath: ref zipArchivePath);
+                                                            buildZipInDocker: buildZipInDocker,
+                                                            publishLocation: out publishLocation, 
+                                                            zipArchivePath: ref zipArchivePath);
 
                     if (string.IsNullOrEmpty(zipArchivePath))
                         return false;
@@ -243,6 +251,8 @@ namespace Amazon.Lambda.Tools.Commands
                     zipArchivePath = package;
                 }
             }
+
+            // TODO: This is where zip is returned, so from here, nothing should change.
 
 
             MemoryStream lambdaZipArchiveStream = null;

@@ -441,5 +441,14 @@ namespace Amazon.Lambda.Tools
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = $"The type of authentication that your function URL uses, default value is NONE. Valid values: {FunctionUrlAuthType.NONE} or {FunctionUrlAuthType.AWS_IAM}"
             };
+        public static readonly CommandOption BUILD_ZIP_IN_DOCKER =
+            new CommandOption
+            {
+                Name = "Build the Lambda .zip file in Docker",
+                Switch = "--build-zip-in-docker",
+                ShortSwitch = "-bzid",
+                ValueType = CommandOption.CommandOptionValueType.BoolValue, // TODO: Not hard-code values like dockerfile location and name, and base image
+                Description = $"Tells the tool to build the Lambda .zip file in Docker locally on AL2, then extract the output zip from there for uploading."
+            };
     }
 }
