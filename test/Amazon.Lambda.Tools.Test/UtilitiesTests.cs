@@ -11,6 +11,8 @@ namespace Amazon.Lambda.Tools.Test
     public  class UtilitiesTests
     {
         [Theory]
+        [InlineData("dotnet6", "net6.0")]
+        [InlineData("dotnetcore3.1", "netcoreapp3.1")]
         [InlineData("dotnetcore2.1", "netcoreapp2.1")]
         [InlineData("dotnetcore2.0", "netcoreapp2.0")]
         [InlineData("dotnetcore1.0", "netcoreapp1.0")]
