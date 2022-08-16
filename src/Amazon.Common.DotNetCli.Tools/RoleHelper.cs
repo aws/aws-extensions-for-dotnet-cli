@@ -143,7 +143,10 @@ namespace Amazon.Common.DotNetCli.Tools
             {
                 for(int i = 0; i < managedPolicies.Length; i++)
                 {
-                    managedPolicies[i] = ExpandManagedPolicyName(iamClient, managedPolicies[i]);
+                    if (managedPolicies[i] != null)
+                    {
+                        managedPolicies[i] = ExpandManagedPolicyName(iamClient, managedPolicies[i]);
+                    }
                 }
             }
 
@@ -168,14 +171,17 @@ namespace Amazon.Common.DotNetCli.Tools
             {
                 try
                 {
-                    foreach(var managedPolicy in managedPolicies)
+                    foreach (var managedPolicy in managedPolicies)
                     {
-                        var request = new AttachRolePolicyRequest
+                        if (managedPolicy != null)
                         {
-                            RoleName = roleName,
-                            PolicyArn = managedPolicy
-                        };
-                        iamClient.AttachRolePolicyAsync(request).Wait();
+                            var request = new AttachRolePolicyRequest
+                            {
+                                RoleName = roleName,
+                                PolicyArn = managedPolicy
+                            };
+                            iamClient.AttachRolePolicyAsync(request).Wait();
+                        }
                     }
                 }
                 catch (Exception e)
