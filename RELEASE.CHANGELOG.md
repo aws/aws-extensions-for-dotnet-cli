@@ -1,4 +1,14 @@
-### Release 2022-06027
+### Release 2022-08-18
+* **Amazon.Common.DotNetCli.Tools (3.1.0.1)**
+  * Fixes an issue where exception could occur while expanding null policy name and attaching it to a role.
+* **Amazon.Lambda.Tools (5.4.5)**
+  * Fixes an issue where Lambda deploy-function fails when choosing option to add permissions later.
+* **Amazon.ECS.Tools (3.5.2)**
+  * Updated to reference the latest version of Amazon.Common.DotNetCli.Tools.
+* **Amazon.ElasticBeanstalk.Tools (4.3.2)**
+  * Updated to reference the latest version of Amazon.Common.DotNetCli.Tools.
+
+### Release 2022-06-27
 * **Amazon.Lambda.Tools (5.4.4)**
   * Bump Newtonsoft.Json to 13.0.1
   
