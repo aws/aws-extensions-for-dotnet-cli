@@ -31,10 +31,6 @@
           }
         }
       }
-    },
-
-    "UploadsBucket" : {
-        "Type" : "AWS::S3::Bucket"
     }
   },
   "Outputs" : {
