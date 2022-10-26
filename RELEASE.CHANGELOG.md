@@ -1,4 +1,8 @@
 ### Release 2022-08-18
+* **Amazon.Lambda.Tools (5.5.0)**
+  * Add new --resolve-s3 switch that can replace the --s3-bucket switch. When --resolve-s3 is set true the tool will ensure a default bucket exists and use that bucket for storing deployment bundles.
+  
+### Release 2022-08-18
 * **Amazon.Common.DotNetCli.Tools (3.1.0.1)**
   * Fixes an issue where exception could occur while expanding null policy name and attaching it to a role.
 * **Amazon.Lambda.Tools (5.4.5)**
