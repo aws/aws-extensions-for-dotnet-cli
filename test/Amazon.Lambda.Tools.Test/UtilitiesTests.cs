@@ -5,6 +5,13 @@ using System.Text;
 
 using Xunit;
 using Amazon.Common.DotNetCli.Tools;
+using System.Threading.Tasks;
+using Moq;
+using Amazon.S3;
+using Amazon.SecurityToken;
+using Amazon.SecurityToken.Model;
+using System.Threading;
+using Amazon.S3.Model;
 
 namespace Amazon.Lambda.Tools.Test
 {
@@ -140,6 +147,104 @@ namespace Amazon.Lambda.Tools.Test
             rootData.SetFilePathIfNotNull("Dockerfile", dockerfilePath, projectLocation);
 
             Assert.Equal(expected, rootData["Dockerfile"]);
+        }
+
+        [Fact]
+        public async Task UseDefaultBucketThatAlreadyExists()
+        {
+            var expectedBucket = $"{LambdaConstants.DEFAULT_BUCKET_NAME_PREFIX}us-west-2-123412341234";
+
+            bool getCallerIdentityCallCount = false;
+            var stsClientMock = new Mock<IAmazonSecurityTokenService>();
+            stsClientMock.Setup(client => client.GetCallerIdentityAsync(It.IsAny<GetCallerIdentityRequest>(), It.IsAny<CancellationToken>()))
+                        .Returns((GetCallerIdentityRequest r, CancellationToken token) =>
+                        {
+                            getCallerIdentityCallCount = true;
+                            var response = new GetCallerIdentityResponse { Account = "123412341234" };
+
+                            return Task.FromResult(response);
+                        });
+
+            bool listBucketsAsyncCallCount = false;
+            bool putBucketCallCount = false;
+            var s3ClientMock = new Mock<IAmazonS3>();
+            s3ClientMock.SetupGet(client => client.Config).Returns(new AmazonS3Config { RegionEndpoint = RegionEndpoint.USWest2 });
+            s3ClientMock.Setup(client => client.ListBucketsAsync(It.IsAny<ListBucketsRequest>(), It.IsAny<CancellationToken>()))
+                        .Returns(() =>
+                        {
+                            listBucketsAsyncCallCount = true;
+                            var response = new ListBucketsResponse { Buckets = { new S3Bucket { BucketName = expectedBucket } } };
+
+                            return Task.FromResult(response);
+                        });
+            s3ClientMock.Setup(client => client.PutBucketAsync(It.IsAny<PutBucketRequest>(), It.IsAny<CancellationToken>()))
+                        .Returns(() =>
+                        {
+                            putBucketCallCount = true;
+                            return Task.FromResult(new PutBucketResponse());
+                        });
+
+
+
+
+            var logger = new TestToolLogger();
+
+            var s3Bucket = await LambdaUtilities.ResolveDefaultS3Bucket(logger, s3ClientMock.Object, stsClientMock.Object);
+            Assert.Equal(expectedBucket, s3Bucket);
+
+            Assert.True(getCallerIdentityCallCount);
+            Assert.True(listBucketsAsyncCallCount);
+            Assert.False(putBucketCallCount);
+        }
+
+        [Fact]
+        public async Task CreateDefaultBucket()
+        {
+            var expectedBucket = $"{LambdaConstants.DEFAULT_BUCKET_NAME_PREFIX}us-west-2-123412341234";
+
+            bool getCallerIdentityCallCount = false;
+            var stsClientMock = new Mock<IAmazonSecurityTokenService>();
+            stsClientMock.Setup(client => client.GetCallerIdentityAsync(It.IsAny<GetCallerIdentityRequest>(), It.IsAny<CancellationToken>()))
+                        .Returns((GetCallerIdentityRequest r, CancellationToken token) =>
+                        {
+                            getCallerIdentityCallCount = true;
+                            var response = new GetCallerIdentityResponse { Account = "123412341234" };
+
+                            return Task.FromResult(response);
+                        });
+
+            bool listBucketsAsyncCallCount = false;
+            bool putBucketCallCount = false;
+            var s3ClientMock = new Mock<IAmazonS3>();
+            s3ClientMock.SetupGet(client => client.Config).Returns(new AmazonS3Config { RegionEndpoint = RegionEndpoint.USWest2 });
+            s3ClientMock.Setup(client => client.ListBucketsAsync(It.IsAny<ListBucketsRequest>(), It.IsAny<CancellationToken>()))
+                        .Returns(() =>
+                        {
+                            listBucketsAsyncCallCount = true;
+                            return Task.FromResult(new ListBucketsResponse());
+                        });
+            s3ClientMock.Setup(client => client.PutBucketAsync(It.IsAny<PutBucketRequest>(), It.IsAny<CancellationToken>()))
+                        .Callback<PutBucketRequest, CancellationToken>((request, token) =>
+                        {
+                            Assert.Equal(expectedBucket, request.BucketName);
+                        })
+                        .Returns(() =>
+                        {
+                            putBucketCallCount = true;
+                            return Task.FromResult(new PutBucketResponse());
+                        });
+
+
+
+
+            var logger = new TestToolLogger();
+
+            var s3Bucket = await LambdaUtilities.ResolveDefaultS3Bucket(logger, s3ClientMock.Object, stsClientMock.Object);
+            Assert.Equal(expectedBucket, s3Bucket);
+
+            Assert.True(getCallerIdentityCallCount);
+            Assert.True(listBucketsAsyncCallCount);
+            Assert.True(putBucketCallCount);
         }
     }
 }

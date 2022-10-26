@@ -38,6 +38,7 @@ namespace Amazon.Lambda.Tools.Commands
             CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK,
             CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS,
             LambdaDefinedCommandOptions.ARGUMENT_PACKAGE,
+            LambdaDefinedCommandOptions.ARGUMENT_RESOLVE_S3,
             LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET,
             LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX,
             LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_TEMPLATE,
@@ -56,6 +57,7 @@ namespace Amazon.Lambda.Tools.Commands
         public string Package { get; set; }
         public string MSBuildParameters { get; set; }
 
+        public bool? ResolveS3 { get; set; }
         public string S3Bucket { get; set; }
         public string S3Prefix { get; set; }
 
@@ -90,6 +92,8 @@ namespace Amazon.Lambda.Tools.Commands
                 this.TargetFramework = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_PACKAGE.Switch)) != null)
                 this.Package = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_RESOLVE_S3.Switch)) != null)
+                this.ResolveS3 = tuple.Item2.BoolValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET.Switch)) != null)
                 this.S3Bucket = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX.Switch)) != null)
@@ -133,9 +137,10 @@ namespace Amazon.Lambda.Tools.Commands
         {
             string projectLocation = this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false);
             string stackName = this.GetStringValueOrDefault(this.StackName, LambdaDefinedCommandOptions.ARGUMENT_STACK_NAME, true);
-            string s3Bucket = this.GetStringValueOrDefault(this.S3Bucket, LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET, true);
             string s3Prefix = this.GetStringValueOrDefault(this.S3Prefix, LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX, false);
             string templatePath = this.GetStringValueOrDefault(this.CloudFormationTemplate, LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_TEMPLATE, true);
+
+            string s3Bucket = await DetermineS3Bucket();
 
             await Utilities.ValidateBucketRegionAsync(this.S3Client, s3Bucket);
 
@@ -613,12 +618,35 @@ namespace Amazon.Lambda.Tools.Commands
             return parameters;
         }
 
+        private async Task<string> DetermineS3Bucket()
+        {
+            string s3Bucket = this.GetStringValueOrDefault(this.S3Bucket, LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET, false);
+            bool? resolveS3 = this.GetBoolValueOrDefault(this.ResolveS3, LambdaDefinedCommandOptions.ARGUMENT_RESOLVE_S3, false);
+
+            if (string.IsNullOrEmpty(s3Bucket))
+            {
+                if (resolveS3 == true)
+                {
+                    s3Bucket = await LambdaUtilities.ResolveDefaultS3Bucket(this.Logger, this.S3Client, this.STSClient);
+                }
+                else
+                {
+                    // Since a bucket wasn't explicitly passed in nor was resolve s3 passed in then ask the user for the S3 bucket.
+                    s3Bucket = this.GetStringValueOrDefault(this.S3Bucket, LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET, true);
+                }
+
+            }
+
+            return s3Bucket;
+        }
+
 
         protected override void SaveConfigFile(JsonData data)
         {
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION.ConfigFileKey, this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false));
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK.ConfigFileKey, this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false));
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS.ConfigFileKey, this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_RESOLVE_S3.ConfigFileKey, this.GetBoolValueOrDefault(this.ResolveS3, LambdaDefinedCommandOptions.ARGUMENT_RESOLVE_S3, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET.ConfigFileKey, this.GetStringValueOrDefault(this.S3Bucket, LambdaDefinedCommandOptions.ARGUMENT_S3_BUCKET, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX.ConfigFileKey, this.GetStringValueOrDefault(this.S3Prefix, LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX, false));
 

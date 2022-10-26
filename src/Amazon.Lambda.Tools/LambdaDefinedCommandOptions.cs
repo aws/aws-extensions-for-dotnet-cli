@@ -206,6 +206,15 @@ namespace Amazon.Lambda.Tools
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = "KMS Key ARN of a customer key used to encrypt the function's environment variables"
             };
+        public static readonly CommandOption ARGUMENT_RESOLVE_S3 =
+            new CommandOption
+            {
+                Name = "Resolve S3 Bucket",
+                ShortSwitch = "-rs",
+                Switch = "--resolve-s3",
+                ValueType = CommandOption.CommandOptionValueType.BoolValue,
+                Description = $"If set to true a bucket with the name format of \"{LambdaConstants.DEFAULT_BUCKET_NAME_PREFIX}<region>-<account-id>\" will be configured to store build outputs"
+            }; 
         public static readonly CommandOption ARGUMENT_S3_BUCKET =
             new CommandOption
             {

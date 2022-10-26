@@ -48,6 +48,8 @@ namespace Amazon.Lambda.Tools
         public const string ARCHITECTURE_X86_64 = "x86_64";
         public const string ARCHITECTURE_ARM64 = "arm64";
 
+        public const string DEFAULT_BUCKET_NAME_PREFIX = "aws-dotnet-lambda-tools-";
+
         // This is the same value the console is using.
         public const string FUNCTION_URL_PUBLIC_PERMISSION_STATEMENT_ID = "FunctionURLAllowPublicAccess";
 
