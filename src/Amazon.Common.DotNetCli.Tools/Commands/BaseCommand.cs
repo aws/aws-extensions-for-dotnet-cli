@@ -14,6 +14,7 @@ using Amazon.ECR;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 using Amazon.S3;
+using Amazon.SecurityToken;
 
 namespace Amazon.Common.DotNetCli.Tools.Commands
 {
@@ -754,6 +755,25 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             string version = this.GetType().GetTypeInfo().Assembly.GetName().Version.ToString();
             Util.Internal.InternalSDKUtils.SetUserAgent(this.ToolName,
                                           version);
+        }
+
+        IAmazonSecurityTokenService _stsClient;
+        public IAmazonSecurityTokenService STSClient
+        {
+            get
+            {
+                if (this._stsClient == null)
+                {
+                    SetUserAgentString();
+
+                    var config = new AmazonSecurityTokenServiceConfig();
+                    config.RegionEndpoint = DetermineAWSRegion();
+
+                    this._stsClient = new AmazonSecurityTokenServiceClient(DetermineAWSCredentials(), config);
+                }
+                return this._stsClient;
+            }
+            set { this._stsClient = value; }
         }
 
         IAmazonIdentityManagementService _iamClient;

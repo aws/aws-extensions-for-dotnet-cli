@@ -71,7 +71,9 @@ namespace Amazon.Lambda.Tools
             FailedToDetectSdkVersion,
             LayerNetSdkVersionMismatch,
 
-            DisabledSupportForNET31Layers
+            DisabledSupportForNET31Layers,
+
+            FailedToResolveS3Bucket
         }
 
         public LambdaToolsException(string message, LambdaErrorCode code) : base(message, code.ToString(), null)

@@ -18,6 +18,7 @@ using Amazon.S3.Model;
 using System.Threading.Tasks;
 using System.Xml.XPath;
 using Environment = System.Environment;
+using Amazon.SecurityToken;
 
 namespace Amazon.Lambda.Tools
 {
@@ -834,6 +835,38 @@ namespace Amazon.Lambda.Tools
             }
 
             throw new LambdaToolsException($"Timeout waiting for function {functionName} to become available", LambdaToolsException.LambdaErrorCode.LambdaWaitTillFunctionAvailable);
+        }
+
+        public static async Task<string> ResolveDefaultS3Bucket(IToolLogger logger, IAmazonS3 s3Client, IAmazonSecurityTokenService stsClient)
+        {
+            var region = s3Client.Config.RegionEndpoint?.SystemName;
+            if(string.IsNullOrEmpty(region))
+            {
+                throw new LambdaToolsException("Error resolving default S3 bucket for deployment bundles: region could not be determined", LambdaToolsException.LambdaErrorCode.FailedToResolveS3Bucket);
+            }
+
+            try
+            {
+                var accountId = (await stsClient.GetCallerIdentityAsync(new SecurityToken.Model.GetCallerIdentityRequest())).Account;
+                var bucketName = $"{LambdaConstants.DEFAULT_BUCKET_NAME_PREFIX}{region}-{accountId}";
+
+                if (!(await s3Client.ListBucketsAsync(new ListBucketsRequest())).Buckets.Any(x => string.Equals(x.BucketName, bucketName, StringComparison.CurrentCultureIgnoreCase)))
+                {
+                    logger?.WriteLine($"Creating S3 bucket {bucketName} for storage of deployment bundles");
+                    await s3Client.PutBucketAsync(new PutBucketRequest { BucketName = bucketName, UseClientRegion = true });
+                }
+                else
+                {
+                    logger?.WriteLine($"Using S3 bucket {bucketName} for storage of deployment bundles");
+                }
+
+                return bucketName;
+
+            }
+            catch(Exception e)
+            {
+                throw new LambdaToolsException("Error resolving default S3 bucket for deployment bundles: " + e.Message, LambdaToolsException.LambdaErrorCode.FailedToResolveS3Bucket);
+            }
         }
     }
 }
