@@ -589,7 +589,8 @@ namespace Amazon.Lambda.Tools
                 if (flattenRuntime && relativePath.StartsWith(RUNTIME_FOLDER_PREFIX))
                     continue;
 
-                if (relativePath.EndsWith(".dbg", StringComparison.OrdinalIgnoreCase) || relativePath.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)) // Don't include debugging symbols
+                // Native debug symbols are very large and are being excluded to keep deployment size down.
+                if (relativePath.EndsWith(".dbg", StringComparison.OrdinalIgnoreCase)) 
                     continue;
 
                 includedFiles[relativePath] = file;
