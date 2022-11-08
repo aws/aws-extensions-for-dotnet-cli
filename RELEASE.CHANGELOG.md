@@ -1,4 +1,9 @@
-### Release 2022-08-18
+### Release 2022-11-18
+* **Amazon.Lambda.Tools (5.6.0)**
+  * Add support for deploying Native AOT .NET 7 Lambda functions. To enable Native AOT set the PublishAot property in project file to true.
+  * Add support for container builds when creating deployment bundle.
+
+### Release 2022-10-26
 * **Amazon.Lambda.Tools (5.5.0)**
   * Add new --resolve-s3 switch that can replace the --s3-bucket switch. When --resolve-s3 is set true the tool will ensure a default bucket exists and use that bucket for storing deployment bundles.
   
