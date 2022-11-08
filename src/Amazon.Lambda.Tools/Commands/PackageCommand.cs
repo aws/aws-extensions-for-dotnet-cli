@@ -33,7 +33,11 @@ namespace Amazon.Lambda.Tools.Commands
             CommonDefinedCommandOptions.ARGUMENT_DOCKERFILE,
             CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_OPTIONS,
             CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_WORKING_DIRECTORY,
-            CommonDefinedCommandOptions.ARGUMENT_HOST_BUILD_OUTPUT
+            CommonDefinedCommandOptions.ARGUMENT_HOST_BUILD_OUTPUT,
+
+            LambdaDefinedCommandOptions.ARGUMENT_USE_CONTAINER_FOR_BUILD,
+            LambdaDefinedCommandOptions.ARGUMENT_CONTAINER_IMAGE_FOR_BUILD,
+            LambdaDefinedCommandOptions.ARGUMENT_CODE_MOUNT_DIRECTORY
         });
 
         public string Architecture { get; set; }
@@ -51,8 +55,10 @@ namespace Amazon.Lambda.Tools.Commands
         public string DockerBuildOptions { get; set; }
         public string DockerBuildWorkingDirectory { get; set; }
         public string DockerImageTag { get; set; }
-
         public string HostBuildOutput { get; set; }
+        public bool? UseContainerForBuild { get; set; }
+        public string ContainerImageForBuild { get; set; }
+        public string CodeMountDirectory { get; private set; }
 
         /// <summary>
         /// Property set when the package command is being created from another command or tool
@@ -109,7 +115,12 @@ namespace Amazon.Lambda.Tools.Commands
                 this.LayerVersionArns = tuple.Item2.StringValues;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE.Switch)) != null)
                 this.Architecture = tuple.Item2.StringValue;
-
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_USE_CONTAINER_FOR_BUILD.Switch)) != null)
+                this.UseContainerForBuild = tuple.Item2.BoolValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_CONTAINER_IMAGE_FOR_BUILD.Switch)) != null)
+                this.ContainerImageForBuild = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_CODE_MOUNT_DIRECTORY.Switch)) != null)
+                this.CodeMountDirectory = tuple.Item2.StringValue;
 
             if (!string.IsNullOrEmpty(values.MSBuildParameters))
             {
@@ -141,7 +152,7 @@ namespace Amazon.Lambda.Tools.Commands
             // Disable interactive since this command is intended to be run as part of a pipeline.
             this.DisableInteractive = true;
 
-            var projectLocation = this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false);
+            string projectLocation = Utilities.DetermineProjectLocation(this.WorkingDirectory, this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false));
 
             Lambda.PackageType packageType = LambdaUtilities.DeterminePackageType(this.GetStringValueOrDefault(this.PackageType, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_TYPE, false));
             if(packageType == Lambda.PackageType.Image)
@@ -198,7 +209,7 @@ namespace Amazon.Lambda.Tools.Commands
                 var targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
                 if (string.IsNullOrEmpty(targetFramework))
                 {
-                    targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation));
+                    targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation);
 
                     // If we still don't know what the target framework is ask the user what targetframework to use.
                     // This is common when a project is using multi targeting.
@@ -207,6 +218,8 @@ namespace Amazon.Lambda.Tools.Commands
                         targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
                     }
                 }
+
+                bool isNativeAot = Utilities.LookPublishAotFlag(projectLocation, this.MSBuildParameters);
 
                 var msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
                 var architecture = this.GetStringValueOrDefault(this.Architecture, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE, false);
@@ -225,7 +238,12 @@ namespace Amazon.Lambda.Tools.Commands
                                                                      architecture: architecture,
                                                                      disableVersionCheck: disableVersionCheck,
                                                                      layerPackageInfo: layerPackageInfo,
-                                                                     publishLocation: out publishLocation, zipArchivePath: ref zipArchivePath);
+                                                                     isNativeAot: isNativeAot,
+                                                                     useContainerForBuild: GetBoolValueOrDefault(this.UseContainerForBuild, LambdaDefinedCommandOptions.ARGUMENT_USE_CONTAINER_FOR_BUILD, false),
+                                                                     containerImageForBuild: GetStringValueOrDefault(this.ContainerImageForBuild, LambdaDefinedCommandOptions.ARGUMENT_CONTAINER_IMAGE_FOR_BUILD, false),
+                                                                     codeMountDirectory: GetStringValueOrDefault(this.CodeMountDirectory, LambdaDefinedCommandOptions.ARGUMENT_CODE_MOUNT_DIRECTORY, false),
+                                                                     publishLocation: out publishLocation, 
+                                                                     zipArchivePath: ref zipArchivePath);
                 if (!success)
                 {
                     this.Logger.WriteLine("Failed to create application package");
@@ -299,6 +317,10 @@ namespace Amazon.Lambda.Tools.Commands
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS.ConfigFileKey, this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE.ConfigFileKey, this.GetStringValueOrDefault(this.OutputPackageFileName, LambdaDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK.ConfigFileKey, this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false));
+
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_USE_CONTAINER_FOR_BUILD.ConfigFileKey, this.GetBoolValueOrDefault(this.UseContainerForBuild, LambdaDefinedCommandOptions.ARGUMENT_USE_CONTAINER_FOR_BUILD, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_CONTAINER_IMAGE_FOR_BUILD.ConfigFileKey, this.GetStringValueOrDefault(this.ContainerImageForBuild, LambdaDefinedCommandOptions.ARGUMENT_CONTAINER_IMAGE_FOR_BUILD, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_CODE_MOUNT_DIRECTORY.ConfigFileKey, this.GetStringValueOrDefault(this.CodeMountDirectory, LambdaDefinedCommandOptions.ARGUMENT_CODE_MOUNT_DIRECTORY, false));
         }
     }
 }

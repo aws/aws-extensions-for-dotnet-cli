@@ -23,7 +23,6 @@ namespace Amazon.Lambda.Tools
             this._workingDirectory = workingDirectory;
         }
 
-
         /// <summary>
         /// Execute the dotnet store command on the provided package manifest
         /// </summary>
@@ -151,9 +150,9 @@ namespace Amazon.Lambda.Tools
         /// <param name="deploymentTargetPackageStoreManifestContent"></param>
         public int Publish(LambdaToolsDefaults defaults, string projectLocation, string outputLocation, string targetFramework, string configuration, string msbuildParameters, string architecture, IList<string> publishManifests)
         {
-            if(outputLocation == null)
+            if (outputLocation == null)
                 throw new ArgumentNullException(nameof(outputLocation));
-            
+
             if (Directory.Exists(outputLocation))
             {
                 try
@@ -181,88 +180,7 @@ namespace Amazon.Lambda.Tools
                 fullProjectLocation = Utilities.DetermineProjectLocation(this._workingDirectory, projectLocation);
             }
 
-            StringBuilder arguments = new StringBuilder("publish");
-            if (!string.IsNullOrEmpty(projectLocation))
-            {
-                arguments.Append($" \"{fullProjectLocation}\"");
-            }
-            if (!string.IsNullOrEmpty(outputLocation))
-            {
-                arguments.Append($" --output \"{outputLocation}\"");
-            }
-
-            if (!string.IsNullOrEmpty(configuration))
-            {
-                arguments.Append($" --configuration \"{configuration}\"");
-            }
-
-            if (!string.IsNullOrEmpty(targetFramework))
-            {
-                arguments.Append($" --framework \"{targetFramework}\"");
-            }
-
-            if (!string.IsNullOrEmpty(msbuildParameters))
-            {
-                arguments.Append($" {msbuildParameters}");
-            }
-
-            if (!string.Equals("netcoreapp1.0", targetFramework, StringComparison.OrdinalIgnoreCase))
-            {
-                arguments.Append(" /p:GenerateRuntimeConfigurationFiles=true");
-
-                // Define an action to set the runtime and self-contained switches.
-                var applyRuntimeSwitchAction = (Action)(() =>
-                {
-                    if (msbuildParameters == null ||
-                        msbuildParameters.IndexOf("--runtime", StringComparison.InvariantCultureIgnoreCase) == -1)
-                    {
-                        arguments.Append($" --runtime {LambdaUtilities.DetermineRuntimeParameter(targetFramework, architecture)}");
-                    }
-
-                    if (msbuildParameters == null ||
-                        msbuildParameters.IndexOf("--self-contained", StringComparison.InvariantCultureIgnoreCase) == -1)
-                    {
-                        arguments.Append(" --self-contained false ");
-                    }
-
-                });
-
-                // This is here to not change existing behavior for the 2.0 and 2.1 runtimes. For those runtimes if
-                // cshtml files are being used we need to support that cshtml being compiled at runtime. In order to do that we
-                // need to not turn PreserveCompilationContext which provides reference assemblies to the runtime
-                // compilation and not set a runtime.
-                //
-                // If there are no cshtml then disable PreserveCompilationContext to reduce package size and continue
-                // to use the same runtime identifier that we used when those runtimes were launched.
-                if (new string[] { "netcoreapp2.0", "netcoreapp2.1" }.Contains(targetFramework))
-                {
-                    if(Directory.GetFiles(fullProjectLocation, "*.cshtml", SearchOption.AllDirectories).Length == 0)
-                    {
-                        applyRuntimeSwitchAction();
-
-                        if (string.IsNullOrEmpty(msbuildParameters) ||
-                            !msbuildParameters.Contains("PreserveCompilationContext"))
-                        {
-                            _logger?.WriteLine("... Disabling compilation context to reduce package size. If compilation context is needed pass in the \"/p:PreserveCompilationContext=false\" switch.");
-                            arguments.Append(" /p:PreserveCompilationContext=false");
-                        }
-                    }
-                }
-                else
-                {
-                    applyRuntimeSwitchAction();
-                }
-
-                // If we have a manifest of packages already deploy in target deployment environment then write it to disk and add the 
-                // command line switch
-                if(publishManifests != null && publishManifests.Count > 0)
-                {
-                    foreach(var manifest in publishManifests)
-                    {
-                        arguments.Append($" --manifest \"{manifest}\"");
-                    }                    
-                }
-            }
+            var arguments = GetPublishArguments(fullProjectLocation, outputLocation, targetFramework, configuration, msbuildParameters, architecture, publishManifests);
 
             // echo the full dotnet command for debug
             _logger?.WriteLine($"... dotnet {arguments}");
@@ -270,7 +188,7 @@ namespace Amazon.Lambda.Tools
             var psi = new ProcessStartInfo
             {
                 FileName = dotnetCLI,
-                Arguments = arguments.ToString(),
+                Arguments = arguments,
                 WorkingDirectory = this._workingDirectory,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -351,6 +269,107 @@ namespace Amazon.Lambda.Tools
             }
 
             return exitCode;
+        }
+
+        public string GetPublishArguments(string projectLocation, 
+            string outputLocation, 
+            string targetFramework, 
+            string configuration, 
+            string msbuildParameters, 
+            string architecture, 
+            IList<string> publishManifests,
+            bool isNativeAot = false)
+        {
+            StringBuilder arguments = new StringBuilder("publish");
+            if (!string.IsNullOrEmpty(projectLocation))
+            {
+                arguments.Append($" \"{projectLocation}\"");
+            }
+            if (!string.IsNullOrEmpty(outputLocation))
+            {
+                arguments.Append($" --output \"{outputLocation}\"");
+            }
+
+            if (!string.IsNullOrEmpty(configuration))
+            {
+                arguments.Append($" --configuration \"{configuration}\"");
+            }
+
+            if (!string.IsNullOrEmpty(targetFramework))
+            {
+                arguments.Append($" --framework \"{targetFramework}\"");
+            }
+
+            if (!string.IsNullOrEmpty(msbuildParameters))
+            {
+                arguments.Append($" {msbuildParameters}");
+            }
+
+            if (!string.Equals("netcoreapp1.0", targetFramework, StringComparison.OrdinalIgnoreCase))
+            {
+                arguments.Append(" /p:GenerateRuntimeConfigurationFiles=true");
+
+                // Define an action to set the runtime and self-contained switches.
+                var applyRuntimeSwitchAction = (Action)(() =>
+                {
+                    if (msbuildParameters == null ||
+                        msbuildParameters.IndexOf("--runtime", StringComparison.InvariantCultureIgnoreCase) == -1)
+                    {
+                        arguments.Append($" --runtime {LambdaUtilities.DetermineRuntimeParameter(targetFramework, architecture)}");
+                    }
+
+                    if (msbuildParameters == null ||
+                        msbuildParameters.IndexOf("--self-contained", StringComparison.InvariantCultureIgnoreCase) == -1)
+                    {
+                        arguments.Append($" --self-contained {isNativeAot} ");
+                    }
+
+                });
+
+                // This is here to not change existing behavior for the 2.0 and 2.1 runtimes. For those runtimes if
+                // cshtml files are being used we need to support that cshtml being compiled at runtime. In order to do that we
+                // need to not turn PreserveCompilationContext which provides reference assemblies to the runtime
+                // compilation and not set a runtime.
+                //
+                // If there are no cshtml then disable PreserveCompilationContext to reduce package size and continue
+                // to use the same runtime identifier that we used when those runtimes were launched.
+                if (new string[] { "netcoreapp2.0", "netcoreapp2.1" }.Contains(targetFramework))
+                {
+                    if (Directory.GetFiles(projectLocation, "*.cshtml", SearchOption.AllDirectories).Length == 0)
+                    {
+                        applyRuntimeSwitchAction();
+
+                        if (string.IsNullOrEmpty(msbuildParameters) ||
+                            !msbuildParameters.Contains("PreserveCompilationContext"))
+                        {
+                            _logger?.WriteLine("... Disabling compilation context to reduce package size. If compilation context is needed pass in the \"/p:PreserveCompilationContext=false\" switch.");
+                            arguments.Append(" /p:PreserveCompilationContext=false");
+                        }
+                    }
+                }
+                else
+                {
+                    applyRuntimeSwitchAction();
+                }
+
+                // If we have a manifest of packages already deploy in target deployment environment then write it to disk and add the 
+                // command line switch
+                if (publishManifests != null && publishManifests.Count > 0)
+                {
+                    foreach (var manifest in publishManifests)
+                    {
+                        arguments.Append($" --manifest \"{manifest}\"");
+                    }
+                }
+
+                if (isNativeAot)
+                {
+                    // StripSymbols will greatly reduce output binary size with Native AOT
+                    arguments.Append(" /p:StripSymbols=true");
+                }
+            }
+
+            return arguments.ToString();
         }
 
         private void ProcessAdditionalFiles(LambdaToolsDefaults defaults, string publishLocation)

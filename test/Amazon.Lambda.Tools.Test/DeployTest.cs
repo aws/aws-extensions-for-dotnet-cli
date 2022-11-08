@@ -39,7 +39,179 @@ namespace Amazon.Lambda.Tools.Test
             this._testOutputHelper = testOutputHelper;
         }
 
+        [Fact]
+        public async Task RunDeploymentBuildWithUseContainer()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
 
+            string expectedValue = "HELLO WORLD";
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + $"../../../../../../testapps/TestFunction");
+            if (Directory.Exists(fullPath + "/bin/"))
+            {
+                Directory.Delete(fullPath + "/bin/", true);
+            }
+            if (Directory.Exists(fullPath + "/obj/"))
+            {
+                Directory.Delete(fullPath + "/obj/", true);
+            }
+
+            var command = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
+            command.FunctionName = "test-function-" + DateTime.Now.Ticks;
+            command.Handler = "TestFunction::TestFunction.Function::ToUpper";
+            command.Timeout = 10;
+            command.MemorySize = 512;
+            command.Role = await TestHelper.GetTestRoleArnAsync();
+            command.Configuration = "Release";
+            command.TargetFramework = "netcoreapp3.1";
+            command.Runtime = "dotnetcore3.1";
+            command.DisableInteractive = true;
+            command.UseContainerForBuild = true;
+
+            bool created = false;
+            try
+            {
+                created = await command.ExecuteAsync();
+                Assert.True(created);
+
+                await LambdaUtilities.WaitTillFunctionAvailableAsync(new TestToolLogger(_testOutputHelper), command.LambdaClient, command.FunctionName);
+                var invokeRequest = new InvokeRequest
+                {
+                    FunctionName = command.FunctionName,
+                    LogType = LogType.Tail,
+                    Payload = "\"hello world\""
+                };
+                var response = await command.LambdaClient.InvokeAsync(invokeRequest);
+
+                var payload = new StreamReader(response.Payload).ReadToEnd();
+                Assert.Equal($"\"{expectedValue}\"", payload);
+
+                // Check that the package size isn't too big which implies stripping the binary worked.
+                var getFunctionRequest = new GetFunctionRequest
+                {
+                    FunctionName = command.FunctionName
+                };
+                GetFunctionResponse getFunctionResponse = await command.LambdaClient.GetFunctionAsync(getFunctionRequest);
+                var codeSize = getFunctionResponse.Configuration.CodeSize;
+                Assert.True(codeSize < 10000000, $"Code size is {codeSize}, which is larger than expected 10000000 bytes (10MB), check that trimming and stripping worked as expected.");
+            }
+            finally
+            {
+                if (created)
+                {
+                    await command.LambdaClient.DeleteFunctionAsync(command.FunctionName);
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData(true, false)]
+        [InlineData(false, false)]
+        [InlineData(true, true)]
+        // [InlineData(false, true)] Ignored since each of these takes over 2 minutes.
+        public async Task RunDeploymentNativeAot(bool multipleProjects, bool customMountLocation)
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+
+            string expectedValue = multipleProjects ? "MYTEST: HELLO WORLD" : "HELLO WORLD";
+            var projectLocation = multipleProjects ? "TestNativeAotMultipleProjects/EntryPoint" : "TestNativeAotSingleProject";
+
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + $"../../../../../../testapps/{projectLocation}");
+            if (Directory.Exists(fullPath + "/bin/"))
+            {
+                Directory.Delete(fullPath + "/bin/", true);
+            }
+            if (Directory.Exists(fullPath + "/obj/"))
+            {
+                Directory.Delete(fullPath + "/obj/", true);
+            }
+
+            var command = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
+            command.FunctionName = "test-function-" + DateTime.Now.Ticks;
+            command.Handler = "ThisDoesntApply";
+            command.Timeout = 10;
+            command.MemorySize = 512;
+            command.Role = await TestHelper.GetTestRoleArnAsync();
+            command.Configuration = "Release";
+            command.TargetFramework = "net7.0";
+            command.Runtime = "provided.al2";
+            command.DisableInteractive = true;
+            if (customMountLocation)
+            {
+                command.CodeMountDirectory = "../"; // To test full path the following (skipped to save time): Path.GetFullPath(Path.Combine(fullPath, "../"));
+            }
+            bool created = false;
+            try
+            {
+                created = await command.ExecuteAsync();
+                Assert.True(created);
+
+                await LambdaUtilities.WaitTillFunctionAvailableAsync(new TestToolLogger(_testOutputHelper), command.LambdaClient, command.FunctionName);
+                var invokeRequest = new InvokeRequest
+                {
+                    FunctionName = command.FunctionName,
+                    LogType = LogType.Tail,
+                    Payload = "\"hello world\""
+                };
+                var response = await command.LambdaClient.InvokeAsync(invokeRequest);
+
+                var payload = new StreamReader(response.Payload).ReadToEnd();
+                Assert.Equal($"\"{expectedValue}\"", payload);
+
+                // Check that the package size isn't too big which implies stripping the binary worked.
+                var getFunctionRequest = new GetFunctionRequest
+                {
+                    FunctionName = command.FunctionName
+                };
+                GetFunctionResponse getFunctionResponse = await command.LambdaClient.GetFunctionAsync(getFunctionRequest);
+                var codeSize = getFunctionResponse.Configuration.CodeSize;
+                Assert.True(codeSize < 10000000, $"Code size is {codeSize}, which is larger than expected 10000000 bytes (10MB), check that trimming and stripping worked as expected.");
+            }
+            finally
+            {
+                if (created)
+                {
+                    await command.LambdaClient.DeleteFunctionAsync(command.FunctionName);
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData(TargetFrameworkMonikers.net60)]
+        [InlineData(TargetFrameworkMonikers.netcoreapp31)]
+        [InlineData(TargetFrameworkMonikers.netcoreapp21)]
+        [InlineData(TargetFrameworkMonikers.netcoreapp20)]
+        [InlineData(TargetFrameworkMonikers.netcoreapp10)]
+        public async Task NativeAotThrowsBeforeNet7(string targetFramework)
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + $"../../../../../../testapps/TestNativeAotSingleProject");
+            var testLogger = new TestToolLogger(_testOutputHelper);
+            var command = new DeployFunctionCommand(testLogger, fullPath, new string[0]);
+            command.FunctionName = "test-function-" + DateTime.Now.Ticks;
+            command.Handler = "ThisDoesntApply";
+            command.Timeout = 10;
+            command.MemorySize = 512;
+            command.Role = await TestHelper.GetTestRoleArnAsync();
+            command.Configuration = "Release";
+            command.TargetFramework = targetFramework;
+            command.Runtime = "provided.al2";
+            command.DisableInteractive = true;
+
+            bool created = false;
+            try
+            {
+                created = await command.ExecuteAsync();
+                Assert.False(created);
+                Assert.Contains($"Can't use native AOT with target framework less than net7.0, however, provided target framework is {targetFramework}", testLogger.Buffer);
+            }
+            finally
+            {
+                if (created)
+                {
+                    await command.LambdaClient.DeleteFunctionAsync(command.FunctionName);
+                }
+            }
+        }
 
         [Fact]
         public async Task RunDeployCommand()

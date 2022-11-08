@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text;
 using Amazon.Common.DotNetCli.Tools;
@@ -20,6 +19,8 @@ namespace Amazon.Lambda.Tools
         private const string Shebang = "#!";
         private const char LinuxLineEnding = '\n';
         private const string BootstrapFilename = "bootstrap";
+        private const string LinuxOSReleaseFile = @"/etc/os-release";
+        private const string AmazonLinux2InOSReleaseFile = "PRETTY_NAME=\"Amazon Linux 2\"";
 #if NETCOREAPP3_1_OR_GREATER        
         private static readonly string BuildLambdaZipCliPath = Path.Combine(
             Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().Location).LocalPath),
@@ -35,6 +36,30 @@ namespace Amazon.Lambda.Tools
             { "netcoreapp1.1", Version.Parse("1.6.1") }
         };
 
+        private static bool IsAmazonLinux2(IToolLogger logger)
+        {
+#if !NETCOREAPP3_1_OR_GREATER
+    return false;
+#else
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                if (File.Exists(LinuxOSReleaseFile))
+                {
+                    logger?.WriteLine($"Found {LinuxOSReleaseFile}");
+                    string readText = File.ReadAllText(LinuxOSReleaseFile);
+                    if (readText.Contains(AmazonLinux2InOSReleaseFile))
+                    {
+                        logger?.WriteLine(
+                            $"Linux distribution is Amazon Linux 2, NativeAOT container build is optional");
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+#endif
+        }
+
         /// <summary>
         /// Execute the dotnet publish command and zip up the resulting publish folder.
         /// </summary>
@@ -48,14 +73,36 @@ namespace Amazon.Lambda.Tools
         /// <param name="disableVersionCheck"></param>
         /// <param name="publishLocation"></param>
         /// <param name="zipArchivePath"></param>
-        public static bool CreateApplicationBundle(LambdaToolsDefaults defaults, IToolLogger logger, string workingDirectory, 
+        public static bool CreateApplicationBundle(LambdaToolsDefaults defaults, IToolLogger logger, string workingDirectory,
             string projectLocation, string configuration, string targetFramework, string msbuildParameters, string architecture,
-            bool disableVersionCheck, LayerPackageInfo layerPackageInfo,
+            bool disableVersionCheck, LayerPackageInfo layerPackageInfo, bool isNativeAot,
+            bool? useContainerForBuild, string containerImageForBuild, string codeMountDirectory,
             out string publishLocation, ref string zipArchivePath)
         {
+            LambdaUtilities.ValidateTargetFramework(projectLocation, targetFramework, isNativeAot);
+
+            LambdaUtilities.ValidateNativeAotArchitecture(architecture, isNativeAot);
+
+            // If use container is set to false explicitly, then that overrides other values.
+            if (useContainerForBuild.HasValue && !useContainerForBuild.Value)
+            {
+                containerImageForBuild = null;
+            }
+            // Else, if we haven't been given a build image, we need to figure out if we should use a default
+            else if (string.IsNullOrWhiteSpace(containerImageForBuild))
+            {
+                // Use a default container image if Use Container is set to true, or if we need to build NativeAOT on non-AL2
+                if ((useContainerForBuild.HasValue && useContainerForBuild.Value) || (isNativeAot && !IsAmazonLinux2(logger)))
+                {
+                    containerImageForBuild = LambdaUtilities.GetDefaultBuildImage(targetFramework, architecture, logger);
+                }
+            }
+            // Otherwise, we've been given a build image to use, so always use that.
+            // Below, the code only considers whether containerImageForBuild is set or not
+
             LogDeprecationMessagesIfNecessary(logger, targetFramework);
 
-            if(string.Equals(architecture, LambdaConstants.ARCHITECTURE_ARM64) && msbuildParameters != null && msbuildParameters.Contains("--self-contained true"))
+            if (string.Equals(architecture, LambdaConstants.ARCHITECTURE_ARM64) && msbuildParameters != null && msbuildParameters.Contains("--self-contained true"))
             {
                 logger.WriteLine("WARNING: There is an issue with self contained ARM based .NET Lambda functions using custom runtimes that causes functions to fail to run. The following GitHub issue has further information and workaround.");
                 logger.WriteLine("https://github.com/aws/aws-lambda-dotnet/issues/920");
@@ -63,20 +110,18 @@ namespace Amazon.Lambda.Tools
 
             if (string.IsNullOrEmpty(configuration))
                 configuration = LambdaConstants.DEFAULT_BUILD_CONFIGURATION;
-            
-            var computedProjectLocation = Utilities.DetermineProjectLocation(workingDirectory, projectLocation);
 
             var lambdaRuntimePackageStoreManifestContent = LambdaUtilities.LoadPackageStoreManifest(logger, targetFramework);
 
             var publishManifestPath = new List<string>();
-            if(!string.IsNullOrEmpty(lambdaRuntimePackageStoreManifestContent))
+            if (!string.IsNullOrEmpty(lambdaRuntimePackageStoreManifestContent))
             {
                 var tempFile = Path.GetTempFileName();
                 File.WriteAllText(tempFile, lambdaRuntimePackageStoreManifestContent);
                 publishManifestPath.Add(tempFile);
             }
 
-            if(layerPackageInfo != null)
+            if (layerPackageInfo != null)
             {
                 foreach (var info in layerPackageInfo.Items)
                 {
@@ -84,30 +129,59 @@ namespace Amazon.Lambda.Tools
                 }
             }
 
+            publishLocation = Utilities.DeterminePublishLocation(workingDirectory, projectLocation, configuration, targetFramework);
+
+            logger?.WriteLine("Executing publish command");
             var cli = new LambdaDotNetCLIWrapper(logger, workingDirectory);
 
-            publishLocation = Utilities.DeterminePublishLocation(workingDirectory, projectLocation, configuration, targetFramework);
-            logger?.WriteLine("Executing publish command");
-            if (cli.Publish(defaults: defaults,
-                projectLocation: projectLocation,
-                outputLocation: publishLocation,
-                targetFramework: targetFramework,
-                configuration: configuration,
-                msbuildParameters: msbuildParameters,
-                architecture: architecture,
-                publishManifests: publishManifestPath) != 0)
+            if (!string.IsNullOrWhiteSpace(containerImageForBuild))
             {
-                return false;
+                var containerBuildLogMessage = isNativeAot ? $"Starting container for native AOT build using build image: {containerImageForBuild}." : $"Starting container for build using build image: {containerImageForBuild}.";
+                logger.WriteLine(containerBuildLogMessage);
+
+                var directoryToMountToContainer = Utilities.GetSolutionDirectoryFullPath(workingDirectory, projectLocation, codeMountDirectory);
+
+                var dockerCli = new DockerCLIWrapper(logger, directoryToMountToContainer);
+
+                var containerName = $"tempLambdaBuildContainer-{Guid.NewGuid()}";
+
+                string relativeContainerPathToProjectLocation = string.Concat(DockerCLIWrapper.WorkingDirectoryMountLocation, Utilities.RelativePathTo(directoryToMountToContainer, projectLocation));
+
+                // This value is the path inside of the container that will map directly to the out parameter "publishLocation" on the host machine
+                string relativeContainerPathToPublishLocation = Utilities.DeterminePublishLocation(null, relativeContainerPathToProjectLocation, configuration, targetFramework);
+
+                var publishCommand = "dotnet " + cli.GetPublishArguments(relativeContainerPathToProjectLocation, relativeContainerPathToPublishLocation, targetFramework, configuration, msbuildParameters, architecture, publishManifestPath, isNativeAot);
+
+                var runResult = dockerCli.Run(containerImageForBuild, containerName, publishCommand);
+                if (runResult != 0)
+                {
+                    logger?.WriteLine($"ERROR: Container build returned {runResult}");
+                    return false;
+                }
+            }
+            else
+            {
+                if (cli.Publish(defaults: defaults,
+                    projectLocation: projectLocation,
+                    outputLocation: publishLocation,
+                    targetFramework: targetFramework,
+                    configuration: configuration,
+                    msbuildParameters: msbuildParameters,
+                    architecture: architecture,
+                    publishManifests: publishManifestPath) != 0)
+                {
+                    return false;
+                }
             }
 
             var buildLocation = Utilities.DetermineBuildLocation(workingDirectory, projectLocation, configuration, targetFramework);
 
             // This is here for legacy reasons. Some older versions of the dotnet CLI were not 
             // copying the deps.json file into the publish folder.
-            foreach(var file in Directory.GetFiles(buildLocation, "*.deps.json", SearchOption.TopDirectoryOnly))
+            foreach (var file in Directory.GetFiles(buildLocation, "*.deps.json", SearchOption.TopDirectoryOnly))
             {
                 var destinationPath = Path.Combine(publishLocation, Path.GetFileName(file));
-                if(!File.Exists(destinationPath))
+                if (!File.Exists(destinationPath))
                     File.Copy(file, destinationPath);
             }
 
@@ -126,12 +200,12 @@ namespace Amazon.Lambda.Tools
                 // for other platforms.
                 flattenRuntime = FlattenRuntimeFolder(logger, publishLocation, depsJsonTargetNode);
             }
-            
+
             FlattenPowerShellRuntimeModules(logger, publishLocation, targetFramework);
-            
-            
+
+
             if (zipArchivePath == null)
-                zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, new DirectoryInfo(computedProjectLocation).Name + ".zip");
+                zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, new DirectoryInfo(projectLocation).Name + ".zip");
 
             zipArchivePath = Path.GetFullPath(zipArchivePath);
             logger?.WriteLine($"Zipping publish folder {publishLocation} to {zipArchivePath}");
@@ -513,6 +587,9 @@ namespace Amazon.Lambda.Tools
                     relativePath = relativePath.Substring(1);
 
                 if (flattenRuntime && relativePath.StartsWith(RUNTIME_FOLDER_PREFIX))
+                    continue;
+
+                if (relativePath.EndsWith(".dbg", StringComparison.OrdinalIgnoreCase) || relativePath.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)) // Don't include debugging symbols
                     continue;
 
                 includedFiles[relativePath] = file;

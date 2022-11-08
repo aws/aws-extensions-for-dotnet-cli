@@ -18,6 +18,13 @@ namespace Amazon.Common.DotNetCli.Tools.Test
         [InlineData(@"C:\Code\Solution", @"C:\Code\Solution\Project\foo.cs", "Project/foo.cs", false)]
         [InlineData(@"/home/user/Solution/Project", @"/home/user/Solution", "../", false)]
         [InlineData(@"/home/user/Solution", @"/home/user/Solution/Project", "Project", false)]
+        [InlineData(@"Code\Solution", @"Code\Solution\Project", "Project", true)]
+        [InlineData(@"user/Solution", @"user/Solution/Project", "Project", false)]
+        [InlineData(@"Code\Solution\", @"Code\Solution\Project\", "Project/", true)]
+        [InlineData(@"user/Solution/", @"user/Solution/Project/", "Project/", false)]
+        [InlineData(@"/home/user/Solution/Project", @"/home/user/Solution/", "../", false)]
+        [InlineData(@"/home/user/Solution/", @"/home/user/Solution/Project", "Project", false)]
+
         public void ToParentDirectory(string start, string relativeTo, string expected, bool windowsOnly)
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && windowsOnly)

@@ -71,9 +71,17 @@ namespace Amazon.Lambda.Tools
             FailedToDetectSdkVersion,
             LayerNetSdkVersionMismatch,
 
+            FailedToResolveS3Bucket,
+
             DisabledSupportForNET31Layers,
 
-            FailedToResolveS3Bucket
+            InvalidNativeAotTargetFramework,
+            InvalidOutputTypeForTargetFramework,
+            Net7OnArmNotSupported,
+            InvalidArchitectureProvided,
+            UnsupportedDefaultContainerBuild,
+            NativeAotOutputTypeError,
+            MismatchedNativeAotArchitectures,
         }
 
         public LambdaToolsException(string message, LambdaErrorCode code) : base(message, code.ToString(), null)

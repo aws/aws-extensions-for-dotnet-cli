@@ -9,6 +9,8 @@ namespace Amazon.Common.DotNetCli.Tools
 {
     public class DockerCLIWrapper : AbstractCLIWrapper
     {
+        public static readonly string WorkingDirectoryMountLocation = "/tmp/source/";
+
         string _dockerCLI;
 
         public DockerCLIWrapper(IToolLogger logger, string workingDirectory)
@@ -150,6 +152,44 @@ namespace Amazon.Common.DotNetCli.Tools
 
 
             return base.ExecuteCommand(psi, "docker push");
+        }
+
+        /// <summary>
+        /// Executes the Docker run command on the given image locally
+        /// </summary>
+        /// <param name="imageId">Tells Docker which pre-built image to run. Can be local or remote.</param>
+        /// <param name="containerName">A custom name to give the generated container. This is useful so the caller of this method knows what container to look for after.</param>
+        /// <param name="commandToRun">Tells Docker what commands to invoke on the container once it is running. Can be left blank.</param>
+        /// <returns></returns>
+        public int Run(string imageId, string containerName, string commandToRun = "")
+        {
+            var containerNameArg = $"--name {containerName}";
+
+            var autoDeleteArg = "--rm"; // Automatically remove the container once it's done running
+
+            // This allows the container access to the working directory in a virtual mapped path located at /tmp/source
+            // That means that when the container is finished running, anything it leaves in /tmp/source (e.g. the binaries),
+            // will just exist in the working directory
+            var mountArg = $"--volume \"{this._workingDirectory}\":{WorkingDirectoryMountLocation}";
+
+            var imageArg = $"-i {imageId}";
+
+            var arguments = $"run {autoDeleteArg} {mountArg} {containerNameArg} {imageArg} {commandToRun}";
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = this._dockerCLI,
+                Arguments = arguments,
+                WorkingDirectory = this._workingDirectory,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            _logger?.WriteLine($"... invoking 'docker {arguments}' from directory {this._workingDirectory}");
+
+            return base.ExecuteCommand(psi, "docker run");
         }
     }
 }

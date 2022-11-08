@@ -83,8 +83,8 @@ namespace Amazon.Common.DotNetCli.Tools.CLi
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine($"Unknown error: {e.Message}");
-                Console.Error.WriteLine(e.StackTrace);
+                Console.Error.WriteLine($"Unknown error:");
+                Console.Error.WriteLine(e);
 
                 return -1;
             }

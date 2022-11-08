@@ -81,8 +81,8 @@ namespace Amazon.Lambda.Tools.Integ.Tests
             {
                 var useDefaultDockerFunction = outputRoot["Resources"]["UseDockerMetadataFunction"]["Properties"] as JObject;
                 Assert.Contains("dkr.ecr", useDefaultDockerFunction["ImageUri"]?.ToString());
-                Assert.Contains("usedockermetadata:usedockermetadatafunction", useDefaultDockerFunction["ImageUri"]?.ToString());
-                Assert.EndsWith("latest", useDefaultDockerFunction["ImageUri"]?.ToString());
+                Assert.Contains("aws-extensions-tests:usedockermetadatafunction", useDefaultDockerFunction["ImageUri"]?.ToString());
+                Assert.EndsWith("usedockermetadata", useDefaultDockerFunction["ImageUri"]?.ToString());
             }
         }
 

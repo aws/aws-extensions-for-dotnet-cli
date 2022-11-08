@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
-
 using Xunit;
 using Amazon.Common.DotNetCli.Tools;
 using System.Threading.Tasks;
@@ -12,11 +10,20 @@ using Amazon.SecurityToken;
 using Amazon.SecurityToken.Model;
 using System.Threading;
 using Amazon.S3.Model;
+using Xunit.Abstractions;
+using System.Linq;
 
 namespace Amazon.Lambda.Tools.Test
 {
-    public  class UtilitiesTests
+    public class UtilitiesTests
     {
+        private readonly ITestOutputHelper _testOutputHelper;
+
+        public UtilitiesTests(ITestOutputHelper testOutputHelper)
+        {
+            this._testOutputHelper = testOutputHelper;
+        }
+
         [Theory]
         [InlineData("dotnetcore2.1", "netcoreapp2.1")]
         [InlineData("dotnetcore2.0", "netcoreapp2.0")]
@@ -107,7 +114,7 @@ namespace Amazon.Lambda.Tools.Test
             string repositoryName;
             var computed = Amazon.Common.DotNetCli.Tools.Utilities.TryGenerateECRRepositoryName(projectName, out repositoryName);
 
-            if(expectRepositoryName == null)
+            if (expectRepositoryName == null)
             {
                 Assert.False(computed);
             }
@@ -147,6 +154,82 @@ namespace Amazon.Lambda.Tools.Test
             rootData.SetFilePathIfNotNull("Dockerfile", dockerfilePath, projectLocation);
 
             Assert.Equal(expected, rootData["Dockerfile"]);
+        }
+
+        [Theory]
+        [InlineData("netcoreapp1.0", LambdaConstants.ARCHITECTURE_X86_64, "throws")]
+        [InlineData("netcoreapp1.1", LambdaConstants.ARCHITECTURE_X86_64, "throws")]
+        [InlineData("netcoreapp2.0", LambdaConstants.ARCHITECTURE_X86_64, "throws")]
+        [InlineData("netcoreapp2.1", LambdaConstants.ARCHITECTURE_X86_64, "throws")]
+        [InlineData("netcoreapp2.2", LambdaConstants.ARCHITECTURE_X86_64, "throws")]
+        [InlineData("netcoreapp3.0", LambdaConstants.ARCHITECTURE_X86_64, "throws")]
+        [InlineData("netcoreapp3.1", LambdaConstants.ARCHITECTURE_X86_64, "public.ecr.aws/sam/build-dotnetcore3.1:latest-x86_64")]
+        [InlineData("netcoreapp3.1", "", "public.ecr.aws/sam/build-dotnetcore3.1:latest-x86_64")]
+        [InlineData("netcoreapp3.1", LambdaConstants.ARCHITECTURE_ARM64, "public.ecr.aws/sam/build-dotnetcore3.1:latest-arm64")]
+        [InlineData("net6.0", LambdaConstants.ARCHITECTURE_X86_64, "public.ecr.aws/sam/build-dotnet6:latest-x86_64")]
+        [InlineData("net6.0", null, "public.ecr.aws/sam/build-dotnet6:latest-x86_64")]
+        [InlineData("net6.0", LambdaConstants.ARCHITECTURE_ARM64, "public.ecr.aws/sam/build-dotnet6:latest-arm64")]
+        [InlineData("net7.0", LambdaConstants.ARCHITECTURE_X86_64, "public.ecr.aws/sam/build-dotnet7:latest-x86_64")]
+        [InlineData("net7.0", " ", "public.ecr.aws/sam/build-dotnet7:latest-x86_64")]
+        [InlineData("net7.0", LambdaConstants.ARCHITECTURE_ARM64, "throws")]
+        [InlineData(null, LambdaConstants.ARCHITECTURE_X86_64, "throws")]
+        [InlineData(null, LambdaConstants.ARCHITECTURE_ARM64, "throws")]
+        public void GetDefaultBuildImage(string targetFramework, string architecture, string expectedValue)
+        {
+            if (expectedValue == "throws")
+            {
+                Assert.Throws<LambdaToolsException>(() => LambdaUtilities.GetDefaultBuildImage(targetFramework, architecture, new TestToolLogger(_testOutputHelper)));
+                return;
+            }
+
+            var containerImageFile = LambdaUtilities.GetDefaultBuildImage(targetFramework, architecture, new TestToolLogger(_testOutputHelper));
+            Assert.Equal(expectedValue, containerImageFile);
+        }
+
+        [Fact]
+        public void AllLambdaRuntimesAreSupportedOrDeprecated()
+        {
+            // All Lambda Runtimes are identified
+            var lambdaDotnetRuntimes = typeof(Lambda.Runtime).GetFields().Where(x => x.Name.ToLower().Contains("dotnet") || x.Name.ToLower().Contains(".net"));
+
+            Assert.True(lambdaDotnetRuntimes.Any());
+
+            var allKnownSupportedAndDeprecatedRuntimes = LambdaConstants.SUPPORTED_LAMBDA_MANAGED_RUNTIMES
+                .Concat(LambdaConstants.DEPRECATED_LAMBDA_MANAGED_RUNTIMES).ToList();
+
+            foreach (var runtime in lambdaDotnetRuntimes)
+            {
+                var runtimeName = (Runtime)runtime.GetValue(null);
+                Assert.Contains(runtimeName.Value, allKnownSupportedAndDeprecatedRuntimes);
+            }
+        }
+
+        [Fact]
+        public void NoLambdaRuntimesIsBothSupportedAndDeprecated()
+        {
+            Assert.Empty(LambdaConstants.SUPPORTED_LAMBDA_MANAGED_RUNTIMES.Intersect(LambdaConstants.DEPRECATED_LAMBDA_MANAGED_RUNTIMES));
+        }
+
+        [Theory]
+        [InlineData("../../../../../testapps/TestFunction", "net6.0", false, false)]
+        [InlineData("../../../../../testapps/TestFunction", "net6.0", true, true)]
+        [InlineData("../../../../../testapps/TestFunction", "net7.0", true, true)]
+        [InlineData("../../../../../testapps/TestFunction", "net7.0", false, true)]
+        [InlineData("../../../../../testapps/TestNativeAotSingleProject", "net7.0", true, false)]
+        [InlineData("../../../../../testapps/TestNativeAotSingleProject", "net7.0", false, false)]
+        [InlineData("../../../../../testapps/TestNativeAotSingleProject", "net6.0", false, false)]
+        [InlineData("../../../../../testapps/TestNativeAotSingleProject", "net6.0", true, true)]
+        public void TestValidateTargetFramework(string projectLocation, string targetFramework, bool isNativeAot, bool shouldThrow)
+        {
+            if (shouldThrow)
+            {
+                Assert.Throws<LambdaToolsException>(() => LambdaUtilities.ValidateTargetFramework(projectLocation, targetFramework, isNativeAot));
+            }
+            else
+            {
+                // If this throws an exception, the test will fail, hench no assert is necessary
+                LambdaUtilities.ValidateTargetFramework(projectLocation, targetFramework, isNativeAot);
+            }
         }
 
         [Fact]

@@ -19,21 +19,46 @@ using System.Threading.Tasks;
 using System.Xml.XPath;
 using Environment = System.Environment;
 using Amazon.SecurityToken;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 
 namespace Amazon.Lambda.Tools
 {
+    public static class TargetFrameworkMonikers
+    {
+        public const string net70 = "net7.0";
+        public const string net60 = "net6.0";
+        public const string net50 = "net5.0";
+        public const string netcoreapp31 = "netcoreapp3.1";
+        public const string netcoreapp30 = "netcoreapp3.0";
+        public const string netcoreapp21 = "netcoreapp2.1";
+        public const string netcoreapp20 = "netcoreapp2.0";
+        public const string netcoreapp10 = "netcoreapp1.0";
+
+        public static readonly List<string> OrderedTargetFrameworkMonikers = new List<string>
+        {
+            netcoreapp10,
+            netcoreapp20,
+            netcoreapp21,
+            netcoreapp30,
+            netcoreapp31,
+            net50,
+            net60,
+            net70
+        };
+    }
+
     public static class LambdaUtilities
     {
         public static readonly IList<string> ValidProjectExtensions = new List<string> { ".csproj", ".fsproj", ".vbproj" };
 
-        static readonly IReadOnlyDictionary<string, string> _lambdaRuntimeToDotnetFramework = new Dictionary<string, string>()
+        public static readonly IReadOnlyDictionary<string, string> _lambdaRuntimeToDotnetFramework = new Dictionary<string, string>()
         {
-            // Using string "dotnet6" instead of Runtime.Dotnet6 because the AWS SDK for .NET hasn't been updated yet with the new value.
-            {"dotnet6", "net6.0"},
-            {Amazon.Lambda.Runtime.Dotnetcore31.Value, "netcoreapp3.1"},
-            {Amazon.Lambda.Runtime.Dotnetcore21.Value, "netcoreapp2.1"},
-            {Amazon.Lambda.Runtime.Dotnetcore20.Value, "netcoreapp2.0"},
-            {Amazon.Lambda.Runtime.Dotnetcore10.Value, "netcoreapp1.0"}
+            {Amazon.Lambda.Runtime.Dotnet6.Value, TargetFrameworkMonikers.net60},
+            {Amazon.Lambda.Runtime.Dotnetcore31.Value, TargetFrameworkMonikers.netcoreapp31},
+            {Amazon.Lambda.Runtime.Dotnetcore21.Value, TargetFrameworkMonikers.netcoreapp21},
+            {Amazon.Lambda.Runtime.Dotnetcore20.Value, TargetFrameworkMonikers.netcoreapp20},
+            {Amazon.Lambda.Runtime.Dotnetcore10.Value, TargetFrameworkMonikers.netcoreapp10}
         };
 
         public static string DetermineTargetFrameworkFromLambdaRuntime(string lambdaRuntime, string projectLocation)
@@ -53,6 +78,65 @@ namespace Amazon.Lambda.Tools
                 return null;
 
             return kvp.Key;
+        }
+
+        public static void ValidateTargetFramework(string projectLocation, string targetFramework, bool isNativeAot)
+        {
+            var outputType = Utilities.LookupOutputTypeFromProjectFile(projectLocation);
+            var ouputTypeIsExe = outputType != null && outputType.ToLower().Equals("exe");
+
+            // Target frameworks that are not supported as managed runtimes in Lambda must have an output type of exe to support being run as a custom runtime
+            var allManagedRuntimes = LambdaConstants.DEPRECATED_LAMBDA_MANAGED_RUNTIMES.Concat(LambdaConstants.SUPPORTED_LAMBDA_MANAGED_RUNTIMES);
+            if (!allManagedRuntimes.Contains(DetermineLambdaRuntimeFromTargetFramework(targetFramework)) && !ouputTypeIsExe)
+            {
+                throw new LambdaToolsException($"Target Framework of {targetFramework} must have output type 'exe' and run on a custom runtime, since this is not a Lambda-managed .NET runtime.",
+                    LambdaToolsException.LambdaErrorCode.InvalidOutputTypeForTargetFramework);
+            }
+
+            if (isNativeAot && !ouputTypeIsExe)
+            {
+                throw new LambdaToolsException($"Native AOT applications must have output type 'exe'.",
+                    LambdaToolsException.LambdaErrorCode.NativeAotOutputTypeError);
+            }
+
+            // Native AOT is only supported with .NET 7 and later
+            var indexOfTargetFramework = TargetFrameworkMonikers.OrderedTargetFrameworkMonikers.IndexOf(targetFramework);
+            if (isNativeAot && indexOfTargetFramework < TargetFrameworkMonikers.OrderedTargetFrameworkMonikers.IndexOf(TargetFrameworkMonikers.net70))
+            {
+                // In the case where IndexOf returns -1, that means we don't know this target framework, so assume it's a newer framework that supports native AOT.
+                if (indexOfTargetFramework != -1)
+                {
+                    throw new LambdaToolsException($"Can't use native AOT with target framework less than {TargetFrameworkMonikers.net70}, however, provided target framework is {targetFramework}",
+                        LambdaToolsException.LambdaErrorCode.InvalidNativeAotTargetFramework);
+                }
+            }
+        }
+
+        public static string GetDefaultBuildImage(string targetFramework, string architecture, IToolLogger logger)
+        {
+            if (string.IsNullOrWhiteSpace(architecture))
+            {
+                logger?.WriteLine($"Architecture not provided, defaulting to {LambdaConstants.ARCHITECTURE_X86_64} for container build image.");
+                architecture = LambdaConstants.ARCHITECTURE_X86_64;
+            }
+            else if (architecture != LambdaConstants.ARCHITECTURE_X86_64 && architecture != LambdaConstants.ARCHITECTURE_ARM64)
+            {
+                throw new LambdaToolsException($"Architecture {architecture} is not a valid option, use {LambdaConstants.ARCHITECTURE_X86_64} or {LambdaConstants.ARCHITECTURE_ARM64}.", LambdaToolsException.LambdaErrorCode.InvalidArchitectureProvided);
+            }
+
+            switch (targetFramework?.ToLower())
+            {
+                case TargetFrameworkMonikers.net70:
+                    return architecture == LambdaConstants.ARCHITECTURE_ARM64 ?
+                        throw new LambdaToolsException(".NET 7 is not supported on ARM Amazon Linux 2. See https://github.com/dotnet/runtime/issues/76195", LambdaToolsException.LambdaErrorCode.Net7OnArmNotSupported)
+                        : $"public.ecr.aws/sam/build-dotnet7:latest-{architecture}";
+                case TargetFrameworkMonikers.net60:
+                    return $"public.ecr.aws/sam/build-dotnet6:latest-{architecture}";
+                case TargetFrameworkMonikers.netcoreapp31:
+                    return $"public.ecr.aws/sam/build-dotnetcore3.1:latest-{architecture}";
+                default:
+                    throw new LambdaToolsException($"No container build image available for targetFramework {targetFramework} and architecture {architecture}.", LambdaToolsException.LambdaErrorCode.UnsupportedDefaultContainerBuild);
+            }
         }
 
         public static Lambda.PackageType DeterminePackageType(string packageType)
@@ -867,6 +951,32 @@ namespace Amazon.Lambda.Tools
             {
                 throw new LambdaToolsException("Error resolving default S3 bucket for deployment bundles: " + e.Message, LambdaToolsException.LambdaErrorCode.FailedToResolveS3Bucket);
             }
+        }
+
+        public static void ValidateNativeAotArchitecture(string architecture, bool isNativeAot)
+        {
+            if (!isNativeAot)
+            {
+                return;
+            }
+
+#if !NETCOREAPP3_1_OR_GREATER
+            return; // If we're below netcoreapp3.1, we're probably running from the visual studio extension, and therefore probably not running on ARM
+#else
+            var hostArchitecture = RuntimeInformation.ProcessArchitecture;
+            if (hostArchitecture == System.Runtime.InteropServices.Architecture.X86)
+                hostArchitecture = System.Runtime.InteropServices.Architecture.X64;
+
+            var targetArchitecture = string.Equals(architecture, LambdaConstants.ARCHITECTURE_ARM64, StringComparison.OrdinalIgnoreCase)
+                ? System.Runtime.InteropServices.Architecture.Arm64
+                : System.Runtime.InteropServices.Architecture.X64;
+
+            if (hostArchitecture != targetArchitecture)
+            {
+                throw new LambdaToolsException($"Host machine architecture ({hostArchitecture}) differs from Lambda architecture ({targetArchitecture}). Building Native AOT Lambda functions require the host and lambda architectures to match.",
+                    LambdaToolsException.LambdaErrorCode.MismatchedNativeAotArchitectures);
+            }
+#endif
         }
     }
 }

@@ -450,5 +450,32 @@ namespace Amazon.Lambda.Tools
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = $"The type of authentication that your function URL uses, default value is NONE. Valid values: {FunctionUrlAuthType.NONE} or {FunctionUrlAuthType.AWS_IAM}"
             };
+        public static readonly CommandOption ARGUMENT_USE_CONTAINER_FOR_BUILD =
+            new CommandOption
+            {
+                Name = "Use Container For Build",
+                Switch = "--use-container-for-build",
+                ShortSwitch = "-ucfb",
+                ValueType = CommandOption.CommandOptionValueType.BoolValue,
+                Description = $"Use a local container to build the Lambda binary. A default image will be provided if none is supplied."
+            };
+        public static readonly CommandOption ARGUMENT_CONTAINER_IMAGE_FOR_BUILD =
+            new CommandOption
+            {
+                Name = "Container Image For Build",
+                Switch = "--container-image-for-build",
+                ShortSwitch = "-cifb",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = $"The container image tag (with version) to be used for building the Lambda binary."
+            };
+        public static readonly CommandOption ARGUMENT_CODE_MOUNT_DIRECTORY =
+            new CommandOption
+            {
+                Name = "Code Mount Directory",
+                Switch = "--code-mount-directory",
+                ShortSwitch = "-cmd",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = $"Path to the directory to mount to the build container. Otherwise, look upward for a solution folder."
+            };
     }
 }

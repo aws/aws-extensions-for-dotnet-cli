@@ -74,7 +74,11 @@ namespace Amazon.Lambda.Tools.Commands
             CommonDefinedCommandOptions.ARGUMENT_DOCKERFILE,
             CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_OPTIONS,
             CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_WORKING_DIRECTORY,
-            CommonDefinedCommandOptions.ARGUMENT_HOST_BUILD_OUTPUT
+            CommonDefinedCommandOptions.ARGUMENT_HOST_BUILD_OUTPUT,
+            
+            LambdaDefinedCommandOptions.ARGUMENT_USE_CONTAINER_FOR_BUILD,
+            LambdaDefinedCommandOptions.ARGUMENT_CONTAINER_IMAGE_FOR_BUILD,
+            LambdaDefinedCommandOptions.ARGUMENT_CODE_MOUNT_DIRECTORY
         });
 
         public string Architecture { get; set; }
@@ -97,6 +101,10 @@ namespace Amazon.Lambda.Tools.Commands
         public string HostBuildOutput { get; set; }
         public string LocalDockerImage { get; set; }
 
+        public bool? UseContainerForBuild { get; set; }
+
+        public string ContainerImageForBuild { get; set; }
+        public string CodeMountDirectory { get;  set; }
 
         public DeployFunctionCommand(IToolLogger logger, string workingDirectory, string[] args)
             : base(logger, workingDirectory, DeployCommandOptions, args)
@@ -161,14 +169,19 @@ namespace Amazon.Lambda.Tools.Commands
                 this.HostBuildOutput = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(CommonDefinedCommandOptions.ARGUMENT_LOCAL_DOCKER_IMAGE.Switch)) != null)
                 this.LocalDockerImage = tuple.Item2.StringValue;
-
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_USE_CONTAINER_FOR_BUILD.Switch)) != null)
+                this.UseContainerForBuild = tuple.Item2.BoolValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_CONTAINER_IMAGE_FOR_BUILD.Switch)) != null)
+                this.ContainerImageForBuild = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_CODE_MOUNT_DIRECTORY.Switch)) != null)
+                this.CodeMountDirectory = tuple.Item2.StringValue;
         }
 
 
 
         protected override async Task<bool> PerformActionAsync()
         {
-            string projectLocation = this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false);
+            string projectLocation = Utilities.DetermineProjectLocation(this.WorkingDirectory, this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false));
             string zipArchivePath = null;
             string package = this.GetStringValueOrDefault(this.Package, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE, false);
 
@@ -206,7 +219,7 @@ namespace Amazon.Lambda.Tools.Commands
                     var targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
                     if (string.IsNullOrEmpty(targetFramework))
                     {
-                        targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(Utilities.DetermineProjectLocation(this.WorkingDirectory, projectLocation));
+                        targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation);
 
                         // If we still don't know what the target framework is ask the user what targetframework to use.
                         // This is common when a project is using multi targeting.
@@ -217,12 +230,14 @@ namespace Amazon.Lambda.Tools.Commands
                     }
                     string msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
 
+                    bool isNativeAot = Utilities.LookPublishAotFlag(projectLocation, this.MSBuildParameters);
+
                     ValidateTargetFrameworkAndLambdaRuntime(targetFramework);
 
                     bool disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
                     string publishLocation;
-                    LambdaPackager.CreateApplicationBundle(defaults: this.DefaultConfig, 
-                                                            logger: this.Logger, 
+                    LambdaPackager.CreateApplicationBundle(defaults: this.DefaultConfig,
+                                                            logger: this.Logger,
                                                             workingDirectory: this.WorkingDirectory,
                                                             projectLocation: projectLocation,
                                                             configuration: configuration,
@@ -231,7 +246,13 @@ namespace Amazon.Lambda.Tools.Commands
                                                             architecture: architecture,
                                                             disableVersionCheck: disableVersionCheck,
                                                             layerPackageInfo: layerPackageInfo,
-                                                            publishLocation: out publishLocation, zipArchivePath: ref zipArchivePath);
+                                                            isNativeAot: isNativeAot,
+                                                            useContainerForBuild: GetBoolValueOrDefault(this.UseContainerForBuild, LambdaDefinedCommandOptions.ARGUMENT_USE_CONTAINER_FOR_BUILD, false),
+                                                            containerImageForBuild: GetStringValueOrDefault(this.ContainerImageForBuild, LambdaDefinedCommandOptions.ARGUMENT_CONTAINER_IMAGE_FOR_BUILD, false),
+                                                            codeMountDirectory: GetStringValueOrDefault(this.CodeMountDirectory, LambdaDefinedCommandOptions.ARGUMENT_CODE_MOUNT_DIRECTORY, false),
+                                                            publishLocation: out publishLocation,
+                                                            zipArchivePath: ref zipArchivePath
+                                                            );
 
                     if (string.IsNullOrEmpty(zipArchivePath))
                         return false;
@@ -580,7 +601,10 @@ namespace Amazon.Lambda.Tools.Commands
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_WORKING_DIRECTORY.ConfigFileKey, this.GetStringValueOrDefault(this.DockerBuildWorkingDirectory, CommonDefinedCommandOptions.ARGUMENT_DOCKER_BUILD_WORKING_DIRECTORY, false));
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_HOST_BUILD_OUTPUT.ConfigFileKey, this.GetStringValueOrDefault(this.HostBuildOutput, CommonDefinedCommandOptions.ARGUMENT_HOST_BUILD_OUTPUT, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_IMAGE_TAG.ConfigFileKey, this.GetStringValueOrDefault(this.DockerImageTag, LambdaDefinedCommandOptions.ARGUMENT_IMAGE_TAG, false));
-        }
 
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_USE_CONTAINER_FOR_BUILD.ConfigFileKey, this.GetBoolValueOrDefault(this.UseContainerForBuild, LambdaDefinedCommandOptions.ARGUMENT_USE_CONTAINER_FOR_BUILD, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_CONTAINER_IMAGE_FOR_BUILD.ConfigFileKey, this.GetStringValueOrDefault(this.ContainerImageForBuild, LambdaDefinedCommandOptions.ARGUMENT_CONTAINER_IMAGE_FOR_BUILD, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_CODE_MOUNT_DIRECTORY.ConfigFileKey, this.GetStringValueOrDefault(this.CodeMountDirectory, LambdaDefinedCommandOptions.ARGUMENT_CODE_MOUNT_DIRECTORY, false));
+        }
     }
 }

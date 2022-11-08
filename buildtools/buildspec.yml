@@ -10,4 +10,4 @@ phases:
       - dotnet msbuild ./buildtools/build.proj /p:SignAssembly=false
 artifacts:
   files:
-    - Deployment/*
+     - Deployment/*

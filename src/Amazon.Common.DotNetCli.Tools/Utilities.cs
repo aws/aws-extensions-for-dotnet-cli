@@ -17,6 +17,7 @@ using System.Xml.XPath;
 using Amazon.Util;
 using System.Text.RegularExpressions;
 using System.Collections;
+using System.Xml;
 
 namespace Amazon.Common.DotNetCli.Tools
 {
@@ -130,6 +131,42 @@ namespace Amazon.Common.DotNetCli.Tools
             return relativePath.ToString();
         }
 
+        public static string GetSolutionDirectoryFullPath(string workingDirectory, string projectLocation, string givenSolutionDirectory)
+        {
+            // If we were given a path to the solution (relative, or full) use that.
+            if (!string.IsNullOrWhiteSpace(givenSolutionDirectory))
+            {
+                if (!Path.IsPathRooted(givenSolutionDirectory))
+                {
+                    return Path.Combine(workingDirectory, givenSolutionDirectory).TrimEnd('\\', '/');
+                }
+                
+                return givenSolutionDirectory.TrimEnd('\\', '/');
+            }
+
+            // If we weren't given a solution path, try to find one looking up from the project file.
+            var currentDirectory = projectLocation;
+
+            while (currentDirectory != null)
+            {
+                if (Directory.EnumerateFiles(currentDirectory).Any(x => x.EndsWith(".sln", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return currentDirectory.TrimEnd('\\', '/');
+                }
+
+                DirectoryInfo dirInfo = Directory.GetParent(currentDirectory);
+                if ((dirInfo == null) || !dirInfo.Exists) 
+                {
+                    break;
+                }
+
+                currentDirectory = dirInfo.FullName;
+            }
+
+            // Otherwise, we didn't find a solution file, so just default to the project directory.
+            return (Path.IsPathRooted(projectLocation) ? projectLocation : Path.Combine(workingDirectory, projectLocation)).TrimEnd('\\', '/');
+        }
+
         /// <summary>
         /// Determine where the dotnet publish should put its artifacts at.
         /// </summary>
@@ -141,10 +178,10 @@ namespace Amazon.Common.DotNetCli.Tools
         public static string DeterminePublishLocation(string workingDirectory, string projectLocation, string configuration, string targetFramework)
         {
             var path = Path.Combine(DetermineProjectLocation(workingDirectory, projectLocation),
-                    "bin",
-                    configuration,
-                    targetFramework,
-                    "publish");
+                "bin",
+                configuration,
+                targetFramework,
+                "publish");
             return path;
         }
 
@@ -156,6 +193,46 @@ namespace Amazon.Common.DotNetCli.Tools
 
             var element = xdoc.XPathSelectElement("//PropertyGroup/TargetFramework");
             return element?.Value;
+        }
+
+        public static string LookupOutputTypeFromProjectFile(string projectLocation)
+        {
+            var projectFile = FindProjectFileInDirectory(projectLocation);
+
+            var xdoc = XDocument.Load(projectFile);
+
+            var element = xdoc.XPathSelectElement("//PropertyGroup/OutputType");
+            return element?.Value;
+        }
+
+        public static bool LookPublishAotFlag(string projectLocation, string msBuildParameters)
+        {
+            if (msBuildParameters != null)
+            {
+                string msBuildParametersTrimmed = string.Concat(msBuildParameters.Where(c => !char.IsWhiteSpace(c)));
+                if (msBuildParametersTrimmed.ToLower().Contains("publishaot=true"))
+                {
+                    return true;
+                }
+                else if (msBuildParametersTrimmed.ToLower().Contains("publishaot=false"))
+                {
+                    return false;
+                }
+            }
+
+            // If the property wasn't provided in msBuildParameters, fall back to searching project file
+            var projectFile = FindProjectFileInDirectory(projectLocation);
+
+            var xdoc = XDocument.Load(projectFile);
+
+            var element = xdoc.XPathSelectElement("//PropertyGroup/PublishAot");
+            
+            if (bool.TryParse(element?.Value, out bool result))
+            {
+                return result;
+            }
+
+            return false;
         }
 
         public static string FindProjectFileInDirectory(string directory)
@@ -176,12 +253,14 @@ namespace Amazon.Common.DotNetCli.Tools
         }
 
         /// <summary>
-        /// Determines the location of the project depending on how the workingDirectory and projectLocation
-        /// fields are set. This location is root of the project.
+        /// Determines the location of the project root depending on how the workingDirectory and projectLocation
+        /// fields are set. workingDir is the directory from where the CLI was called. ProjectLocation is optionally 
+        /// passed in as an argument by the user, but must be a directory, not a file. If a relative project loction 
+        /// is passed in (i.e. not rooted), the path relative to the workingDirectory is returned. 
         /// </summary>
         /// <param name="workingDirectory"></param>
         /// <param name="projectLocation"></param>
-        /// <returns></returns>
+        /// <returns>The full path to the project root directory (not project file, and not solution directory) without a trailing directory separator</returns>
         public static string DetermineProjectLocation(string workingDirectory, string projectLocation)
         {
             string location;
@@ -198,10 +277,7 @@ namespace Amazon.Common.DotNetCli.Tools
                 location = Path.IsPathRooted(projectLocation) ? projectLocation : Path.Combine(workingDirectory, projectLocation);
             }
 
-            if (location.EndsWith(@"\") || location.EndsWith(@"/"))
-                location = location.Substring(0, location.Length - 1);
-
-            return location;
+            return location.TrimEnd('\\', '/');
         }
         
         /// <summary>

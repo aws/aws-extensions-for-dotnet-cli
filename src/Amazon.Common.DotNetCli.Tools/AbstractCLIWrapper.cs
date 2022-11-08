@@ -23,8 +23,6 @@ namespace Amazon.Common.DotNetCli.Tools
 
         protected int ExecuteCommand(ProcessStartInfo startInfo, string loggerLabel)
         {
-
-
             var handler = (DataReceivedEventHandler)((o, e) =>
             {
                 if (string.IsNullOrEmpty(e.Data))

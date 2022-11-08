@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.IO;
+using System.Reflection;
 
 using Xunit;
 
@@ -8,6 +9,18 @@ namespace Amazon.Common.DotNetCli.Tools.Test
 {
     public class UtilitiesTests
     {
+        [Theory]
+        [InlineData("../../../../../testapps/TestFunction", "netcoreapp3.1")]
+        [InlineData("../../../../../testapps/ServerlessWithYamlFunction", "netcoreapp3.1")]
+        [InlineData("../../../../../testapps/TestBeanstalkWebApp", "netcoreapp3.1")]
+        public void CheckFramework(string projectPath, string expectedFramework)
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + projectPath);
+            var determinedFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectPath);
+            Assert.Equal(expectedFramework, determinedFramework);
+        }
+
         [Fact]
         public void TestExecuteShellCommandSuccess()
         {
@@ -45,6 +58,30 @@ namespace Amazon.Common.DotNetCli.Tools.Test
                 dotnetCLI = AbstractCLIWrapper.FindExecutableInPath("dotnet");
 
             return dotnetCLI;
+        }
+
+        [Theory]
+        [InlineData("../../../../../testapps/TestFunction", null, false)]
+        [InlineData("../../../../../testapps/TestFunction", "", false)]
+        [InlineData("../../../../../testapps/TestFunction", "publishaot=true", true)]
+        [InlineData("../../../../../testapps/TestFunction", "publishAOT=False", false)]
+        [InlineData("../../../../../testapps/TestNativeAotSingleProject", null, true)]
+        [InlineData("../../../../../testapps/TestNativeAotSingleProject", "publishAOT=False", false)]
+        public void TestLookForPublishAotFlag(string projectLocation, string msBuildParameters, bool expected)
+        {
+            var result = Utilities.LookPublishAotFlag(projectLocation, msBuildParameters);
+
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("../../../../../testapps/TestFunction", "Library")]
+        [InlineData("../../../../../testapps/TestNativeAotSingleProject", "Exe")]
+        public void TestLookupOutputTypeFromProjectFile(string projectLocation, string expected)
+        {
+            var result = Utilities.LookupOutputTypeFromProjectFile(projectLocation);
+
+            Assert.Equal(expected, result);
         }
     }
 }
