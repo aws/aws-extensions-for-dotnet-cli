@@ -42,6 +42,12 @@ namespace Amazon.Lambda.Tools.Test
         [Fact]
         public async Task RunDeploymentBuildWithUseContainer()
         {
+            if (string.Equals(System.Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"), "true", StringComparison.OrdinalIgnoreCase))
+            {
+                _testOutputHelper.WriteLine("Skipping container build test because test is already running inside a container");
+                return;
+            }
+
             var assembly = this.GetType().GetTypeInfo().Assembly;
 
             string expectedValue = "HELLO WORLD";
@@ -110,6 +116,12 @@ namespace Amazon.Lambda.Tools.Test
         // [InlineData(false, true)] Ignored since each of these takes over 2 minutes.
         public async Task RunDeploymentNativeAot(bool multipleProjects, bool customMountLocation)
         {
+            if (string.Equals(System.Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"), "true", StringComparison.OrdinalIgnoreCase))
+            {
+                _testOutputHelper.WriteLine("Skipping container build test because test is already running inside a container");
+                return;
+            }
+
             var assembly = this.GetType().GetTypeInfo().Assembly;
 
             string expectedValue = multipleProjects ? "MYTEST: HELLO WORLD" : "HELLO WORLD";
