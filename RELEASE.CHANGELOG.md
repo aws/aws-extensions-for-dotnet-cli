@@ -1,8 +1,12 @@
-### Release 2022-11-18
+### Release 2022-11-14
+* **Amazon.Lambda.Tools (5.6.2)**
+  * Fixed regression in 5.6.0 that prevented the package command for non managed .NET runtime like .NET 5 and 7. This feature is required for SAM container image builds.
+  
+### Release 2022-11-08
 * **Amazon.Lambda.Tools (5.6.1)**
   * Fixed regression in 5.6.0 that excluded pdb files from being packaged in deployment bundle breaking SAM debugger experience.
   
-### Release 2022-11-18
+### Release 2022-11-08
 * **Amazon.Lambda.Tools (5.6.0)**
   * Added support for deploying Native AOT .NET 7 Lambda functions. To enable Native AOT set the PublishAot property in project file to true.
   * Added support for container builds when creating deployment bundle.
