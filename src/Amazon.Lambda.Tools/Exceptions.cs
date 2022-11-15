@@ -76,7 +76,6 @@ namespace Amazon.Lambda.Tools
             DisabledSupportForNET31Layers,
 
             InvalidNativeAotTargetFramework,
-            InvalidOutputTypeForTargetFramework,
             Net7OnArmNotSupported,
             InvalidArchitectureProvided,
             UnsupportedDefaultContainerBuild,

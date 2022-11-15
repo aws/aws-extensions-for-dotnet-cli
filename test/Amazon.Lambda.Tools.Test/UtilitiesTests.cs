@@ -186,39 +186,17 @@ namespace Amazon.Lambda.Tools.Test
             Assert.Equal(expectedValue, containerImageFile);
         }
 
-        [Fact]
-        public void AllLambdaRuntimesAreSupportedOrDeprecated()
-        {
-            // All Lambda Runtimes are identified
-            var lambdaDotnetRuntimes = typeof(Lambda.Runtime).GetFields().Where(x => x.Name.ToLower().Contains("dotnet") || x.Name.ToLower().Contains(".net"));
-
-            Assert.True(lambdaDotnetRuntimes.Any());
-
-            var allKnownSupportedAndDeprecatedRuntimes = LambdaConstants.SUPPORTED_LAMBDA_MANAGED_RUNTIMES
-                .Concat(LambdaConstants.DEPRECATED_LAMBDA_MANAGED_RUNTIMES).ToList();
-
-            foreach (var runtime in lambdaDotnetRuntimes)
-            {
-                var runtimeName = (Runtime)runtime.GetValue(null);
-                Assert.Contains(runtimeName.Value, allKnownSupportedAndDeprecatedRuntimes);
-            }
-        }
-
-        [Fact]
-        public void NoLambdaRuntimesIsBothSupportedAndDeprecated()
-        {
-            Assert.Empty(LambdaConstants.SUPPORTED_LAMBDA_MANAGED_RUNTIMES.Intersect(LambdaConstants.DEPRECATED_LAMBDA_MANAGED_RUNTIMES));
-        }
-
         [Theory]
         [InlineData("../../../../../testapps/TestFunction", "net6.0", false, false)]
         [InlineData("../../../../../testapps/TestFunction", "net6.0", true, true)]
         [InlineData("../../../../../testapps/TestFunction", "net7.0", true, true)]
-        [InlineData("../../../../../testapps/TestFunction", "net7.0", false, true)]
+        [InlineData("../../../../../testapps/TestFunction", "net7.0", false, false)]
+        [InlineData("../../../../../testapps/TestFunction", "net5.0", false, false)]
         [InlineData("../../../../../testapps/TestNativeAotSingleProject", "net7.0", true, false)]
         [InlineData("../../../../../testapps/TestNativeAotSingleProject", "net7.0", false, false)]
         [InlineData("../../../../../testapps/TestNativeAotSingleProject", "net6.0", false, false)]
         [InlineData("../../../../../testapps/TestNativeAotSingleProject", "net6.0", true, true)]
+        [InlineData("../../../../../testapps/TestNativeAotSingleProject", "net5.0", true, true)]
         public void TestValidateTargetFramework(string projectLocation, string targetFramework, bool isNativeAot, bool shouldThrow)
         {
             if (shouldThrow)
