@@ -5,6 +5,7 @@ using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Xunit;
@@ -248,6 +249,8 @@ namespace Amazon.Lambda.Tools.Test
                 Assert.True(created);
 
                 await LambdaUtilities.WaitTillFunctionAvailableAsync(new TestToolLogger(_testOutputHelper), command.LambdaClient, command.FunctionName);
+                
+                //Thread.Sleep(5000);
                 var invokeRequest = new InvokeRequest
                 {
                     FunctionName = command.FunctionName,

@@ -886,7 +886,8 @@ namespace Amazon.Lambda.Tools
                             // Not throwing exception because it is possible the calling code could be fixing the failed state.
                             logger.WriteLine($"Warning: function {functionName} is currently in failed state: {response.LastUpdateStatusReason}");
                         }
-
+                        
+                        await Task.Delay(POLL_INTERVAL);
                         return;
                     }
 

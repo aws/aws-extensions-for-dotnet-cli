@@ -227,7 +227,9 @@ namespace Amazon.Lambda.Tools
 
         public static void BundleDirectory(string zipArchivePath, string sourceDirectory, bool flattenRuntime, IToolLogger logger)
         {
-#if NETCOREAPP3_1_OR_GREATER
+#if NET6_0_OR_GREATER
+            BundleWithNETZipApi(zipArchivePath, sourceDirectory, flattenRuntime, logger);
+#elif NETCOREAPP3_1_OR_GREATER
             if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 BundleWithBuildLambdaZip(zipArchivePath, sourceDirectory, flattenRuntime, logger);
@@ -253,8 +255,9 @@ namespace Amazon.Lambda.Tools
         public static void BundleFiles(string zipArchivePath, string rootDirectory, string[] files, IToolLogger logger)
         {
             var includedFiles = ConvertToMapOfFiles(rootDirectory, files);
-
-#if NETCOREAPP3_1_OR_GREATER
+#if NET6_0_OR_GREATER
+            BundleWithNETZipApi(zipArchivePath, rootDirectory, includedFiles, logger);
+#elif NETCOREAPP3_1_OR_GREATER
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 BundleWithBuildLambdaZip(zipArchivePath, rootDirectory, includedFiles, logger);
@@ -599,9 +602,60 @@ namespace Amazon.Lambda.Tools
             return includedFiles;
         }
 
+#if NET6_0_OR_GREATER       
+        /// <summary>
+        /// Zip up the publish folder using the System.IO.Compression API. This can only be used for .NET 6 and above
+        /// which maintains Linux file permissions.
+        /// </summary>
+        /// <param name="zipArchivePath">The path and name of the zip archive to create.</param>
+        /// <param name="publishLocation">The location to be bundled.</param>
+        /// <param name="flattenRuntime">If true the runtimes folder will be flatten</param>
+        /// <param name="logger">Logger instance.</param>
+        private static void BundleWithNETZipApi(string zipArchivePath, string publishLocation, bool flattenRuntime, IToolLogger logger)
+        {
+            var includedFiles = GetFilesToIncludeInArchive(publishLocation, flattenRuntime);
+            BundleWithNETZipApi(zipArchivePath, publishLocation, includedFiles, logger);
+        }        
+
+        /// <summary>
+        /// Zip up the publish folder using the System.IO.Compression API. This can only be used for .NET 6 and above
+        /// which maintains Linux file permissions.
+        /// </summary>
+        /// <param name="zipArchivePath">The path and name of the zip archive to create.</param>
+        /// <param name="rootDirectory">The root directory where all of the relative paths in includedFiles is pointing to.</param>
+        /// <param name="includedFiles">Map of relative to absolute path of files to include in bundle.</param>
+        /// <param name="logger">Logger instance.</param>
+        private static void BundleWithNETZipApi(string zipArchivePath, string rootDirectory,
+            IDictionary<string, string> includedFiles, IToolLogger logger)
+        {
+            EnsureBootstrapLinuxLineEndings(rootDirectory, includedFiles);
+
+            using var zipFileStream = File.OpenWrite(zipArchivePath);
+            using var zipFile = new System.IO.Compression.ZipArchive(zipFileStream, System.IO.Compression.ZipArchiveMode.Create, true);
+            foreach (var kvp in includedFiles)
+            {
+                var entry = zipFile.CreateEntry(kvp.Key.Replace("\\", "/"));
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    // If on Windows which doesn't have Linux file permissions automatically set permissions to "-rwxrwxrwx".
+                    // This is the same as the previous Go executable the tool used to use.
+                    // https://github.com/aws/aws-extensions-for-dotnet-cli/blob/master/src/Amazon.Lambda.Tools/BuildLambdaZip/build-lambda-zip.go#L79
+                    entry.ExternalAttributes = 0777 << 16;
+                }
+                
+                using var zipStream = entry.Open();
+                using var fileStream = File.Open(kvp.Value, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                fileStream.CopyTo(zipStream);
+                zipStream.Flush();
+            }
+            zipFileStream.Flush();
+        }        
+#endif
         /// <summary>
         /// Zip up the publish folder using the build-lambda-zip utility which will maintain linux/osx file permissions.
         /// This is what is used when run on Windows.
+        /// </summary>
         /// <param name="zipArchivePath">The path and name of the zip archive to create.</param>
         /// <param name="publishLocation">The location to be bundled.</param>
         /// <param name="flattenRuntime">If true the runtimes folder will be flatten</param>
@@ -611,7 +665,7 @@ namespace Amazon.Lambda.Tools
             var includedFiles = GetFilesToIncludeInArchive(publishLocation, flattenRuntime);
             BundleWithBuildLambdaZip(zipArchivePath, publishLocation, includedFiles, logger);
         }
-
+        
         /// <summary>
         /// Zip up the publish folder using the build-lambda-zip utility which will maintain linux/osx file permissions.
         /// This is what is used when run on Windows.
