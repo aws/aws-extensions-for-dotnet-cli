@@ -174,7 +174,21 @@ namespace Amazon.Common.DotNetCli.Tools
 
             var imageArg = $"-i {imageId}";
 
-            var arguments = $"run {autoDeleteArg} {mountArg} {containerNameArg} {imageArg} {commandToRun}";
+            // If running in MacOS or Linux, set Docker to launch using the running user's UID and GID,
+            // which will make sure that any directories or files created in mounted volumes will be
+            // writable by the running user's account
+            string userArg;
+            if (PosixUserHelper.IsRunningInPosix)
+            {
+                var posixUser = PosixUserHelper.GetEffectiveUser(_logger);
+                userArg = $" -u {posixUser.UserID}:{posixUser.GroupID}";
+            }
+            else
+            {
+                userArg = "";
+            }
+            
+            var arguments = $"run {autoDeleteArg} {mountArg} {containerNameArg} {imageArg}{userArg} {commandToRun}";
 
             var psi = new ProcessStartInfo
             {
