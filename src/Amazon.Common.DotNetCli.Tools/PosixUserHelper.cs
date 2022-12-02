@@ -56,7 +56,7 @@ namespace Amazon.Common.DotNetCli.Tools
             };
             proc.ErrorDataReceived += (_, e) =>
             {
-                if (string.IsNullOrEmpty(e.Data))
+                if (! string.IsNullOrEmpty(e.Data))
                     logger.WriteLine($"[\"id\"]: {e.Data}");
             };
             if (!proc.Start())

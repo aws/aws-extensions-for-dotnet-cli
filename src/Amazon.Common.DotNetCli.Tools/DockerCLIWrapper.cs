@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -163,32 +164,49 @@ namespace Amazon.Common.DotNetCli.Tools
         /// <returns></returns>
         public int Run(string imageId, string containerName, string commandToRun = "")
         {
-            var containerNameArg = $"--name {containerName}";
+            var argumentList = new List<string>()
+            {
+                "run",
+                "--name",
+                containerName,
 
-            var autoDeleteArg = "--rm"; // Automatically remove the container once it's done running
+                // Automatically remove the container once it's done running
+                "--rm",
 
-            // This allows the container access to the working directory in a virtual mapped path located at /tmp/source
-            // That means that when the container is finished running, anything it leaves in /tmp/source (e.g. the binaries),
-            // will just exist in the working directory
-            var mountArg = $"--volume \"{this._workingDirectory}\":{WorkingDirectoryMountLocation}";
+                // This allows the container access to the working directory in a virtual mapped path located at /tmp/source
+                // That means that when the container is finished running, anything it leaves in /tmp/source (e.g. the binaries),
+                // will just exist in the working directory
+                "--volume",
+                $"\"{this._workingDirectory}\":{WorkingDirectoryMountLocation}",
 
-            var imageArg = $"-i {imageId}";
-
-            // If running in MacOS or Linux, set Docker to launch using the running user's UID and GID,
-            // which will make sure that any directories or files created in mounted volumes will be
-            // writable by the running user's account
-            string userArg;
+                "-i"
+            };
+            
+            // For Linux or MacOS, running a .NET image as non-root requires some special
+            // handling.  We have to pass the user's UID and GID, but we also have to specify
+            // the location of where .NET and Nuget put their files, because by default, they
+            // go to the /.dotnet and /.local, which a non-root user can't write to in a container
             if (PosixUserHelper.IsRunningInPosix)
             {
                 var posixUser = PosixUserHelper.GetEffectiveUser(_logger);
-                userArg = $" -u {posixUser.UserID}:{posixUser.GroupID}";
+                argumentList.AddRange(new []
+                {
+                    "-u",
+                    $"{posixUser.UserID}:{posixUser.GroupID}",
+                    "-e",
+                    "DOTNET_CLI_HOME=/tmp/dotnet",
+                    "-e",
+                    "XDG_DATA_HOME=/tmp/xdg"
+                });
             }
-            else
-            {
-                userArg = "";
-            }
+
+            argumentList.Add(imageId);
             
-            var arguments = $"run {autoDeleteArg} {mountArg} {containerNameArg} {imageArg}{userArg} {commandToRun}";
+            var arguments = string.Join(" ", argumentList);
+            if (!string.IsNullOrEmpty(commandToRun))
+            {
+                arguments += $" {commandToRun}";
+            }
 
             var psi = new ProcessStartInfo
             {
