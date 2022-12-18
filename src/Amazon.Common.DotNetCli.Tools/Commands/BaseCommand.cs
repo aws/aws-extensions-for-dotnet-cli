@@ -450,15 +450,30 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             {
                 return propertyValue;
             }
-            else if (!string.IsNullOrEmpty(DefaultConfig[option.Switch] as string))
-            {
-                var configDefault = DefaultConfig[option.Switch] as string;
-                if (string.IsNullOrEmpty(configDefault))
-                    return null;
 
-                return Utilities.ParseKeyValueOption(configDefault);
+            switch (DefaultConfig[option.Switch])
+            {
+                // Handle setting if stored in either object, array (key=value) or string (key1=value1;key2=value2;...)
+                case Dictionary<string, string> dict:
+                    return dict;
+                case string[] arr:
+                    return new Dictionary<string, string>(arr.Select(item =>
+                    {
+                        var idx = item.IndexOf('=');
+                        if (idx == -1) throw new Exception("Arrays of Key Value Pairs must be in the form of key=value");
+                        var key = item[..idx].Trim();
+                        var value = item[(idx + 1)..].Trim();
+                        return new KeyValuePair<string, string>(key, value);
+                    }));
+                case string str:
+                    if (!string.IsNullOrEmpty(str))
+                    {
+                        return Utilities.ParseKeyValueOption(str);
+                    }
+                    break;
             }
-            else if (required && !this.DisableInteractive)
+
+            if (required && !this.DisableInteractive)
             {
                 var response = PromptForValue(option);
                 if (string.IsNullOrEmpty(response))
@@ -466,7 +481,8 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
 
                 return Utilities.ParseKeyValueOption(response);
             }
-            else if (_cachedRequestedValues.ContainsKey(option))
+            
+            if (_cachedRequestedValues.ContainsKey(option))
             {
                 var cachedValue = _cachedRequestedValues[option];
                 return cachedValue == null ? null : Utilities.ParseKeyValueOption(cachedValue);
