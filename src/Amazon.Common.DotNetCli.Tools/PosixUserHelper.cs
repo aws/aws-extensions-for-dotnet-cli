@@ -1,13 +1,16 @@
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 namespace Amazon.Common.DotNetCli.Tools
 {
     public struct PosixUserInfo
     {
-        public uint UserID;
-        public uint GroupID;
+        public int UserID;
+        public int GroupID;
+        public bool UserIDSet;
+        public bool GroupIDSet;
     }
 
     /// <summary>
@@ -18,9 +21,9 @@ namespace Amazon.Common.DotNetCli.Tools
         /// <summary>
         /// Return True if running under Unix or Mac
         /// </summary>
-        public static readonly bool IsRunningInPosix = Environment.OSVersion.Platform == PlatformID.Unix
-                                                       || Environment.OSVersion.Platform == PlatformID.MacOSX;
-        
+        public static readonly bool IsRunningInPosix = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ||
+                                                       RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+
         /// <summary>
         /// Return the effective user's UID and GID under Linux and Mac by calling the "id" command.
         /// This will fault if running on Windows (by design), check IsRunningInPosix before calling this method.
@@ -29,8 +32,11 @@ namespace Amazon.Common.DotNetCli.Tools
         /// <exception cref="Exception"></exception>
         public static PosixUserInfo GetEffectiveUser(IToolLogger logger)
         {
-            var userID = uint.MaxValue;
-            var groupID = uint.MaxValue;
+            var userID = 0;
+            var groupID = 0;
+
+            var userIDSet = false;
+            var groupIDSet = false;
 
             using var proc = new Process();
             proc.StartInfo = new ProcessStartInfo
@@ -51,8 +57,15 @@ namespace Amazon.Common.DotNetCli.Tools
                     throw new Exception($"\"id\" returned unexpected results (\"{e.Data}\")");
                 }
 
-                userID = uint.Parse(results.Groups[1].Value);
-                groupID = uint.Parse(results.Groups[2].Value);
+                if (int.TryParse(results.Groups[1].Value, out var id1)) {
+                    userID = id1;
+                    userIDSet = true;
+                }
+
+                if (int.TryParse(results.Groups[2].Value, out var id2)) {
+                    groupID = id2;
+                    groupIDSet = true;
+                }
             };
             proc.ErrorDataReceived += (_, e) =>
             {
@@ -72,20 +85,22 @@ namespace Amazon.Common.DotNetCli.Tools
                 throw new Exception($"\"id\" exited with status {proc.ExitCode}");
             }
 
-            if (userID == uint.MaxValue)
+            if (! userIDSet)
             {
-                throw new Exception("Unable to get effective user from \"id\"");
+                logger?.WriteLine("Warning: Unable to get effective user from \"id\" - using root(0)");
             }
 
-            if (groupID == uint.MaxValue)
+            if (! groupIDSet)
             {
-                throw new Exception("Unable to get effective group from \"id\"");
+                logger?.WriteLine("Warning: Unable to get effective group from \"id\" - using root(0)");
             }
 
             return new PosixUserInfo
             {
                 UserID = userID,
-                GroupID = groupID
+                GroupID = groupID,
+                UserIDSet = userIDSet,
+                GroupIDSet = groupIDSet
             };
         }
     }        

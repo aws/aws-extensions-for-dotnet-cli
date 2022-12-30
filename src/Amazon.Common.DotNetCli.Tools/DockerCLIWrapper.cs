@@ -191,10 +191,13 @@ namespace Amazon.Common.DotNetCli.Tools
                 var posixUser = PosixUserHelper.GetEffectiveUser(_logger);
                 argumentList.AddRange(new []
                 {
+                    // Set Docker user and group IDs
                     "-u",
                     $"{posixUser.UserID}:{posixUser.GroupID}",
+                    // Set .NET CLI home directory
                     "-e",
                     "DOTNET_CLI_HOME=/tmp/dotnet",
+                    // Set NuGet data home directory to non-root directory
                     "-e",
                     "XDG_DATA_HOME=/tmp/xdg"
                 });
