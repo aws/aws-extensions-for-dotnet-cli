@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using ThirdParty.Json.LitJson;
 
@@ -97,7 +96,7 @@ namespace Amazon.Common.DotNetCli.Tools
                     var obj = new Dictionary<string, string>();
                     foreach (var key in this._rootData[fullSwitchName].PropertyNames)
                     {
-                        obj[key] = this._rootData[fullSwitchName][key]?.ToString();
+                        obj[key] = this._rootData[key]?.ToString();
                     }
                     return obj;
                 }
@@ -134,25 +133,6 @@ namespace Amazon.Common.DotNetCli.Tools
             return null;
         }
 
-        /// <summary>
-        /// Gets the default if it exists as a dictionary.
-        /// </summary>
-        /// <param name="option"></param>
-        /// <returns></returns>
-        public IDictionary<string, string> GetValueAsDictionary(CommandOption option)
-        {
-            var key = option.Switch.Substring(2);
-            var data = this._rootData[key];
-            if (data == null)
-                return null;
-
-            if (data.IsObject)
-            {
-                return data.PropertyNames
-                    .ToDictionary(name => name, name => data[name].ToString());
-            }
-            return null;
-        }
 
         public static string FormatCommaDelimitedList(string[] values)
         {
