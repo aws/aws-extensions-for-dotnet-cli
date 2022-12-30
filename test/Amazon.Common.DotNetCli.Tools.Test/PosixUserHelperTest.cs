@@ -1,6 +1,7 @@
 using System;
 using Xunit;
 using Amazon.Common.DotNetCli.Tools.Test.Mocks;
+using System.Runtime.InteropServices;
 
 namespace Amazon.Common.DotNetCli.Tools.Test;
 
@@ -13,13 +14,14 @@ public class PosixUserHelperTest
     [Fact]
     public void TestGetEffectiveUser()
     {
-        if (Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX)
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ||
+            RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             var mockLogger = new MockToolLogger();
             Assert.True(PosixUserHelper.IsRunningInPosix);
             var user = PosixUserHelper.GetEffectiveUser(mockLogger);
-            Assert.NotEqual(uint.MaxValue, user.UserID);
-            Assert.NotEqual(uint.MaxValue, user.GroupID);
+            Assert.True(user.UserIDSet);
+            Assert.True(user.GroupIDSet);
         }
         else
         {
