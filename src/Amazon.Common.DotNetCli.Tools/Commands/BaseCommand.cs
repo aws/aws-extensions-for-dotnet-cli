@@ -450,13 +450,7 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             {
                 return propertyValue;
             }
-
-            if (DefaultConfig[option.Switch] is Dictionary<string, string> dict)
-            {
-                return dict;
-            }
-            
-            if (!string.IsNullOrEmpty(DefaultConfig[option.Switch] as string))
+            else if (!string.IsNullOrEmpty(DefaultConfig[option.Switch] as string))
             {
                 var configDefault = DefaultConfig[option.Switch] as string;
                 if (string.IsNullOrEmpty(configDefault))
@@ -464,8 +458,7 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
 
                 return Utilities.ParseKeyValueOption(configDefault);
             }
-
-            if (required && !this.DisableInteractive)
+            else if (required && !this.DisableInteractive)
             {
                 var response = PromptForValue(option);
                 if (string.IsNullOrEmpty(response))
@@ -473,8 +466,7 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
 
                 return Utilities.ParseKeyValueOption(response);
             }
-            
-            if (_cachedRequestedValues.ContainsKey(option))
+            else if (_cachedRequestedValues.ContainsKey(option))
             {
                 var cachedValue = _cachedRequestedValues[option];
                 return cachedValue == null ? null : Utilities.ParseKeyValueOption(cachedValue);
