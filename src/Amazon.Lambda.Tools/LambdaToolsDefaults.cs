@@ -83,9 +83,6 @@ namespace Amazon.Lambda.Tools
         {
             get
             {
-                var dict = GetValueAsDictionary(LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_TEMPLATE_PARAMETER);
-                if (dict != null) return dict;
-                
                 var str = GetValueAsString(LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_TEMPLATE_PARAMETER);
                 if (string.IsNullOrEmpty(str))
                     return null;
@@ -105,9 +102,6 @@ namespace Amazon.Lambda.Tools
         {
             get
             {
-                var dict = GetValueAsDictionary(LambdaDefinedCommandOptions.ARGUMENT_ENVIRONMENT_VARIABLES);
-                if (dict != null) return dict;
-                
                 var str = GetValueAsString(LambdaDefinedCommandOptions.ARGUMENT_ENVIRONMENT_VARIABLES);
                 if (string.IsNullOrEmpty(str))
                     return null;
