@@ -189,18 +189,21 @@ namespace Amazon.Common.DotNetCli.Tools
             if (PosixUserHelper.IsRunningInPosix)
             {
                 var posixUser = PosixUserHelper.GetEffectiveUser(_logger);
-                argumentList.AddRange(new []
+                if (posixUser != null && (posixUser?.UserID > 0 || posixUser.Value.GroupID > 0))
                 {
-                    // Set Docker user and group IDs
-                    "-u",
-                    $"{posixUser.UserID}:{posixUser.GroupID}",
-                    // Set .NET CLI home directory
-                    "-e",
-                    "DOTNET_CLI_HOME=/tmp/dotnet",
-                    // Set NuGet data home directory to non-root directory
-                    "-e",
-                    "XDG_DATA_HOME=/tmp/xdg"
-                });
+                    argumentList.AddRange(new []
+                    {
+                        // Set Docker user and group IDs
+                        "-u",
+                        $"{posixUser.Value.UserID}:{posixUser.Value.GroupID}",
+                        // Set .NET CLI home directory
+                        "-e",
+                        "DOTNET_CLI_HOME=/tmp/dotnet",
+                        // Set NuGet data home directory to non-root directory
+                        "-e",
+                        "XDG_DATA_HOME=/tmp/xdg"
+                    });
+                }
             }
 
             argumentList.Add(imageId);

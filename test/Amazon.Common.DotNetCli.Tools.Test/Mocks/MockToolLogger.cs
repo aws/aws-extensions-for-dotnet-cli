@@ -1,16 +1,23 @@
 using System;
+using System.Text;
 
 namespace Amazon.Common.DotNetCli.Tools.Test.Mocks;
 
 public class MockToolLogger : IToolLogger
 {
-    public void WriteLine(string _)
+    private readonly StringBuilder _sbLog = new();
+
+    public void WriteLine(string text)
     {
-        // NOP
+        _sbLog.Append(text);
+        _sbLog.Append('\n');
     }
 
-    public void WriteLine(string _1, params object[] _2)
+    public void WriteLine(string text, params object[] data)
     {
-        // NOP
+        _sbLog.AppendFormat(text, data);
+        _sbLog.Append('\n');
     }
+
+    public string Log => _sbLog.ToString();
 }
