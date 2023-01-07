@@ -129,7 +129,7 @@ namespace Amazon.Lambda.Tools
         public static readonly CommandOption ARGUMENT_FUNCTION_SECURITY_GROUPS =
             new CommandOption
             {
-                Name = "Subnets",
+                Name = "Security Groups",
                 ShortSwitch = "-fsec",
                 Switch = "--function-security-groups",
                 ValueType = CommandOption.CommandOptionValueType.CommaDelimitedList,
