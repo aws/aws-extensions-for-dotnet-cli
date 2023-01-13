@@ -329,7 +329,7 @@ The `Architectures` array can be specified either by:
 1. Directly with the path `AWS::Serverless::Function` 
 2. Within the [AWS SAM Template syntax `Globals`](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-specification-template-anatomy-globals.html)
 
-Example of directly with the path `AWS::Serverless::Funaction` in a `serverless.template`:
+Example of directly with the path `AWS::Serverless::Function` in a `serverless.template`:
 
 ```
   ...
