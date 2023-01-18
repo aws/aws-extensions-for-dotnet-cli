@@ -1,3 +1,8 @@
+### Release 2023-01-18
+* **Amazon.Lambda.Tools (5.6.3)**
+  * Pull Request [#257](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/257) supporting non-root users when doing container based builds. Thanks [Jason T](https://github.com/jasonterando)
+  * Pull Request [#260](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/260) fixed typo in Security Groups option name. Thanks [Mohammad Sadegh Shad](https://github.com/m-sadegh-sh)
+
 ### Release 2022-11-14
 * **Amazon.Lambda.Tools (5.6.2)**
   * Fixed regression in 5.6.0 that prevented the package command for non managed .NET runtime like .NET 5 and 7. This feature is required for SAM container image builds.
