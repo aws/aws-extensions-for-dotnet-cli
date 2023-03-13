@@ -230,8 +230,28 @@ namespace Amazon.Lambda.Tools.Commands
             }
         }
 
-        protected async Task UpdateConfigAsync(GetFunctionConfigurationResponse existingConfiguration, string dotnetSharedStoreValue)
+        /// <summary>
+        /// Reverts the lambda configuration to an earlier point, which is needed if updating the lambda function code failed.
+        /// </summary>
+        /// <param name="existingConfiguration"></param>
+        protected async Task AttemptRevertConfigAsync(GetFunctionConfigurationResponse existingConfiguration)
         {
+            try
+            {
+                var request = CreateRevertConfigurationRequest(existingConfiguration);
+                await LambdaUtilities.WaitTillFunctionAvailableAsync(Logger, this.LambdaClient, request.FunctionName);
+                this.Logger.WriteLine($"Reverting runtime configuration for function {this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true)}");
+                await this.LambdaClient.UpdateFunctionConfigurationAsync(request);
+            }
+            catch (Exception e)
+            {
+                this.Logger.WriteLine($"Error reverting configuration for Lambda function: {e.Message}");
+            }
+        }
+
+        protected async Task<bool> UpdateConfigAsync(GetFunctionConfigurationResponse existingConfiguration, string dotnetSharedStoreValue)
+        {
+            var configUpdated = false;
             var request = CreateConfigurationRequestIfDifferent(existingConfiguration, dotnetSharedStoreValue);
             if (request != null)
             {
@@ -240,6 +260,7 @@ namespace Amazon.Lambda.Tools.Commands
                 try
                 {
                     await this.LambdaClient.UpdateFunctionConfigurationAsync(request);
+                    configUpdated = true;
                 }
                 catch (Exception e)
                 {
@@ -282,6 +303,8 @@ namespace Amazon.Lambda.Tools.Commands
                     this.Logger.WriteLine($"Updating function url config: {this.FunctionUrlLink}");
                 }
             }
+
+            return configUpdated;
         }
 
         public async Task<GetFunctionConfigurationResponse> GetFunctionConfigurationAsync()
@@ -303,6 +326,77 @@ namespace Amazon.Lambda.Tools.Commands
             {
                 throw new LambdaToolsException($"Error retrieving configuration for function {request.FunctionName}: {e.Message}", LambdaToolsException.LambdaErrorCode.LambdaGetConfiguration, e);
             }
+        }
+
+        /// <summary>
+        /// Create an UpdateFunctionConfigurationRequest for the current configuration to be used to revert a failed configuration update.
+        /// </summary>
+        /// <param name="existingConfiguration"></param>
+        /// <returns><see cref="UpdateFunctionConfigurationRequest"/></returns>
+        private UpdateFunctionConfigurationRequest CreateRevertConfigurationRequest(GetFunctionConfigurationResponse existingConfiguration)
+        {
+            var request = new UpdateFunctionConfigurationRequest
+            {
+                FunctionName = existingConfiguration.FunctionName,
+                Description = existingConfiguration.Description,
+                Role = existingConfiguration.Role,
+                MemorySize = existingConfiguration.MemorySize,
+                EphemeralStorage = existingConfiguration.EphemeralStorage,
+                Timeout = existingConfiguration.Timeout,
+                Layers = existingConfiguration.Layers?.Select(x => x.Arn).ToList(),
+                DeadLetterConfig = existingConfiguration.DeadLetterConfig,
+                KMSKeyArn = existingConfiguration.KMSKeyArn
+            };
+
+            if (existingConfiguration.VpcConfig != null)
+            {
+                request.VpcConfig = new VpcConfig
+                {
+                    IsSecurityGroupIdsSet = existingConfiguration.VpcConfig.SecurityGroupIds?.Any() ?? false,
+                    IsSubnetIdsSet = existingConfiguration.VpcConfig.SubnetIds?.Any() ?? false,
+                    SecurityGroupIds = existingConfiguration.VpcConfig.SecurityGroupIds,
+                    SubnetIds = existingConfiguration.VpcConfig.SubnetIds
+                };
+            }
+
+            if (existingConfiguration.TracingConfig != null)
+            {
+                request.TracingConfig = new TracingConfig
+                {
+                    Mode = existingConfiguration.TracingConfig.Mode
+                };
+            }
+
+            if (existingConfiguration.Environment != null)
+            {
+                request.Environment = new Model.Environment
+                {
+                    IsVariablesSet = existingConfiguration.Environment.Variables?.Any() ?? false,
+                    Variables = existingConfiguration.Environment.Variables
+                };
+            }
+
+            if (existingConfiguration.PackageType == Lambda.PackageType.Zip)
+            {
+                request.Handler = existingConfiguration.Handler;
+                request.Runtime = existingConfiguration.Runtime;
+            }
+            else if (existingConfiguration.PackageType == Lambda.PackageType.Image)
+            {
+                if (existingConfiguration.ImageConfigResponse != null)
+                {
+                    request.ImageConfig = new ImageConfig
+                    {
+                        Command = existingConfiguration.ImageConfigResponse.ImageConfig?.Command,
+                        EntryPoint = existingConfiguration.ImageConfigResponse.ImageConfig?.EntryPoint,
+                        IsCommandSet = existingConfiguration.ImageConfigResponse.ImageConfig?.Command?.Any() ?? false,
+                        IsEntryPointSet = existingConfiguration.ImageConfigResponse.ImageConfig?.EntryPoint?.Any() ?? false,
+                        WorkingDirectory = existingConfiguration.ImageConfigResponse.ImageConfig?.WorkingDirectory
+                    };
+                }
+            }
+
+            return request;
         }
 
         /// <summary>
