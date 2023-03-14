@@ -12,6 +12,7 @@ using ThirdParty.Json.LitJson;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Commands;
 using Amazon.Common.DotNetCli.Tools.Options;
+using Amazon.Runtime.Internal;
 
 namespace Amazon.Lambda.Tools.Commands
 {
@@ -482,6 +483,7 @@ namespace Amazon.Lambda.Tools.Commands
 
                     try
                     {
+                        await LambdaUtilities.WaitTillFunctionAvailableAsync(Logger, this.LambdaClient, updateCodeRequest.FunctionName);
                         await this.LambdaClient.UpdateFunctionCodeAsync(updateCodeRequest);
                     }
                     catch (Exception e)
