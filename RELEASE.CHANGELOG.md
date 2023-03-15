@@ -1,3 +1,7 @@
+### Release 2023-03-15
+* **Amazon.Lambda.Tools (5.6.4)**
+  * Fixed an issue which caused upgrading from an End-of-Life .NET version to a supported version to fail.
+
 ### Release 2023-01-18
 * **Amazon.Lambda.Tools (5.6.3)**
   * Pull Request [#257](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/257) supporting non-root users when doing container based builds. Thanks [Jason T](https://github.com/jasonterando)
