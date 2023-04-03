@@ -11,8 +11,7 @@ namespace Amazon.Common.DotNetCli.Tools
     /// </summary>
     public class ToolkitConfigFileFetcher
     {
-        const string CLOUDFRONT_CONFIG_FILES_LOCATION = @"https://d3rrggjwfhwld2.cloudfront.net/";
-        const string S3_FALLBACK_LOCATION = @"https://aws-vs-toolkit.s3.amazonaws.com/";
+        const string HOSTEDFILES_LOCATION = @"https://idetoolkits-hostedfiles.amazonaws.com/";
 
         static ToolkitConfigFileFetcher INSTANCE = new ToolkitConfigFileFetcher();
         private ToolkitConfigFileFetcher()
@@ -37,20 +36,12 @@ namespace Amazon.Common.DotNetCli.Tools
             {
                 try
                 {
-                    var content = await client.GetStringAsync(CLOUDFRONT_CONFIG_FILES_LOCATION + filename);
+                    var content = await client.GetStringAsync(HOSTEDFILES_LOCATION + filename);
                     return content;
                 }
                 catch(Exception)
                 {
-                    try
-                    {
-                        var content = await client.GetStringAsync(S3_FALLBACK_LOCATION + filename);
-                        return content;
-                    }
-                    catch(Exception)
-                    {
-                        return null;
-                    }
+                    return null;
                 }
             }
         }
