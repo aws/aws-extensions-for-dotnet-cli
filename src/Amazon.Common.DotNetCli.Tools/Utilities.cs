@@ -234,6 +234,27 @@ namespace Amazon.Common.DotNetCli.Tools
 
             return false;
         }
+        public static bool HasExplicitSelfContainedFlag(string projectLocation, string msBuildParameters)
+        {
+            if (msBuildParameters != null && msBuildParameters.Contains("--self-contained", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return true;
+            }
+
+            // If the property wasn't provided in msBuildParameters, fall back to searching project file
+            var projectFile = FindProjectFileInDirectory(projectLocation);
+
+            var xdoc = XDocument.Load(projectFile);
+
+            var element = xdoc.XPathSelectElement("//PropertyGroup/SelfContained");
+
+            if (bool.TryParse(element?.Value, out _))
+            {
+                return true;
+            }
+
+            return false;
+        }
 
         public static string FindProjectFileInDirectory(string directory)
         {
