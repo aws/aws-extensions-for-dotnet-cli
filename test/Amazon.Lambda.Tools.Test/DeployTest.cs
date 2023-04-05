@@ -453,6 +453,7 @@ namespace Amazon.Lambda.Tools.Test
                 {
                     var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
                     deleteCommand.StackName = command.StackName;
+                    deleteCommand.Region = "us-east-1";
                     await deleteCommand.ExecuteAsync();
                 }
             }
@@ -581,6 +582,7 @@ namespace Amazon.Lambda.Tools.Test
                         {
                             var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
                             deleteCommand.StackName = command.StackName;
+                            deleteCommand.Region = "us-east-2";
                             await deleteCommand.ExecuteAsync();
                         }
                         catch
@@ -648,6 +650,7 @@ namespace Amazon.Lambda.Tools.Test
                 {
                     var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
                     deleteCommand.StackName = command.StackName;
+                    deleteCommand.Region = "us-east-1";
                     await deleteCommand.ExecuteAsync();
                 }
             }

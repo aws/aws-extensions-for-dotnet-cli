@@ -91,8 +91,13 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// True if the field should contain code like a Lambda package bundle.
         /// </summary>
         bool IsCode { get; }
-        
-        
+
+        /// <summary>
+        /// True if the field points to an ImageUri.
+        /// </summary>
+        bool IsImageUri { get; }
+
+
         /// <summary>
         /// Reference back to the containing updatable resource.
         /// </summary>

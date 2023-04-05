@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace Amazon.Lambda.Tools.TemplateProcessor
@@ -140,13 +141,44 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                     {
                         return false;
                     }
-                    if(!string.IsNullOrEmpty(this._resource.DataSource.GetValue("Code", "ZipFile")))
+                    if (!string.IsNullOrEmpty(this._resource.DataSource.GetValue("Code", "ZipFile")))
                     {
                         // The template contains embedded code.
                         return false;
-                    }                     
+                    }
+                    else
+                    {
+                        string localPath = GetLocalPath();
 
-                    return true;
+                        string tempLocalPath = this._resource.DataSource.GetValueFromResource(LambdaConstants.CF_SERVERLESS_METADATA, LambdaConstants.CF_SERVERLESS_DOCKERCONTEXT);
+                        if (string.IsNullOrEmpty(tempLocalPath))
+                        {
+                            tempLocalPath = this._resource.DataSource.GetValue(LambdaConstants.CF_LAMBDA_IMAGEURI);
+                            if (localPath == tempLocalPath && IsECRImage(localPath))
+                            {
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    }
+                }
+            }
+
+            public bool IsImageUri
+            {
+                get
+                {
+                    string localPath = GetLocalPath();
+
+                    string tempLocalPath = this._resource.DataSource.GetValueFromResource(LambdaConstants.CF_SERVERLESS_METADATA, LambdaConstants.CF_SERVERLESS_DOCKERCONTEXT);
+                    if (string.IsNullOrEmpty(tempLocalPath))
+                    {
+                        tempLocalPath = this._resource.DataSource.GetValue(LambdaConstants.CF_LAMBDA_IMAGEURI);
+                        return (localPath == tempLocalPath && IsECRImage(localPath));
+                    }
+
+                    return false;
                 }
             }
 
@@ -178,6 +210,11 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             public Dictionary<string, string> GetMetadataDockerBuildArgs()
             {
                 return this.DataSource.GetValueDictionaryFromResource("Metadata", "DockerBuildArgs");
+            }
+
+            private bool IsECRImage(string path)
+            {
+                return (!string.IsNullOrEmpty(path) && path.Contains("dkr.ecr") && Regex.Match(path.Split('.')[0], @"^\d{12}$").Success);
             }
         }
     }

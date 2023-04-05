@@ -1,14 +1,16 @@
-﻿using Amazon.Lambda.Tools.Commands;
-using System;
+﻿using System;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
+using Amazon.CloudFormation;
+using Amazon.CloudFormation.Model;
+using Amazon.Common.DotNetCli.Tools.Commands;
+using Amazon.Lambda.Tools.Commands;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
-using Newtonsoft.Json;
-
 using static Amazon.Lambda.Tools.Integ.Tests.TestConstants;
-using Newtonsoft.Json.Linq;
 
 namespace Amazon.Lambda.Tools.Integ.Tests
 {
@@ -176,6 +178,214 @@ namespace Amazon.Lambda.Tools.Integ.Tests
             Assert.True(created);
             Assert.Contains("--build-arg PROJECT_PATH=/src/path-to/project", toolLogger.Buffer);
             Assert.Contains("--build-arg PROJECT_FILE=project.csproj", toolLogger.Buffer);
+        }
+
+        [Fact]
+        public async Task TestDeployServerlessECRImageUriNoMetadataYamlTemplate()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+            var toolLogger = new TestToolLogger(_testOutputHelper);
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/ImageBasedProjects/TestSimpleImageProject");
+
+            var pushImageCommand = new PushDockerImageCommand(toolLogger, fullPath, new string[0])
+            {
+                DisableInteractive = true,
+                Region = TEST_REGION,
+                WorkingDirectory = fullPath,
+                SkipPushToECR = false,
+
+                PushDockerImageProperties = new BasePushDockerImageCommand<LambdaToolsDefaults>.PushDockerImagePropertyContainer
+                {
+                    DockerImageTag = $"{TEST_ECR_REPOSITORY}:deployserverlessimageurinometadata",
+                }
+            };
+
+            var pushImageResult = await pushImageCommand.ExecuteAsync();
+            Assert.Contains("Pushing image to ECR repository", toolLogger.Buffer);
+            Assert.Contains($"{TEST_ECR_REPOSITORY}:deployserverlessimageurinometadata Push Complete.", toolLogger.Buffer);
+
+            string functionName = $"HelloWorldFunction{DateTime.Now.Ticks}";
+            string yamlTemplate = @$"
+AWSTemplateFormatVersion: 2010-09-09
+Transform: 'AWS::Serverless-2016-10-31'
+Description: An AWS Serverless Application.
+Resources:
+  {functionName}:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: {functionName}
+      MemorySize: 256
+      Timeout: 30
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      PackageType: Image
+      ImageUri: {pushImageCommand.PushedImageUri}
+      ImageConfig:
+        Command: ['TestSimpleImageProject::TestSimpleImageProject.Function::FunctionHandler']
+Outputs: {{}}
+            ";
+            var tempFileName = Path.GetTempFileName();
+            File.WriteAllText(tempFileName, yamlTemplate);
+            var deployServerlessCommand = new DeployServerlessCommand(toolLogger, fullPath, new string[] { "--template", tempFileName });
+            deployServerlessCommand.DisableInteractive = true;
+            deployServerlessCommand.Region = TEST_REGION;
+            deployServerlessCommand.Configuration = "Release";
+            deployServerlessCommand.StackName = functionName;
+            deployServerlessCommand.S3Bucket = this._testFixture.Bucket;
+            deployServerlessCommand.WaitForStackToComplete = true;
+
+            var created = false;
+            try
+            {
+                created = await deployServerlessCommand.ExecuteAsync();
+                Assert.True(created);
+                using (var cfClient = new AmazonCloudFormationClient(RegionEndpoint.GetBySystemName(TEST_REGION)))
+                {
+                    var describeResponse = await cfClient.DescribeStacksAsync(new DescribeStacksRequest
+                    {
+                        StackName = deployServerlessCommand.StackName
+                    });
+
+                    Assert.Equal(StackStatus.CREATE_COMPLETE, describeResponse.Stacks[0].StackStatus);
+                }
+
+                toolLogger.ClearBuffer();
+                var invokeCommand = new InvokeFunctionCommand(toolLogger, fullPath, new string[0]);
+                invokeCommand.FunctionName = functionName;
+                invokeCommand.Payload = "hello world";
+                invokeCommand.Region = TEST_REGION;
+
+                await invokeCommand.ExecuteAsync();
+                Assert.Contains("HELLO WORLD", toolLogger.Buffer);
+            }
+            finally
+            {
+                if (created)
+                {
+                    try
+                    {
+                        var deleteCommand = new DeleteServerlessCommand(toolLogger, fullPath, new string[0]);
+                        deleteCommand.StackName = deployServerlessCommand.StackName;
+                        deleteCommand.Region = TEST_REGION;
+                        await deleteCommand.ExecuteAsync();
+                    }
+                    catch
+                    {
+                        // Bury exception because we don't want to lose any exceptions during the deploy stage.
+                    }
+                }
+
+                File.Delete(tempFileName);
+            }
+        }
+
+        [Fact]
+        public async Task TestDeployServerlessECRImageUriNoMetadataJsonTemplate()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+            var toolLogger = new TestToolLogger(_testOutputHelper);
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/ImageBasedProjects/TestSimpleImageProject");
+
+            var pushImageCommand = new PushDockerImageCommand(toolLogger, fullPath, new string[0])
+            {
+                DisableInteractive = true,
+                Region = TEST_REGION,
+                WorkingDirectory = fullPath,
+                SkipPushToECR = false,
+
+                PushDockerImageProperties = new BasePushDockerImageCommand<LambdaToolsDefaults>.PushDockerImagePropertyContainer
+                {
+                    DockerImageTag = $"{TEST_ECR_REPOSITORY}:deployserverlessimageurinometadata",
+                }
+            };
+
+            var pushImageResult = await pushImageCommand.ExecuteAsync();
+            Assert.Contains("Pushing image to ECR repository", toolLogger.Buffer);
+            Assert.Contains($"{TEST_ECR_REPOSITORY}:deployserverlessimageurinometadata Push Complete.", toolLogger.Buffer);
+
+            string functionName = $"HelloWorldFunction{DateTime.Now.Ticks}";
+            string jsonTemplate = @$"
+{{
+    ""AWSTemplateFormatVersion"": ""2010-09-09"",
+    ""Transform"": ""AWS::Serverless-2016-10-31"",
+    ""Description"": ""An AWS Serverless Application."",
+    ""Resources"": {{
+        ""{functionName}"": {{
+            ""Type"": ""AWS::Serverless::Function"",
+            ""Properties"": {{
+                ""FunctionName"": ""{functionName}"",
+                ""MemorySize"": 256,
+                ""Timeout"": 30,
+                ""Policies"": [
+                    ""AWSLambdaBasicExecutionRole""
+                ],
+                ""PackageType"": ""Image"",
+                ""ImageUri"": ""{pushImageCommand.PushedImageUri}"",
+                ""ImageConfig"": {{
+                    ""Command"": [
+                        ""TestSimpleImageProject::TestSimpleImageProject.Function::FunctionHandler""
+                    ]
+                }}
+            }}
+        }}
+    }},
+    ""Outputs"": {{}}
+}}
+            ";
+            
+            var tempFileName = Path.GetTempFileName();
+            File.WriteAllText(tempFileName, jsonTemplate);
+            var deployServerlessCommand = new DeployServerlessCommand(toolLogger, fullPath, new string[] { "--template", tempFileName });
+            deployServerlessCommand.DisableInteractive = true;
+            deployServerlessCommand.Region = TEST_REGION;
+            deployServerlessCommand.Configuration = "Release";
+            deployServerlessCommand.StackName = functionName;
+            deployServerlessCommand.S3Bucket = this._testFixture.Bucket;
+            deployServerlessCommand.WaitForStackToComplete = true;
+
+            var created = false;
+            try
+            {
+                created = await deployServerlessCommand.ExecuteAsync();
+                Assert.True(created);
+                using (var cfClient = new AmazonCloudFormationClient(RegionEndpoint.GetBySystemName(TEST_REGION)))
+                {
+                    var describeResponse = await cfClient.DescribeStacksAsync(new DescribeStacksRequest
+                    {
+                        StackName = deployServerlessCommand.StackName
+                    });
+
+                    Assert.Equal(StackStatus.CREATE_COMPLETE, describeResponse.Stacks[0].StackStatus);
+                }
+
+                toolLogger.ClearBuffer();
+                var invokeCommand = new InvokeFunctionCommand(toolLogger, fullPath, new string[0]);
+                invokeCommand.FunctionName = functionName;
+                invokeCommand.Payload = "hello world";
+                invokeCommand.Region = TEST_REGION;
+
+                await invokeCommand.ExecuteAsync();
+                Assert.Contains("HELLO WORLD", toolLogger.Buffer);
+            }
+            finally
+            {
+                if (created)
+                {
+                    try
+                    {
+                        var deleteCommand = new DeleteServerlessCommand(toolLogger, fullPath, new string[0]);
+                        deleteCommand.StackName = deployServerlessCommand.StackName;
+                        deleteCommand.Region = TEST_REGION;
+                        await deleteCommand.ExecuteAsync();
+                    }
+                    catch
+                    {
+                        // Bury exception because we don't want to lose any exceptions during the deploy stage.
+                    }
+                }
+
+                File.Delete(tempFileName);
+            }
         }
     }
 }
