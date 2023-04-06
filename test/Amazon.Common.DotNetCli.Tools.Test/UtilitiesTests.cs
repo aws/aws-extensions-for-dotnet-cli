@@ -83,5 +83,21 @@ namespace Amazon.Common.DotNetCli.Tools.Test
 
             Assert.Equal(expected, result);
         }
+
+        [Theory]
+        [InlineData("../../../../../testapps/TestFunction", null, false)]
+        [InlineData("../../../../../testapps/TestFunction", "", false)]
+        [InlineData("../../../../../testapps/TestFunction", "--self-contained=true", true)]
+        [InlineData("../../../../../testapps/TestFunction", "--self-contained=false", true)]
+        [InlineData("../../../../../testapps/TestFunction", "--self-contained true", true)]
+        [InlineData("../../../../../testapps/TestFunction", "--self-contained false", true)]
+        [InlineData("../../../../../testapps/TestNativeAotSingleProject", null, true)]
+        [InlineData("../../../../../testapps/TestNativeAotSingleProject", "--self-contained false", true)]
+        public void TestHasExplicitSelfContainedFlag(string projectLocation, string msBuildParameters, bool expected)
+        {
+            var result = Utilities.HasExplicitSelfContainedFlag(projectLocation, msBuildParameters);
+
+            Assert.Equal(expected, result);
+        }
     }
 }

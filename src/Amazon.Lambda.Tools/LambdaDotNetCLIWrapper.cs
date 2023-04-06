@@ -318,12 +318,10 @@ namespace Amazon.Lambda.Tools
                         arguments.Append($" --runtime {LambdaUtilities.DetermineRuntimeParameter(targetFramework, architecture)}");
                     }
 
-                    if (msbuildParameters == null ||
-                        msbuildParameters.IndexOf("--self-contained", StringComparison.InvariantCultureIgnoreCase) == -1)
+                    if (!Utilities.HasExplicitSelfContainedFlag(projectLocation, msbuildParameters))
                     {
                         arguments.Append($" --self-contained {isNativeAot} ");
                     }
-
                 });
 
                 // This is here to not change existing behavior for the 2.0 and 2.1 runtimes. For those runtimes if
