@@ -12,6 +12,7 @@ using System.Threading;
 using Amazon.S3.Model;
 using Xunit.Abstractions;
 using System.Linq;
+using static Amazon.Lambda.Tools.TemplateProcessor.UpdatableResource;
 
 namespace Amazon.Lambda.Tools.Test
 {
@@ -184,6 +185,18 @@ namespace Amazon.Lambda.Tools.Test
 
             var containerImageFile = LambdaUtilities.GetDefaultBuildImage(targetFramework, architecture, new TestToolLogger(_testOutputHelper));
             Assert.Equal(expectedValue, containerImageFile);
+        }
+
+        [Theory]
+        [InlineData(null, false)]
+        [InlineData("somelocalpath", false)]
+        [InlineData("123456789012", false)]
+        [InlineData("139480602983.dkr.ecr.us-east-2.amazonaws.com/test-deploy-serverless-image-uri", true)]
+        [InlineData("139480602.dkr.ecr.us-east-2.amazonaws.com/test-deploy-serverless-image-uri", false)]
+        public void TestIsECRImage(string path, bool expectedValue)
+        {
+            bool isECRImage = UpdatableResourceField.IsECRImage(path);
+            Assert.Equal(expectedValue, isECRImage);
         }
 
         [Theory]

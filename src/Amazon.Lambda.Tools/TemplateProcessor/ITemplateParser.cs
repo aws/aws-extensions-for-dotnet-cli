@@ -93,9 +93,9 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         bool IsCode { get; }
 
         /// <summary>
-        /// True if the field points to an ImageUri.
+        /// True if the field points to an Image already pushed in ECR.
         /// </summary>
-        bool IsImageUri { get; }
+        bool IsImagePushed { get; }
 
 
         /// <summary>

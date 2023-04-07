@@ -142,13 +142,13 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             UpdateResourceResults results;
             var localPath = field.GetLocalPath();
 
-            if (!field.IsImageUri && !Path.IsPathRooted(localPath))
+            if (!field.IsImagePushed && !Path.IsPathRooted(localPath))
                 localPath = Path.Combine(templateDirectory, localPath);
 
             bool deleteArchiveAfterUploaded = false;
 
             // If ImageUri needs to be processed.
-            if (field.IsImageUri)
+            if (field.IsImagePushed)
             {
                 results = new UpdateResourceResults { ImageUri = localPath };
             }
