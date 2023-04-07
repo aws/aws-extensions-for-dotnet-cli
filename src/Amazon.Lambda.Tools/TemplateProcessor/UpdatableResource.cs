@@ -148,16 +148,24 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                     }
                     else
                     {
-                        string localPath = GetLocalPath();
-
-                        string tempLocalPath = this._resource.DataSource.GetValueFromResource(LambdaConstants.CF_SERVERLESS_METADATA, LambdaConstants.CF_SERVERLESS_DOCKERCONTEXT);
-                        if (string.IsNullOrEmpty(tempLocalPath))
+                        string localPath = this._resource.DataSource.GetValueFromResource(LambdaConstants.CF_SERVERLESS_METADATA, LambdaConstants.CF_SERVERLESS_DOCKERCONTEXT);
+                        // Pointing to already pushed image, no package needs to be done.
+                        if (IsECRImage(localPath))
                         {
-                            tempLocalPath = this._resource.DataSource.GetValue(LambdaConstants.CF_LAMBDA_IMAGEURI);
-                            if (localPath == tempLocalPath && IsECRImage(localPath))
-                            {
-                                return false;
-                            }
+                            return false;
+                        }
+                        // Metadata points to local path that needs to be packaged up return true for code.
+                        else if (!string.IsNullOrEmpty(localPath))
+                        {
+                            return true;
+                        }
+
+                        // If no Docker Metadata was set fallback to looking for a local path in the resource's ImageUri property.
+                        localPath = this._resource.DataSource.GetValue(LambdaConstants.CF_LAMBDA_IMAGEURI);
+                        // Pointing to already pushed image, no package needs to be done.
+                        if (IsECRImage(localPath))
+                        {
+                            return false;
                         }
 
                         return true;
@@ -165,19 +173,30 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 }
             }
 
-            public bool IsImageUri
+            public bool IsImagePushed
             {
                 get
                 {
-                    string localPath = GetLocalPath();
-
-                    string tempLocalPath = this._resource.DataSource.GetValueFromResource(LambdaConstants.CF_SERVERLESS_METADATA, LambdaConstants.CF_SERVERLESS_DOCKERCONTEXT);
-                    if (string.IsNullOrEmpty(tempLocalPath))
+                    string localPath = this._resource.DataSource.GetValueFromResource(LambdaConstants.CF_SERVERLESS_METADATA, LambdaConstants.CF_SERVERLESS_DOCKERCONTEXT);
+                    // Pointing to already pushed image, no package needs to be done.
+                    if (IsECRImage(localPath))
                     {
-                        tempLocalPath = this._resource.DataSource.GetValue(LambdaConstants.CF_LAMBDA_IMAGEURI);
-                        return (localPath == tempLocalPath && IsECRImage(localPath));
+                        return true;
+                    }
+                    // Metadata points to local path that needs to be packaged up return true for code.
+                    else if (!string.IsNullOrEmpty(localPath))
+                    {
+                        return false;
                     }
 
+                    // If no Docker Metadata was set fallback to looking for a local path in the resource's ImageUri property.
+                    localPath = this._resource.DataSource.GetValue(LambdaConstants.CF_LAMBDA_IMAGEURI);
+                    // Pointing to already pushed image, no package needs to be done.
+                    if (IsECRImage(localPath))
+                    {
+                        return true;
+                    }
+                    
                     return false;
                 }
             }
@@ -212,7 +231,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 return this.DataSource.GetValueDictionaryFromResource("Metadata", "DockerBuildArgs");
             }
 
-            private bool IsECRImage(string path)
+            public static bool IsECRImage(string path)
             {
                 return (!string.IsNullOrEmpty(path) && path.Contains("dkr.ecr") && Regex.Match(path.Split('.')[0], @"^\d{12}$").Success);
             }
