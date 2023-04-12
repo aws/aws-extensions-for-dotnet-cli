@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace Amazon.Lambda.Tools.TemplateProcessor
@@ -140,13 +141,63 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                     {
                         return false;
                     }
-                    if(!string.IsNullOrEmpty(this._resource.DataSource.GetValue("Code", "ZipFile")))
+                    if (!string.IsNullOrEmpty(this._resource.DataSource.GetValue("Code", "ZipFile")))
                     {
                         // The template contains embedded code.
                         return false;
-                    }                     
+                    }
+                    else
+                    {
+                        string localPath = this._resource.DataSource.GetValueFromResource(LambdaConstants.CF_SERVERLESS_METADATA, LambdaConstants.CF_SERVERLESS_DOCKERCONTEXT);
+                        // Pointing to already pushed image, no package needs to be done.
+                        if (IsECRImage(localPath))
+                        {
+                            return false;
+                        }
+                        // Metadata points to local path that needs to be packaged up return true for code.
+                        else if (!string.IsNullOrEmpty(localPath))
+                        {
+                            return true;
+                        }
 
-                    return true;
+                        // If no Docker Metadata was set fallback to looking for a local path in the resource's ImageUri property.
+                        localPath = this._resource.DataSource.GetValue(LambdaConstants.CF_LAMBDA_IMAGEURI);
+                        // Pointing to already pushed image, no package needs to be done.
+                        if (IsECRImage(localPath))
+                        {
+                            return false;
+                        }
+
+                        return true;
+                    }
+                }
+            }
+
+            public bool IsImagePushed
+            {
+                get
+                {
+                    string localPath = this._resource.DataSource.GetValueFromResource(LambdaConstants.CF_SERVERLESS_METADATA, LambdaConstants.CF_SERVERLESS_DOCKERCONTEXT);
+                    // Pointing to already pushed image, no package needs to be done.
+                    if (IsECRImage(localPath))
+                    {
+                        return true;
+                    }
+                    // Metadata points to local path that needs to be packaged up return true for code.
+                    else if (!string.IsNullOrEmpty(localPath))
+                    {
+                        return false;
+                    }
+
+                    // If no Docker Metadata was set fallback to looking for a local path in the resource's ImageUri property.
+                    localPath = this._resource.DataSource.GetValue(LambdaConstants.CF_LAMBDA_IMAGEURI);
+                    // Pointing to already pushed image, no package needs to be done.
+                    if (IsECRImage(localPath))
+                    {
+                        return true;
+                    }
+                    
+                    return false;
                 }
             }
 
@@ -178,6 +229,11 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             public Dictionary<string, string> GetMetadataDockerBuildArgs()
             {
                 return this.DataSource.GetValueDictionaryFromResource("Metadata", "DockerBuildArgs");
+            }
+
+            public static bool IsECRImage(string path)
+            {
+                return (!string.IsNullOrEmpty(path) && path.Contains("dkr.ecr") && Regex.Match(path.Split('.')[0], @"^\d{12}$").Success);
             }
         }
     }

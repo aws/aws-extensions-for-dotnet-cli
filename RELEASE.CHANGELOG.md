@@ -1,3 +1,8 @@
+### Release 2023-04-11
+* **Amazon.Lambda.Tools (5.6.5)**
+  * Allow self contained in csproj.
+  * Fixed an issue where lambda deploy-serverless command tries to build image when ImageUri is set in template without any Metadata.
+
 ### Release 2023-03-15
 * **Amazon.Lambda.Tools (5.6.4)**
   * Fixed an issue which caused upgrading from an End-of-Life .NET version to a supported version to fail.

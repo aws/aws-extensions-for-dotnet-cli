@@ -91,8 +91,13 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// True if the field should contain code like a Lambda package bundle.
         /// </summary>
         bool IsCode { get; }
-        
-        
+
+        /// <summary>
+        /// True if the field points to an Image already pushed in ECR.
+        /// </summary>
+        bool IsImagePushed { get; }
+
+
         /// <summary>
         /// Reference back to the containing updatable resource.
         /// </summary>
