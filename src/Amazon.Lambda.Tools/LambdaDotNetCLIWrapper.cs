@@ -278,13 +278,19 @@ namespace Amazon.Lambda.Tools
             string msbuildParameters, 
             string architecture, 
             IList<string> publishManifests,
-            bool isNativeAot = false)
+            bool isNativeAot = false,
+            string projectLocationInsideContainer = null)
         {
             StringBuilder arguments = new StringBuilder("publish");
-            if (!string.IsNullOrEmpty(projectLocation))
+            if (!string.IsNullOrEmpty(projectLocationInsideContainer))
+            {
+                arguments.Append($" \"{projectLocationInsideContainer}\"");
+            }
+            else if (!string.IsNullOrEmpty(projectLocation))
             {
                 arguments.Append($" \"{projectLocation}\"");
             }
+
             if (!string.IsNullOrEmpty(outputLocation))
             {
                 arguments.Append($" --output \"{outputLocation}\"");
