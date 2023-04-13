@@ -1,3 +1,7 @@
+### Release 2023-04-13
+* **Amazon.Lambda.Tools (5.6.6)**
+  * Fixed issue reading self contained property from project file.
+  
 ### Release 2023-04-11
 * **Amazon.Lambda.Tools (5.6.5)**
   * Allow self contained in csproj.
