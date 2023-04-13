@@ -150,7 +150,7 @@ namespace Amazon.Lambda.Tools
                 // This value is the path inside of the container that will map directly to the out parameter "publishLocation" on the host machine
                 string relativeContainerPathToPublishLocation = Utilities.DeterminePublishLocation(null, relativeContainerPathToProjectLocation, configuration, targetFramework);
 
-                var publishCommand = "dotnet " + cli.GetPublishArguments(relativeContainerPathToProjectLocation, relativeContainerPathToPublishLocation, targetFramework, configuration, msbuildParameters, architecture, publishManifestPath, isNativeAot);
+                var publishCommand = "dotnet " + cli.GetPublishArguments(projectLocation, relativeContainerPathToPublishLocation, targetFramework, configuration, msbuildParameters, architecture, publishManifestPath, isNativeAot, relativeContainerPathToProjectLocation);
 
                 var runResult = dockerCli.Run(containerImageForBuild, containerName, publishCommand);
                 if (runResult != 0)
