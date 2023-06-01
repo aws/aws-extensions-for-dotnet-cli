@@ -9,7 +9,7 @@
       "Type" : "AWS::Serverless::Function",
       "Properties": {
         "Handler": "CurrentDirectoryTest::CurrentDirectoryTest.Functions::Get",
-        "Runtime": "dotnetcore3.1",
+        "Runtime": "dotnet6",
         "CodeUri": "",
         "MemorySize": 256,
         "Timeout": 30,
@@ -31,7 +31,7 @@
       "Type" : "AWS::Serverless::Function",
       "Properties": {
         "Handler": "CurrentDirectoryTest::CurrentDirectoryTest.Functions::Get2",
-        "Runtime": "dotnetcore3.1",
+        "Runtime": "dotnet6",
         "CodeUri": "",
         "MemorySize": 256,
         "Timeout": 30,
@@ -53,7 +53,7 @@
       "Type" : "AWS::Serverless::Function",
       "Properties": {
         "Handler": "SiblingProjectTest::SiblingProjectTest.Function::Get",
-        "Runtime": "dotnetcore3.1",
+        "Runtime": "dotnet6",
         "CodeUri": "../SiblingProjectTest",
         "MemorySize": 256,
         "Timeout": 30,
@@ -75,7 +75,7 @@
       "Type" : "AWS::Serverless::Function",
       "Properties": {
         "Handler": "app.handler",
-        "Runtime": "nodejs12.x",
+        "Runtime": "nodejs18.x",
         "CodeUri": "../SingleFileNodeFunction/app.js",
         "MemorySize": 256,
         "Timeout": 30,
@@ -97,7 +97,7 @@
       "Type" : "AWS::Serverless::Function",
       "Properties": {
         "Handler": "app.handler",
-        "Runtime": "nodejs12.x",
+        "Runtime": "nodejs18.x",
         "CodeUri": "../DirectoryNodeFunction",
         "MemorySize": 256,
         "Timeout": 30,

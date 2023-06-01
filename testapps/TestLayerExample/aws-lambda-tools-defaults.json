@@ -11,7 +11,7 @@
   "profile":"default",
   "region" : "us-west-2",
   "configuration" : "Release",
-  "function-runtime":"dotnetcore3.1",
+  "function-runtime":"dotnet6",
   "function-memory-size" : 256,
   "function-timeout" : 30,
   "function-handler" : "TestLayerExample::TestLayerExample.Function::FunctionHandler"

@@ -1,10 +1,10 @@
-FROM public.ecr.aws/lambda/dotnet:5.0
+FROM public.ecr.aws/lambda/dotnet:6.0
 
 WORKDIR /var/task
 
 # This field should match where the .NET Lambda project built its output at. If this is being built as part of 
 # Amazon.Lambda.Tools this source in the copy command below should match the `--docker-host-build-output-dir` switch.
-COPY "bin/Release/net5.0/linux-x64/publish"  .
+COPY "bin/Release/net6.0/linux-x64/publish"  .
 
 # Defining the entry  point in the Lambda function is optional. If not set then the base image
 # will execute a shell script to determine the parameters for starting the .NET process.
