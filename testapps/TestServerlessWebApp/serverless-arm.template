@@ -10,7 +10,7 @@
       "Properties": {
         "Handler": "TestServerlessWebApp::TestServerlessWebApp.LambdaFunction::FunctionHandlerAsync",
         "Architectures" : ["arm64"],
-        "Runtime": "dotnetcore3.1",
+        "Runtime": "dotnet6",
         "CodeUri": "",
         "Description": "Default function",
         "MemorySize": 256,

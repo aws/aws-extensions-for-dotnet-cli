@@ -172,7 +172,7 @@ namespace Amazon.Lambda.Tools.Test
         [InlineData("net6.0", LambdaConstants.ARCHITECTURE_ARM64, "public.ecr.aws/sam/build-dotnet6:latest-arm64")]
         [InlineData("net7.0", LambdaConstants.ARCHITECTURE_X86_64, "public.ecr.aws/sam/build-dotnet7:latest-x86_64")]
         [InlineData("net7.0", " ", "public.ecr.aws/sam/build-dotnet7:latest-x86_64")]
-        [InlineData("net7.0", LambdaConstants.ARCHITECTURE_ARM64, "throws")]
+        [InlineData("net7.0", LambdaConstants.ARCHITECTURE_ARM64, "public.ecr.aws/sam/build-dotnet7:latest-arm64")]
         [InlineData(null, LambdaConstants.ARCHITECTURE_X86_64, "throws")]
         [InlineData(null, LambdaConstants.ARCHITECTURE_ARM64, "throws")]
         public void GetDefaultBuildImage(string targetFramework, string architecture, string expectedValue)

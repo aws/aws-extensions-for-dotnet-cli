@@ -98,7 +98,7 @@ Resources :
     Type: AWS::Serverless::Function
     Properties: 
       Handler: WildRydes::Function.Functions::Post
-      Runtime: dotnetcore3.1
+      Runtime: dotnet6
       CodeUri: 
       MemorySize: 256
       Timeout: 30

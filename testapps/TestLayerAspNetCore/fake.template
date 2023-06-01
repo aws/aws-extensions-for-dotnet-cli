@@ -12,7 +12,7 @@
 				"Type" : "AWS::Serverless::Function",
 				"Properties": {
 				"Handler": "TestLayerAspNetCore::TestLayerAspNetCore.LambdaEntryPoint::FunctionHandlerAsync",
-				"Runtime": "dotnetcore3.1",
+				"Runtime": "dotnet6",
 				"CodeUri": "",
 				"MemorySize": 256,
 				"Timeout": 30,
