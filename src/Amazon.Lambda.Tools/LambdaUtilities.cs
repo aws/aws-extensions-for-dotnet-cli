@@ -118,10 +118,8 @@ namespace Amazon.Lambda.Tools
 
             switch (targetFramework?.ToLower())
             {
-                case TargetFrameworkMonikers.net70:
-                    return architecture == LambdaConstants.ARCHITECTURE_ARM64 ?
-                        throw new LambdaToolsException(".NET 7 is not supported on ARM Amazon Linux 2. See https://github.com/dotnet/runtime/issues/76195", LambdaToolsException.LambdaErrorCode.Net7OnArmNotSupported)
-                        : $"public.ecr.aws/sam/build-dotnet7:latest-{architecture}";
+                case TargetFrameworkMonikers.net70:                    
+                    return $"public.ecr.aws/sam/build-dotnet7:latest-{architecture}";
                 case TargetFrameworkMonikers.net60:
                     return $"public.ecr.aws/sam/build-dotnet6:latest-{architecture}";
                 case TargetFrameworkMonikers.netcoreapp31:
