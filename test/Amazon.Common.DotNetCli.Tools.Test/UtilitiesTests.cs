@@ -10,8 +10,8 @@ namespace Amazon.Common.DotNetCli.Tools.Test
     public class UtilitiesTests
     {
         [Theory]
-        [InlineData("../../../../../testapps/TestFunction", "netcoreapp3.1")]
-        [InlineData("../../../../../testapps/ServerlessWithYamlFunction", "netcoreapp3.1")]
+        [InlineData("../../../../../testapps/TestFunction", "net6.0")]
+        [InlineData("../../../../../testapps/ServerlessWithYamlFunction", "net6.0")]
         [InlineData("../../../../../testapps/TestBeanstalkWebApp", "netcoreapp3.1")]
         public void CheckFramework(string projectPath, string expectedFramework)
         {
