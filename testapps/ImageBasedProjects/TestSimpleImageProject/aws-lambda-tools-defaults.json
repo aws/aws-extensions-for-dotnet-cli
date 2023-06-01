@@ -12,7 +12,6 @@
   "function-timeout": 30,
   "image-command": "TestSimpleImageProject::TestSimpleImageProject.Function::FunctionHandler",
   "image-tag": "",
-  "docker-host-build-output-dir": "./bin/Release/net5.0/linux-x64/publish",
-  "configuration": "Release",
-  "framework": "net5.0"
+  "docker-host-build-output-dir": "./bin/Release/net6.0/linux-x64/publish",
+  "configuration": "Release"
 }
