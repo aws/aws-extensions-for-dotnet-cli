@@ -1,3 +1,7 @@
+### Release 2023-06-02 (5.7.0)
+* **Amazon.Lambda.Tools (5.7.0)**
+  * Enabled support for using container builds for .NET 7 ARM. This includes support for producing .NET 7 ARM AOT Lambda functions.
+
 ### Release 2023-04-13
 * **Amazon.Lambda.Tools (5.6.6)**
   * Fixed issue reading self contained property from project file.
