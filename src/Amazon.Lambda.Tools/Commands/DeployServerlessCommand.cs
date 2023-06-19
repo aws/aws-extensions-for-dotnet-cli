@@ -238,9 +238,7 @@ namespace Amazon.Lambda.Tools.Commands
             // All other states means the Stack is in an inconsistent state.
             else
             {
-                this.Logger.WriteLine($"The stack's current state of {existingStack.StackStatus} is invalid for updating");
-                return false;
-
+                throw new LambdaToolsException($"The stack's current state of {existingStack.StackStatus} is invalid for updating", LambdaToolsException.LambdaErrorCode.InvalidCloudFormationStackState);
             }
 
             CreateChangeSetResponse changeSetResponse;
@@ -337,8 +335,7 @@ namespace Amazon.Lambda.Tools.Commands
             }
 
             // The change set can take a few seconds to be reviewed and be ready to be executed.
-            if (!await WaitForChangeSetBeingAvailableAsync(changeSetResponse.Id))
-                return false;
+            await WaitForChangeSetBeingAvailableAsync(changeSetResponse.Id);
 
             var executeChangeSetRequest = new ExecuteChangeSetRequest
             {
@@ -377,9 +374,7 @@ namespace Amazon.Lambda.Tools.Commands
                 }
                 else
                 {
-
-                    this.Logger.WriteLine($"Stack update failed with status: {updatedStack.StackStatus} ({updatedStack.StackStatusReason})");
-                    return false;
+                    throw new LambdaToolsException($"Stack update failed with status: {updatedStack.StackStatus} ({updatedStack.StackStatusReason})", LambdaToolsException.LambdaErrorCode.FailedLambdaCreateOrUpdate);
                 }
             }
 
@@ -529,7 +524,7 @@ namespace Amazon.Lambda.Tools.Commands
             }
         }
 
-        private async Task<bool> WaitForChangeSetBeingAvailableAsync(string changeSetId)
+        private async Task WaitForChangeSetBeingAvailableAsync(string changeSetId)
         {
             try
             {
@@ -548,11 +543,8 @@ namespace Amazon.Lambda.Tools.Commands
 
                 if (response.Status == ChangeSetStatus.FAILED)
                 {
-                    this.Logger.WriteLine($"Failed to create CloudFormation change set: {response.StatusReason}");
-                    return false;
+                    throw new LambdaToolsException($"Failed to create CloudFormation change set: {response.StatusReason}", LambdaToolsException.LambdaErrorCode.FailedToCreateChangeSet);
                 }
-
-                return true;
             }
             catch (Exception e)
             {
