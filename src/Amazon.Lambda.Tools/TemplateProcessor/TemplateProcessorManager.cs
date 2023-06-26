@@ -274,7 +274,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                     if (command.LastToolsException != null)
                         message += $": {command.LastToolsException.Message}";
 
-                    throw new LambdaToolsException(message, ToolsException.CommonErrorCode.DotnetPublishFailed);
+                    throw new LambdaToolsException(message, ToolsException.CommonErrorCode.DotnetPublishFailed, command.LastToolsException);
                 }
 
                 var results = new UpdateResourceResults() { ZipArchivePath = outputPackage };

@@ -23,6 +23,7 @@ namespace Amazon.Common.DotNetCli.Tools
             InvalidCredentialConfiguration,
 
             DotnetPublishFailed,
+            ShellOutToDotnetPublishFailed, // Return for the specific shell out to dotnet publish
 
             DockerBuildFailed,
             FailedToFindSolutionDirectory,

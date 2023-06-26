@@ -21,6 +21,9 @@ namespace Amazon.Lambda.Tools
             CloudFormationDescribeChangeSet,
             CloudFormationDescribeStack,
             CloudFormationDescribeStackEvents,
+            InvalidCloudFormationStackState,
+            FailedToCreateChangeSet,
+            FailedLambdaCreateOrUpdate,
 
             InvalidPackage,
             FrameworkNewerThanRuntime,
@@ -81,6 +84,8 @@ namespace Amazon.Lambda.Tools
             UnsupportedDefaultContainerBuild,
             NativeAotOutputTypeError,
             MismatchedNativeAotArchitectures,
+            ContainerBuildFailed,
+            FailedToPushImage
         }
 
         public LambdaToolsException(string message, LambdaErrorCode code) : base(message, code.ToString(), null)
@@ -92,6 +97,10 @@ namespace Amazon.Lambda.Tools
         }
 
         public LambdaToolsException(string message, LambdaErrorCode code, Exception e) : base(message, code.ToString(), e)
+        {
+        }
+
+        public LambdaToolsException(string message, CommonErrorCode code, Exception e) : base(message, code.ToString(), e)
         {
         }
     }

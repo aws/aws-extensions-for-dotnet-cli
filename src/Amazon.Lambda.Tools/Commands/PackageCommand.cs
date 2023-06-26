@@ -161,10 +161,10 @@ namespace Amazon.Lambda.Tools.Commands
 
                 if (!pushResults.Success)
                 {
-                    if (pushResults.LastToolsException != null)
-                        throw pushResults.LastToolsException;
+                    if (pushResults.LastException != null)
+                        throw pushResults.LastException;
 
-                    return false;
+                    throw new LambdaToolsException("Failed to push container image to ECR.", LambdaToolsException.LambdaErrorCode.FailedToPushImage);
                 }
             }
             else
@@ -246,8 +246,7 @@ namespace Amazon.Lambda.Tools.Commands
                                                                      zipArchivePath: ref zipArchivePath);
                 if (!success)
                 {
-                    this.Logger.WriteLine("Failed to create application package");
-                    return false;
+                    throw new LambdaToolsException("Failed to create Lambda deployment bundle.", ToolsException.CommonErrorCode.DotnetPublishFailed);
                 }
 
 
@@ -298,7 +297,7 @@ namespace Amazon.Lambda.Tools.Commands
 
             var result = new PushLambdaImageResult();
             result.Success = await pushCommand.ExecuteAsync();
-            result.LastToolsException = pushCommand.LastToolsException;
+            result.LastException = pushCommand.LastException;
 
             if(result.Success)
             {

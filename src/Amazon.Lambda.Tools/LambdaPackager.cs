@@ -155,8 +155,7 @@ namespace Amazon.Lambda.Tools
                 var runResult = dockerCli.Run(containerImageForBuild, containerName, publishCommand);
                 if (runResult != 0)
                 {
-                    logger?.WriteLine($"ERROR: Container build returned {runResult}");
-                    return false;
+                    throw new LambdaToolsException($"ERROR: Container build returned {runResult}", LambdaToolsException.LambdaErrorCode.ContainerBuildFailed);
                 }
             }
             else
@@ -170,7 +169,7 @@ namespace Amazon.Lambda.Tools
                     architecture: architecture,
                     publishManifests: publishManifestPath) != 0)
                 {
-                    return false;
+                    throw new LambdaToolsException($"ERROR: The dotnet publish command return unsuccessful error code", LambdaToolsException.CommonErrorCode.ShellOutToDotnetPublishFailed);
                 }
             }
 

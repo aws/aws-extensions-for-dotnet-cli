@@ -8,7 +8,7 @@ namespace Amazon.Lambda.Tools.Commands
     public class PushLambdaImageResult
     {
         public bool Success { get; set; }
-        public ToolsException LastToolsException { get; set; }
+        public Exception LastException { get; set; }
         public string ImageUri { get; set; }
     }
 }

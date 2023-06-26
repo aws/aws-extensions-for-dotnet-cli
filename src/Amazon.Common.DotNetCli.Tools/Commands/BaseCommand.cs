@@ -21,7 +21,9 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
     public abstract class BaseCommand<TDefaultConfig> : ICommand
         where TDefaultConfig : DefaultConfigFile, new()
     {
-        public ToolsException LastToolsException { get; protected set; }
+        public ToolsException LastToolsException  => LastException as ToolsException;
+
+        public Exception LastException { get; private set; }
 
         public string[] OriginalCommandLineArguments { get; private set; }
 
@@ -58,13 +60,14 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             catch (ToolsException e)
             {
                 this.Logger?.WriteLine(e.Message);
-                this.LastToolsException = e;
+                this.LastException = e;
                 return false;
             }
             catch (Exception e)
             {
                 this.Logger?.WriteLine($"Unknown error executing command: {e.Message}");
                 this.Logger?.WriteLine(e.StackTrace);
+                this.LastException = e;
                 return false;
             }
  
