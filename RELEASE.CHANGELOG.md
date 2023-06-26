@@ -1,4 +1,8 @@
-### Release 2023-06-02 (5.7.0)
+### Release 2023-06-26
+* **Amazon.Lambda.Tools (5.7.1)**
+  * Improve error reporting back for AWS Toolkit for Visual Studio integration.
+
+### Release 2023-06-02
 * **Amazon.Lambda.Tools (5.7.0)**
   * Enabled support for using container builds for .NET 7 ARM. This includes support for producing .NET 7 ARM AOT Lambda functions.
 
