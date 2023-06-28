@@ -1,3 +1,7 @@
+### Release 2023-06-28
+* **Amazon.Lambda.Tools (5.7.2)**
+  * fix: ensure net6.0 runtimes are copied with the publish artifacts
+
 ### Release 2023-06-26
 * **Amazon.Lambda.Tools (5.7.1)**
   * Improve error reporting back for AWS Toolkit for Visual Studio integration.
