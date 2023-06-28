@@ -57,51 +57,53 @@ namespace Amazon.Common.DotNetCli.Tools
 
             var stdout = new StringBuilder();
             var stderr = new StringBuilder();
-            
-            using var proc = new Process();
-            proc.StartInfo = _info;
-            proc.EnableRaisingEvents = true;
-            proc.OutputDataReceived += (_, e) =>
-            {
-                if (! string.IsNullOrEmpty(e.Data)) stdout.Append(e.Data);
-            };
-            proc.ErrorDataReceived += (_, e) =>
-            {
-                if (!string.IsNullOrEmpty(e.Data)) stderr.Append(e.Data);
-            };
-            bool executed;
-            int? exitCode;
-            string output;
-            string error;
-            
-            if (proc.Start())
-            {
-                proc.BeginOutputReadLine();
-                proc.BeginErrorReadLine();
-                executed = proc.WaitForExit(timeoutInMilliseconds);
-                if (executed)
-                    proc.WaitForExit(); // this ensures STDOUT is completely captured
-                else
-                    stderr.Append($"{(stderr.Length > 0 ? "\n" : "")}Timeout waiting for process");
-                exitCode = proc.ExitCode;
-                output = stdout.ToString();
-                error = stderr.ToString();
-            }
-            else
-            {
-                executed = false;
-                exitCode = null;
-                output = "";
-                error = "Unable to launch process";
-            }
 
-            return new ProcessResults()
+            using (var proc = new Process())
             {
-                Executed = executed,
-                ExitCode = exitCode,
-                Output = output,
-                Error = error
-            };
+                proc.StartInfo = _info;
+                proc.EnableRaisingEvents = true;
+                proc.OutputDataReceived += (_, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data)) stdout.Append(e.Data);
+                };
+                proc.ErrorDataReceived += (_, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data)) stderr.Append(e.Data);
+                };
+                bool executed;
+                int? exitCode;
+                string output;
+                string error;
+
+                if (proc.Start())
+                {
+                    proc.BeginOutputReadLine();
+                    proc.BeginErrorReadLine();
+                    executed = proc.WaitForExit(timeoutInMilliseconds);
+                    if (executed)
+                        proc.WaitForExit(); // this ensures STDOUT is completely captured
+                    else
+                        stderr.Append($"{(stderr.Length > 0 ? "\n" : "")}Timeout waiting for process");
+                    exitCode = proc.ExitCode;
+                    output = stdout.ToString();
+                    error = stderr.ToString();
+                }
+                else
+                {
+                    executed = false;
+                    exitCode = null;
+                    output = "";
+                    error = "Unable to launch process";
+                }
+
+                return new ProcessResults()
+                {
+                    Executed = executed,
+                    ExitCode = exitCode,
+                    Output = output,
+                    Error = error
+                };
+            }
         }
     }
     

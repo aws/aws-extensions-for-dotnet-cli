@@ -39,8 +39,9 @@ namespace Amazon.Common.DotNetCli.Tools
         /// <returns>PosixUserInfo struct with UID and GID, or NULL if not detected</returns>
         public static PosixUserInfo? GetEffectiveUser(IToolLogger logger, IProcessFactory processFactory = null)
         {
-            processFactory ??= ProcessFactory.Default;
-            
+            if (processFactory == null)
+                processFactory = ProcessFactory.Default;
+
             var values = new int?[] {null, null};
 
             // Call `id` twice, once to get the user,

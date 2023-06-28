@@ -236,7 +236,7 @@ namespace Amazon.Common.DotNetCli.Tools
         }
         public static bool HasExplicitSelfContainedFlag(string projectLocation, string msBuildParameters)
         {
-            if (msBuildParameters != null && msBuildParameters.Contains("--self-contained", StringComparison.InvariantCultureIgnoreCase))
+            if (msBuildParameters != null && msBuildParameters.IndexOf("--self-contained", StringComparison.InvariantCultureIgnoreCase) != -1)
             {
                 return true;
             }
