@@ -62,7 +62,7 @@ namespace Amazon.Common.DotNetCli.Tools
         }
 
         protected ToolsException(string message, string errorCode, Exception e)
-            : base(message)
+            : base(message, e)
         {
             this.Code = errorCode;
 
