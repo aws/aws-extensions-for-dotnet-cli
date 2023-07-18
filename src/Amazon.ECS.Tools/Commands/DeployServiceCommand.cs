@@ -128,7 +128,13 @@ namespace Amazon.ECS.Tools.Commands
                 var success = await pushCommand.ExecuteAsync();
 
                 if (!success)
+                {
+                    if (pushCommand.LastException != null)
+                    {
+                        throw pushCommand.LastException;
+                    }
                     return false;
+                }
 
                 this.PushDockerImageProperties.DockerImageTag = pushCommand.PushedImageUri;
             }
