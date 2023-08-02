@@ -287,6 +287,15 @@ namespace Amazon.Lambda.Tools
                 ValueType = CommandOption.CommandOptionValueType.BoolValue,
                 Description = "If true wait for the Stack to finish updating before exiting. Default is true."
             };
+        public static readonly CommandOption ARGUMENT_STACK_POLLING_DELAY =
+            new CommandOption
+            {
+                Name = "Stack Polling Delay",
+                ShortSwitch = "-pd",
+                Switch = "--stack-polling-delay",
+                ValueType = CommandOption.CommandOptionValueType.IntValue,
+                Description = "The time interval in seconds between each check for stack updates. Default is 3 seconds."
+            };
         public static readonly CommandOption ARGUMENT_CLOUDFORMATION_ROLE =
             new CommandOption
             {

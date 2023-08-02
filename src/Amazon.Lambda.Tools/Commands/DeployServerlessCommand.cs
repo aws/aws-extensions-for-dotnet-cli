@@ -14,6 +14,7 @@ using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
 using Amazon.Lambda.Tools.TemplateProcessor;
 using Newtonsoft.Json.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Amazon.Lambda.Tools.Commands
 {
@@ -49,7 +50,8 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_DISABLE_CAPABILITIES,
             LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TAGS,
             LambdaDefinedCommandOptions.ARGUMENT_STACK_WAIT,
-            LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK
+            LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK,
+            LambdaDefinedCommandOptions.ARGUMENT_STACK_POLLING_DELAY,
         });
 
         public string Configuration { get; set; }
@@ -64,6 +66,7 @@ namespace Amazon.Lambda.Tools.Commands
         public string CloudFormationTemplate { get; set; }
         public string StackName { get; set; }
         public bool? WaitForStackToComplete { get; set; }
+        public TimeSpan StackPollingDelay { get; set; } = TimeSpan.FromSeconds(3);
         public string CloudFormationRole { get; set; }
         public Dictionary<string, string> TemplateParameters { get; set; }
         public Dictionary<string, string> TemplateSubstitutions { get; set; }
@@ -104,6 +107,8 @@ namespace Amazon.Lambda.Tools.Commands
                 this.CloudFormationTemplate = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_STACK_WAIT.Switch)) != null)
                 this.WaitForStackToComplete = tuple.Item2.BoolValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_STACK_POLLING_DELAY.Switch)) != null)
+                this.StackPollingDelay = TimeSpan.FromSeconds(tuple.Item2.IntValue);
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_TEMPLATE_PARAMETER.Switch)) != null)
                 this.TemplateParameters = tuple.Item2.KeyValuePairs;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_TEMPLATE_SUBSTITUTIONS.Switch)) != null)
@@ -401,7 +406,6 @@ namespace Amazon.Lambda.Tools.Commands
             }
         }
 
-        static readonly TimeSpan POLLING_PERIOD = TimeSpan.FromSeconds(3);
         private async Task<Stack> WaitStackToCompleteAsync(string stackName, DateTime mintimeStampForEvents)
         {
             const int TIMESTAMP_WIDTH = 20;
@@ -423,7 +427,7 @@ namespace Amazon.Lambda.Tools.Commands
             Stack stack;
             do
             {
-                Thread.Sleep(POLLING_PERIOD);
+                Thread.Sleep(this.StackPollingDelay);
                 stack = await GetExistingStackAsync(stackName);
 
                 var events = await GetLatestEventsAsync(stackName, mintimeStampForEvents, mostRecentEventId);
@@ -511,7 +515,7 @@ namespace Amazon.Lambda.Tools.Commands
                 {
                     if (currentStack != null)
                         this.Logger.WriteLine($"... Waiting for stack's state to change from {currentStack.StackStatus}: {TimeSpan.FromTicks(DateTime.Now.Ticks - start).TotalSeconds.ToString("0").PadLeft(3)} secs");
-                    Thread.Sleep(POLLING_PERIOD);
+                    Thread.Sleep(this.StackPollingDelay);
                     currentStack = await GetExistingStackAsync(stackName);
 
                 } while (currentStack != null && currentStack.StackStatus.ToString().EndsWith(IN_PROGRESS_SUFFIX));
@@ -537,7 +541,7 @@ namespace Amazon.Lambda.Tools.Commands
                 DescribeChangeSetResponse response;
                 do
                 {
-                    Thread.Sleep(POLLING_PERIOD);
+                    Thread.Sleep(this.StackPollingDelay);
                     response = await this.CloudFormationClient.DescribeChangeSetAsync(request);
                 } while (response.Status == ChangeSetStatus.CREATE_IN_PROGRESS || response.Status == ChangeSetStatus.CREATE_PENDING);
 
