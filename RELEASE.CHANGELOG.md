@@ -1,3 +1,7 @@
+### Release 2023-08-02 
+* **Amazon.Lambda.Tools (5.8.0)**
+  * Pull Request [#287](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/287) adding a new `--stack-polling-delay` switch to control polling interval to CloudFormation. This is useful for environments that are seeing CloudFormation throttling issues. Thanks [Alex Gausman](https://github.com/alex-gausman).
+
 ### Release 2023-06-28
 * **Amazon.Lambda.Tools (5.7.2)**
   * fix: ensure net6.0 runtimes are copied with the publish artifacts
