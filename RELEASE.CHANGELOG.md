@@ -1,3 +1,7 @@
+### Release 2023-08-18
+* **Amazon.ECS.Tools (3.5.3)**
+  * Pull Request [#286](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/286) to improve error reporting with ECS workflows. Thanks [Shruti Sinha](https://github.com/shruti0085)
+
 ### Release 2023-08-02 
 * **Amazon.Lambda.Tools (5.8.0)**
   * Pull Request [#287](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/287) adding a new `--stack-polling-delay` switch to control polling interval to CloudFormation. This is useful for environments that are seeing CloudFormation throttling issues. Thanks [Alex Gausman](https://github.com/alex-gausman).
