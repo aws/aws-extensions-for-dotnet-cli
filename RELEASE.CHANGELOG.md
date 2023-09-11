@@ -1,3 +1,7 @@
+### Release 2023-09-11
+* **Amazon.ECS.Tools (3.5.4)**
+  * Pull Request [#224](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/224) Fix task-definition-volumes and container-mount-points not work issue. Thanks [Gary zhurongbo111 ](https://github.com/zhurongbo111)
+
 ### Release 2023-08-18
 * **Amazon.ECS.Tools (3.5.3)**
   * Pull Request [#286](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/286) to improve error reporting with ECS workflows. Thanks [Shruti Sinha](https://github.com/shruti0085)
