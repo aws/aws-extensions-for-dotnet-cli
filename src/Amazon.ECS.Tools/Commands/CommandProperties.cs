@@ -249,6 +249,8 @@ namespace Amazon.ECS.Tools.Commands
                 this.ContainerMemoryHardLimit = tuple.Item2.IntValue;
             if ((tuple = values.FindCommandOption(ECSDefinedCommandOptions.ARGUMENT_CONTAINER_MEMORY_SOFT_LIMIT.Switch)) != null)
                 this.ContainerMemorySoftLimit = tuple.Item2.IntValue;
+            if ((tuple = values.FindCommandOption(ECSDefinedCommandOptions.ARGUMENT_TD_VOLUMES.Switch)) != null)
+                this.TaskDefinitionVolumes = tuple.Item2.StringValue;
         }
 
         internal void PersistSettings(ECSBaseCommand command, JsonData data)

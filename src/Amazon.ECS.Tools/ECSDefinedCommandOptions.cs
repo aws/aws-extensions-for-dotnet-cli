@@ -411,7 +411,7 @@ namespace Amazon.ECS.Tools
             {
                 Name = "Container Mount Points",
                 Switch = "--container-mount-points",
-                ValueType = CommandOption.CommandOptionValueType.CommaDelimitedList,
+                ValueType = CommandOption.CommandOptionValueType.JsonValue,
                 Description = "The mount points for data volumes in your container. Format is JSON string."
             };
         public static readonly CommandOption ARGUMENT_CONTAINER_NAME =
