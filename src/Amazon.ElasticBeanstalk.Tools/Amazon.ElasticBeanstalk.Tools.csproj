@@ -10,7 +10,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dotnet-eb</ToolCommandName>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>4.3.2</Version>
+    <Version>4.3.3</Version>
     <AssemblyName>dotnet-eb</AssemblyName>
     <Authors>Amazon Web Services</Authors>
     <Copyright>Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
@@ -25,9 +25,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.ElasticBeanstalk" Version="3.7.0.148" />
-    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.2.128" />
-    <PackageReference Include="AWSSDK.S3" Version="3.7.8.20" />
+    <PackageReference Include="AWSSDK.ElasticBeanstalk" Version="3.7.200.52" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.200.52" />
+    <PackageReference Include="AWSSDK.S3" Version="3.7.205.7" />
   </ItemGroup>
   
   <PropertyGroup>
