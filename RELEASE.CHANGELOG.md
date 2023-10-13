@@ -1,3 +1,11 @@
+### Release 2023-10-13
+* **Amazon.Lambda.Tools (5.8.1)**
+  * Update AWSSDK dependencies. This is primarily to pull in a fix to support sso_session in the config file when using SSO credentials.
+* **Amazon.ECS.Tools (3.5.5)**
+  * Update AWSSDK dependencies. This is primarily to pull in a fix to support sso_session in the config file when using SSO credentials.
+* **Amazon.ElasticBeanstalk.Tools (4.3.3)**
+  * Update AWSSDK dependencies. This is primarily to pull in a fix to support sso_session in the config file when using SSO credentials.
+
 ### Release 2023-09-11
 * **Amazon.ECS.Tools (3.5.4)**
   * Pull Request [#224](https://github.com/aws/aws-extensions-for-dotnet-cli/pull/224) Fix task-definition-volumes and container-mount-points not work issue. Thanks [Gary zhurongbo111 ](https://github.com/zhurongbo111)
