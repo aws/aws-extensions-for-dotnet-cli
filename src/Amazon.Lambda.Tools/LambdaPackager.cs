@@ -21,6 +21,7 @@ namespace Amazon.Lambda.Tools
         private const string BootstrapFilename = "bootstrap";
         private const string LinuxOSReleaseFile = @"/etc/os-release";
         private const string AmazonLinux2InOSReleaseFile = "PRETTY_NAME=\"Amazon Linux 2\"";
+        private const string AmazonLinux2023InOSReleaseFile = "PRETTY_NAME=\"Amazon Linux 2023\"";
 #if NETCOREAPP3_1_OR_GREATER        
         private static readonly string BuildLambdaZipCliPath = Path.Combine(
             Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().Location).LocalPath),
@@ -36,7 +37,7 @@ namespace Amazon.Lambda.Tools
             { "netcoreapp1.1", Version.Parse("1.6.1") }
         };
 
-        private static bool IsAmazonLinux2(IToolLogger logger)
+        private static bool IsAmazonLinux(IToolLogger logger)
         {
 #if !NETCOREAPP3_1_OR_GREATER
     return false;
@@ -51,6 +52,12 @@ namespace Amazon.Lambda.Tools
                     {
                         logger?.WriteLine(
                             $"Linux distribution is Amazon Linux 2, NativeAOT container build is optional");
+                        return true;
+                    }
+                    if (readText.Contains(AmazonLinux2023InOSReleaseFile))
+                    {
+                        logger?.WriteLine(
+                            $"Linux distribution is Amazon Linux 2023, NativeAOT container build is optional");
                         return true;
                     }
                 }
@@ -92,7 +99,7 @@ namespace Amazon.Lambda.Tools
             else if (string.IsNullOrWhiteSpace(containerImageForBuild))
             {
                 // Use a default container image if Use Container is set to true, or if we need to build NativeAOT on non-AL2
-                if ((useContainerForBuild.HasValue && useContainerForBuild.Value) || (isNativeAot && !IsAmazonLinux2(logger)))
+                if ((useContainerForBuild.HasValue && useContainerForBuild.Value) || (isNativeAot && !IsAmazonLinux(logger)))
                 {
                     containerImageForBuild = LambdaUtilities.GetDefaultBuildImage(targetFramework, architecture, logger);
                 }
