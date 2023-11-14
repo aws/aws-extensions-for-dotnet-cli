@@ -1,3 +1,7 @@
+### Release 2023-11-14
+* **Amazon.Lambda.Tools (5.9.0)**
+  * For Amazon Linux 2023 when building for Native AOT container build defaults to false. This is the same behavior as Amazon Linux 2.
+  
 ### Release 2023-10-13
 * **Amazon.Lambda.Tools (5.8.1)**
   * Update AWSSDK dependencies. This is primarily to pull in a fix to support sso_session in the config file when using SSO credentials.
