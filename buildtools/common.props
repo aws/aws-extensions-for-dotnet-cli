@@ -13,8 +13,8 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile Condition=" '$(AssemblyOriginatorKeyFile)' == '' ">$(MSBuildThisFileDirectory)local-development.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly>false</SignAssembly>  
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)/public.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>  
   </PropertyGroup>
 
   <ItemGroup>
