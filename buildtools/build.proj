@@ -7,7 +7,7 @@
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
 
 	<SignAssembly Condition=" '$(SignAssembly)' == '' ">true</SignAssembly>
-    <AssemblyOriginatorKeyFile Condition=" '$(AssemblyOriginatorKeyFile)' == '' ">$(MSBuildThisFileDirectory)local-development.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)/public.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <Target Name="full-build" DependsOnTargets="run-tests;build-nuget-packages">
