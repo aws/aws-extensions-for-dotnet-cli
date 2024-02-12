@@ -26,6 +26,7 @@ namespace Amazon.Lambda.Tools
 {
     public static class TargetFrameworkMonikers
     {
+        public const string net80 = "net8.0";
         public const string net70 = "net7.0";
         public const string net60 = "net6.0";
         public const string net50 = "net5.0";
@@ -44,7 +45,8 @@ namespace Amazon.Lambda.Tools
             netcoreapp31,
             net50,
             net60,
-            net70
+            net70,
+            net80
         };
     }
 
@@ -54,6 +56,7 @@ namespace Amazon.Lambda.Tools
 
         public static readonly IReadOnlyDictionary<string, string> _lambdaRuntimeToDotnetFramework = new Dictionary<string, string>()
         {
+            {"dotnet8", TargetFrameworkMonikers.net80}, // Use the string version since the SDK hasn't been updated yet.
             {Amazon.Lambda.Runtime.Dotnet6.Value, TargetFrameworkMonikers.net60},
             {Amazon.Lambda.Runtime.Dotnetcore31.Value, TargetFrameworkMonikers.netcoreapp31},
             {Amazon.Lambda.Runtime.Dotnetcore21.Value, TargetFrameworkMonikers.netcoreapp21},
@@ -118,6 +121,8 @@ namespace Amazon.Lambda.Tools
 
             switch (targetFramework?.ToLower())
             {
+                case TargetFrameworkMonikers.net80:
+                    return $"public.ecr.aws/sam/build-dotnet8:latest-{architecture}";
                 case TargetFrameworkMonikers.net70:                    
                     return $"public.ecr.aws/sam/build-dotnet7:latest-{architecture}";
                 case TargetFrameworkMonikers.net60:
