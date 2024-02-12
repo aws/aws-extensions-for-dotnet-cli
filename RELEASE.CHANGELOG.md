@@ -1,3 +1,7 @@
+### Release 2024-02-12
+* **Amazon.Lambda.Tools (5.10.0)**
+  * Added the default .NET 8 build image when using container builds. Container builds are most often used when building for Native AOT.
+  
 ### Release 2023-11-14
 * **Amazon.Lambda.Tools (5.9.0)**
   * For Amazon Linux 2023 when building for Native AOT container build defaults to false. This is the same behavior as Amazon Linux 2.
