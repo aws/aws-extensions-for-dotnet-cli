@@ -25,8 +25,10 @@ namespace Amazon.Lambda.Tools.Integ.Tests
             this._testOutputHelper = testOutputHelper;
         }
 
-        [Fact]
-        public async Task TestImageFunctionServerlessTemplateExamples()
+        [Theory]
+        [InlineData("serverless-resource.template")]
+        [InlineData("serverless-resource-arm.template")]
+        public async Task TestImageFunctionServerlessTemplateExamples(string template)
         {
             var assembly = this.GetType().GetTypeInfo().Assembly;
 
@@ -38,7 +40,7 @@ namespace Amazon.Lambda.Tools.Integ.Tests
             command.Region = TEST_REGION;
             command.DisableInteractive = true;
             command.S3Bucket = this._testFixture.Bucket;
-            command.CloudFormationTemplate = "serverless-resource.template";
+            command.CloudFormationTemplate = template;
             command.CloudFormationOutputTemplate = Path.GetTempFileName();
 
             var created = await command.ExecuteAsync();
