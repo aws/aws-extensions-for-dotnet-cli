@@ -22,8 +22,10 @@ namespace Amazon.Lambda.Tools.Integ.Tests
         }
 
 
-        [Fact]
-        public async Task TestSimpleImageProjectTest()
+        [Theory]
+        [InlineData("arm64")]
+        [InlineData("x86_64")]
+        public async Task TestSimpleImageProjectTest(string architecture)
         {
             var assembly = this.GetType().GetTypeInfo().Assembly;
 
@@ -39,6 +41,7 @@ namespace Amazon.Lambda.Tools.Integ.Tests
             command.Role = await TestHelper.GetTestRoleArnAsync();
             command.DockerImageTag = $"{TEST_ECR_REPOSITORY}:simpleimageproject1";
             command.DisableInteractive = true;
+            command.Architecture = architecture;
 
             var created = await command.ExecuteAsync();
             try
@@ -66,6 +69,7 @@ namespace Amazon.Lambda.Tools.Integ.Tests
                 updateCommand.DisableInteractive = true;
                 updateCommand.Region = TEST_REGION;
                 updateCommand.DockerImageTag = $"{TEST_ECR_REPOSITORY}:simpleimageproject1";
+                updateCommand.Architecture = architecture;
 
                 var updated = await updateCommand.ExecuteAsync();
                 Assert.True(updated);
@@ -90,6 +94,7 @@ namespace Amazon.Lambda.Tools.Integ.Tests
                 updateCommand.DockerImageTag = $"{TEST_ECR_REPOSITORY}:simpleimageproject1";
                 updateCommand.Region = TEST_REGION;
                 updateCommand.DisableInteractive = true;
+                updateCommand.Architecture = architecture;
 
                 updated = await updateCommand.ExecuteAsync();
                 Assert.True(updated);

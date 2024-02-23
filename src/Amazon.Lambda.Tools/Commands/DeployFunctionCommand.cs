@@ -531,7 +531,7 @@ namespace Amazon.Lambda.Tools.Commands
                 ProjectLocation = this.ProjectLocation,
                 Region = this.Region,
                 WorkingDirectory = this.WorkingDirectory,
-                
+                Architecture = this.Architecture,
 
                 PushDockerImageProperties = new BasePushDockerImageCommand<LambdaToolsDefaults>.PushDockerImagePropertyContainer
                 {

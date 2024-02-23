@@ -295,6 +295,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 pushCommand.PushDockerImageProperties.DockerFile = field.GetMetadataDockerfile();
                 pushCommand.PushDockerImageProperties.DockerImageTag = field.GetMetadataDockerTag();
                 pushCommand.ImageTagUniqueSeed = field.Resource.Name;
+                pushCommand.Architecture = field.Resource.LambdaArchitecture;
 
                 // Refer https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg
                 Dictionary<string, string> dockerBuildArgs = field.GetMetadataDockerBuildArgs();
