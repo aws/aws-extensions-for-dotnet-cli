@@ -1,3 +1,7 @@
+### Release 2024-02-23
+* **Amazon.Lambda.Tools (5.10.1)**
+  * Fixed issue with the configured architecture of the Lambda function not being used when building the container image. This caused images to be built for X64 when the function was configured for ARM64.
+
 ### Release 2024-02-12
 * **Amazon.Lambda.Tools (5.10.0)**
   * Added the default .NET 8 build image when using container builds. Container builds are most often used when building for Native AOT.
