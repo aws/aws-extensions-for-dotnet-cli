@@ -64,6 +64,11 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 }
                 else if(architectures.Length == 1)
                 {
+                    if (architectures[0] != Architecture.Arm64 && architectures[0] != Architecture.X86_64)
+                    {
+                        return null;
+                    }
+
                     return architectures[0];
                 }
                 else
