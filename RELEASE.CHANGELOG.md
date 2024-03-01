@@ -1,3 +1,7 @@
+### Release 2024-03-01
+* **Amazon.Lambda.Tools (5.10.2)**
+  * Fixed incorrectly using "JSON Data" as the architecture value from CloudFormation template
+  
 ### Release 2024-02-23
 * **Amazon.Lambda.Tools (5.10.1)**
   * Fixed issue with the configured architecture of the Lambda function not being used when building the container image. This caused images to be built for X64 when the function was configured for ARM64.
