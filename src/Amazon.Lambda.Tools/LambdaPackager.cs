@@ -20,7 +20,7 @@ namespace Amazon.Lambda.Tools
         private const char LinuxLineEnding = '\n';
         private const string BootstrapFilename = "bootstrap";
         private const string LinuxOSReleaseFile = @"/etc/os-release";
-        private const string AmazonLinuxNameInOSReleaseFile = "NAME=\"Amazon Linux\""
+        private const string AmazonLinuxNameInOSReleaseFile = "NAME=\"Amazon Linux\"";
         private const string AmazonLinux2InOSReleaseFile = "VERSION=\"2\"";
         private const string AmazonLinux2023InOSReleaseFile = "VERSION=\"2023\"";
 #if NETCOREAPP3_1_OR_GREATER        
