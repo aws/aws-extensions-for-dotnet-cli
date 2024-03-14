@@ -20,8 +20,9 @@ namespace Amazon.Lambda.Tools
         private const char LinuxLineEnding = '\n';
         private const string BootstrapFilename = "bootstrap";
         private const string LinuxOSReleaseFile = @"/etc/os-release";
-        private const string AmazonLinux2InOSReleaseFile = "PRETTY_NAME=\"Amazon Linux 2\"";
-        private const string AmazonLinux2023InOSReleaseFile = "PRETTY_NAME=\"Amazon Linux 2023\"";
+        private const string AmazonLinuxNameInOSReleaseFile = "NAME=\"Amazon Linux\"";
+        private const string AmazonLinux2InOSReleaseFile = "VERSION=\"2\"";
+        private const string AmazonLinux2023InOSReleaseFile = "VERSION=\"2023\"";
 #if NETCOREAPP3_1_OR_GREATER        
         private static readonly string BuildLambdaZipCliPath = Path.Combine(
             Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().Location).LocalPath),
@@ -48,13 +49,13 @@ namespace Amazon.Lambda.Tools
                 {
                     logger?.WriteLine($"Found {LinuxOSReleaseFile}");
                     string readText = File.ReadAllText(LinuxOSReleaseFile);
-                    if (readText.Contains(AmazonLinux2InOSReleaseFile))
+                    if (readText.Contains(AmazonLinuxNameInOSReleaseFile) && readText.Contains(AmazonLinux2InOSReleaseFile))
                     {
                         logger?.WriteLine(
                             $"Linux distribution is Amazon Linux 2, NativeAOT container build is optional");
                         return true;
                     }
-                    if (readText.Contains(AmazonLinux2023InOSReleaseFile))
+                    if (readText.Contains(AmazonLinuxNameInOSReleaseFile) && readText.Contains(AmazonLinux2023InOSReleaseFile))
                     {
                         logger?.WriteLine(
                             $"Linux distribution is Amazon Linux 2023, NativeAOT container build is optional");
