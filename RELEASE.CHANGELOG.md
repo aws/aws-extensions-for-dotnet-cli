@@ -1,3 +1,7 @@
+### Release 2024-03-14
+* **Amazon.Lambda.Tools (5.10.3)**
+  * Fixed issue not correctly identifying running on Amazon Linux 2023 forcing a container build for Native AOT.
+
 ### Release 2024-03-01
 * **Amazon.Lambda.Tools (5.10.2)**
   * Fixed incorrectly using "JSON Data" as the architecture value from CloudFormation template
