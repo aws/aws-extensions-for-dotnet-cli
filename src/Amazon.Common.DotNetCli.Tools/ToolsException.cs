@@ -45,7 +45,9 @@ namespace Amazon.Common.DotNetCli.Tools
             BucketInDifferentRegionThenClient,
 
             S3GetBucketLocation,
-            S3UploadError
+            S3UploadError,
+            
+            DotnetMsbuildError
 
         }
 
