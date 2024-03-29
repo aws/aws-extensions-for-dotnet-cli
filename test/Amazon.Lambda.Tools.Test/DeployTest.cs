@@ -186,6 +186,45 @@ namespace Amazon.Lambda.Tools.Test
             }
         }
 
+        /// <summary>
+        /// This test deploys a .NET8 Native AOT Web App that does not explicitly set the OutputType to Exe.
+        /// In .NET8, the web app inherits the OutputType from the SDK.
+        /// </summary>
+        [Fact]
+        public async Task NativeAotNet8WebApp()
+        {
+            var logger = new TestToolLogger();
+            var assembly = GetType().GetTypeInfo().Assembly;
+
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestNativeAotNet8WebApp");
+            var command = new DeployServerlessCommand(logger, fullPath, new string[0]);
+            command.Region = "us-east-1";
+            command.Configuration = "Release";
+            command.CloudFormationTemplate = "serverless.template";
+            command.StackName = "TestDeployServerless-" + DateTime.Now.Ticks;
+            command.S3Bucket = _testFixture.Bucket;
+            command.WaitForStackToComplete = true;
+            command.ProjectLocation = fullPath;
+            command.DisableInteractive = false;
+
+            var created = await command.ExecuteAsync();
+            try
+            {
+                Assert.True(created);
+            }
+            finally
+            {
+                if (created)
+                {
+                    var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
+                    deleteCommand.StackName = command.StackName;
+                    deleteCommand.Region = command.Region;
+                    deleteCommand.DisableInteractive = true;
+                    await deleteCommand.ExecuteAsync();
+                }
+            }
+        }
+
         [Theory]
         [InlineData(TargetFrameworkMonikers.net60)]
         [InlineData(TargetFrameworkMonikers.netcoreapp31)]

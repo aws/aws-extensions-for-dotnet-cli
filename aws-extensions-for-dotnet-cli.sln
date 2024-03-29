@@ -63,6 +63,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amazon.Lambda.Tools.Integ.T
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestHttpFunction", "testapps\TestHttpFunction\TestHttpFunction.csproj", "{AD31D053-97C5-4262-B187-EC42BFD51A9F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestNativeAotNet8WebApp", "testapps\TestNativeAotNet8WebApp\TestNativeAotNet8WebApp.csproj", "{69FFA03C-D29F-40E0-9E7F-572D5E10AF77}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -157,6 +159,10 @@ Global
 		{AD31D053-97C5-4262-B187-EC42BFD51A9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD31D053-97C5-4262-B187-EC42BFD51A9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD31D053-97C5-4262-B187-EC42BFD51A9F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69FFA03C-D29F-40E0-9E7F-572D5E10AF77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69FFA03C-D29F-40E0-9E7F-572D5E10AF77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69FFA03C-D29F-40E0-9E7F-572D5E10AF77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69FFA03C-D29F-40E0-9E7F-572D5E10AF77}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -186,6 +192,7 @@ Global
 		{4FA5B55F-BE55-42F7-A2DE-1924B10296A2} = {7C227173-0F21-44DD-93A7-5D3693240271}
 		{7B2AE176-8AB5-4050-8E22-A2A80E88BB92} = {BB0A8314-3127-4159-8B6A-64F97FEF9474}
 		{AD31D053-97C5-4262-B187-EC42BFD51A9F} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
+		{69FFA03C-D29F-40E0-9E7F-572D5E10AF77} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DBFC70D6-49A2-40A1-AB08-5D9504AB7112}

@@ -195,14 +195,62 @@ namespace Amazon.Common.DotNetCli.Tools
             return element?.Value;
         }
 
+        /// <summary>
+        /// Retrieve the `OutputType` property of a given project
+        /// </summary>
+        /// <param name="projectLocation">Path of the project</param>
+        /// <returns>The value of the `OutputType` property</returns>
         public static string LookupOutputTypeFromProjectFile(string projectLocation)
         {
-            var projectFile = FindProjectFileInDirectory(projectLocation);
+            var process = new Process();
+            var output = string.Empty;
+            var msbuildProcessFailed = false;
+            try
+            {
+                process.StartInfo = new ProcessStartInfo()
+                {
+                    FileName = "dotnet",
+                    Arguments = $"msbuild {projectLocation} -getProperty:OutputType",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    WindowStyle = ProcessWindowStyle.Hidden
+                };
 
-            var xdoc = XDocument.Load(projectFile);
+                process.Start();
+                output = process.StandardOutput.ReadToEnd();
+                var hasExited = process.WaitForExit(5000);
 
-            var element = xdoc.XPathSelectElement("//PropertyGroup/OutputType");
-            return element?.Value;
+                // If it hasn't completed in the specified timeout, stop the process and give up
+                if (!hasExited) 
+                {
+                    process.Kill();
+                    msbuildProcessFailed = true;
+                }
+
+                // If it has completed but unsuccessfully, give up
+                if (process.ExitCode != 0)
+                {
+                    msbuildProcessFailed = true;
+                }
+            }
+            catch (Exception)
+            {
+                // swallow any exceptions related to `dotnet msbuild`
+                msbuildProcessFailed = true;
+            }
+
+            if (msbuildProcessFailed)
+            {
+                var projectFile = FindProjectFileInDirectory(projectLocation);
+                var xdoc = XDocument.Load(projectFile);
+                var element = xdoc.XPathSelectElement("//PropertyGroup/OutputType");
+                output = element?.Value;
+            }
+
+            return 
+                string.IsNullOrEmpty(output) ? 
+                    null : 
+                    output.Trim();
         }
 
         public static bool LookPublishAotFlag(string projectLocation, string msBuildParameters)
