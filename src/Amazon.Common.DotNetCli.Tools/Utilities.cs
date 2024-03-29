@@ -196,21 +196,21 @@ namespace Amazon.Common.DotNetCli.Tools
         }
 
         /// <summary>
-        /// Uses `dotnet msbuild` to determine project properties.
+        /// Retrieve the `OutputType` property of a given project
         /// </summary>
         /// <param name="projectLocation">Path of the project</param>
-        /// <param name="propertyName">The name of the property</param>
-        /// <returns>The value of the project property</returns>
-        private static string LookupMsbuildProperty(string projectLocation, string propertyName)
+        /// <returns>The value of the `OutputType` property</returns>
+        public static string LookupOutputTypeFromProjectFile(string projectLocation)
         {
             var process = new Process();
-            string outputJson;
+            var outputJson = string.Empty;
+            var msbuildProcessFailed = false;
             try
             {
                 process.StartInfo = new ProcessStartInfo()
                 {
                     FileName = "dotnet",
-                    Arguments = $"msbuild {projectLocation} -getProperty:{propertyName}",
+                    Arguments = $"msbuild {projectLocation} -getProperty:OutputType",
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
                     WindowStyle = ProcessWindowStyle.Hidden
@@ -224,49 +224,33 @@ namespace Amazon.Common.DotNetCli.Tools
                 if (!hasExited) 
                 {
                     process.Kill();
-                    return null;
+                    msbuildProcessFailed = true;
+                }
+
+                // If it has completed but unsuccessfully, give up
+                if (process.ExitCode != 0)
+                {
+                    msbuildProcessFailed = true;
                 }
             }
             catch (Exception)
             {
                 // swallow any exceptions related to `dotnet msbuild`
-                return null;
+                msbuildProcessFailed = true;
             }
 
-            // If it has completed but unsuccessfully, give up
-            if (process.ExitCode != 0)
-            {
-                if (outputJson.Contains("MSBUILD : error MSB1001: Unknown switch."))
-                {
-                    throw new ToolsException("Using 'dotnet msbuild -getProperty' is not supported by the installed .NET SDK version.", ToolsException.CommonErrorCode.DotnetMsbuildError);
-                }
-                return null;
-            }
-
-            return 
-                string.IsNullOrEmpty(outputJson) ? 
-                null : 
-                outputJson.Trim();
-        }
-
-        /// <summary>
-        /// Retrieve the `OutputType` property of a given project
-        /// </summary>
-        /// <param name="projectLocation">Path of the project</param>
-        /// <returns>The value of the `OutputType` property</returns>
-        public static string LookupOutputTypeFromProjectFile(string projectLocation)
-        {
-            try
-            {
-                return LookupMsbuildProperty(projectLocation, "OutputType");
-            }
-            catch (ToolsException)
+            if (msbuildProcessFailed)
             {
                 var projectFile = FindProjectFileInDirectory(projectLocation);
                 var xdoc = XDocument.Load(projectFile);
                 var element = xdoc.XPathSelectElement("//PropertyGroup/OutputType");
-                return element?.Value;
+                outputJson = element?.Value;
             }
+
+            return 
+                string.IsNullOrEmpty(outputJson) ? 
+                    null : 
+                    outputJson.Trim();
         }
 
         public static bool LookPublishAotFlag(string projectLocation, string msBuildParameters)
