@@ -186,6 +186,10 @@ namespace Amazon.Lambda.Tools.Test
             }
         }
 
+        /// <summary>
+        /// This test deploys a .NET8 Native AOT Web App that does not explicitly set the OutputType to Exe.
+        /// In .NET8, the web app inherits the OutputType from the SDK.
+        /// </summary>
         [Fact]
         public async Task NativeAotNet8WebApp()
         {

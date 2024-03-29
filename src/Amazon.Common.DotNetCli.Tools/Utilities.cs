@@ -203,7 +203,7 @@ namespace Amazon.Common.DotNetCli.Tools
         public static string LookupOutputTypeFromProjectFile(string projectLocation)
         {
             var process = new Process();
-            var outputJson = string.Empty;
+            var output = string.Empty;
             var msbuildProcessFailed = false;
             try
             {
@@ -217,7 +217,7 @@ namespace Amazon.Common.DotNetCli.Tools
                 };
 
                 process.Start();
-                outputJson = process.StandardOutput.ReadToEnd();
+                output = process.StandardOutput.ReadToEnd();
                 var hasExited = process.WaitForExit(5000);
 
                 // If it hasn't completed in the specified timeout, stop the process and give up
@@ -244,13 +244,13 @@ namespace Amazon.Common.DotNetCli.Tools
                 var projectFile = FindProjectFileInDirectory(projectLocation);
                 var xdoc = XDocument.Load(projectFile);
                 var element = xdoc.XPathSelectElement("//PropertyGroup/OutputType");
-                outputJson = element?.Value;
+                output = element?.Value;
             }
 
             return 
-                string.IsNullOrEmpty(outputJson) ? 
+                string.IsNullOrEmpty(output) ? 
                     null : 
-                    outputJson.Trim();
+                    output.Trim();
         }
 
         public static bool LookPublishAotFlag(string projectLocation, string msBuildParameters)
