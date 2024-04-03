@@ -190,9 +190,15 @@ namespace Amazon.Lambda.Tools.Test
         /// This test deploys a .NET8 Native AOT Web App that does not explicitly set the OutputType to Exe.
         /// In .NET8, the web app inherits the OutputType from the SDK.
         /// </summary>
-        [Fact(Skip = "This test requires Docker to be available. We are using a Windows container in the release pipeline which does not support Docker.")]
+        [Fact]
         public async Task NativeAotNet8WebApp()
         {
+            if (string.Equals(System.Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"), "true", StringComparison.OrdinalIgnoreCase))
+            {
+                _testOutputHelper.WriteLine("Skipping container build test because test is already running inside a container");
+                return;
+            }
+            
             var logger = new TestToolLogger();
             var assembly = GetType().GetTypeInfo().Assembly;
 
