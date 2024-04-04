@@ -1,3 +1,7 @@
+### Release 2024-04-04
+* **Amazon.Lambda.Tools (5.10.4)**
+  * Fixed an issue where deploying .NET 8 Native AOT Web Apps fails because of a check that looks for the OutputType property explicitly in the .csproj.
+
 ### Release 2024-03-14
 * **Amazon.Lambda.Tools (5.10.3)**
   * Fixed issue not correctly identifying running on Amazon Linux 2023 forcing a container build for Native AOT.
