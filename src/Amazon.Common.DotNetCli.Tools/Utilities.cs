@@ -29,6 +29,26 @@ namespace Amazon.Common.DotNetCli.Tools
         private readonly static Regex EnvironmentVariableTokens = new Regex(@"[$][(].*?[)]", RegexOptions.Compiled);
 
         /// <summary>
+        /// Adds a delegate to the AWS service client to update the User-Agent string before every request.
+        /// </summary>
+        /// <param name="amazonServiceClient">The AWS service client.</param>
+        /// <param name="userAgent">The User-Agent string that will be set.</param>
+        public static void SetUserAgentString(AmazonServiceClient amazonServiceClient, string userAgent)
+        {
+            const string userAgentHeader = "User-Agent";
+
+            var beforeRequestEvent = new RequestEventHandler((sender, e) =>
+            {
+                if (!(e is WebServiceRequestEventArgs args) || !args.Headers.TryGetValue(userAgentHeader, out var header) || header.Contains(userAgent))
+                    return;
+
+                args.Headers[userAgentHeader] += " " + userAgent;
+            });
+
+            amazonServiceClient.BeforeRequestEvent += beforeRequestEvent;
+        }
+
+        /// <summary>
         /// Replaces $(Variable) tokens with environment variables
         /// </summary>
         /// <param name="original">original string</param>

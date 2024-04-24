@@ -55,9 +55,9 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="AWSSDK.CloudFormation" Version="3.7.203.46" />
-    <PackageReference Include="AWSSDK.Lambda" Version="3.7.201.48" />
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.200.53" />
+    <PackageReference Include="AWSSDK.CloudFormation" Version="3.7.307.6" />
+    <PackageReference Include="AWSSDK.Lambda" Version="3.7.305.12" />
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.300.80" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
       <PrivateAssets>all</PrivateAssets>
