@@ -7,6 +7,7 @@ using Amazon.Common.DotNetCli.Tools.Commands;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
 using System.Threading.Tasks;
+using Amazon.Runtime;
 
 namespace Amazon.ElasticBeanstalk.Tools.Commands
 {
@@ -22,7 +23,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
         {
         }
 
-        protected override string ToolName => "AWSElasticBeanstalkToolsDotnet";
+        protected override string ToolName => EBConstants.TOOLNAME;
 
         IAmazonElasticBeanstalk _ebClient;
         public IAmazonElasticBeanstalk EBClient
@@ -31,12 +32,11 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             {
                 if (this._ebClient == null)
                 {
-                    SetUserAgentString();
-
                     var config = new AmazonElasticBeanstalkConfig();
                     config.RegionEndpoint = DetermineAWSRegion();
 
                     this._ebClient = new AmazonElasticBeanstalkClient(DetermineAWSCredentials(), config);
+                    Utilities.SetUserAgentString((AmazonServiceClient)_ebClient, UserAgentString);
                 }
                 return this._ebClient;
             }

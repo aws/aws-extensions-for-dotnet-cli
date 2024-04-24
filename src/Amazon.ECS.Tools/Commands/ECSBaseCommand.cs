@@ -51,12 +51,11 @@ namespace Amazon.ECS.Tools.Commands
             {
                 if (this._cweClient == null)
                 {
-                    SetUserAgentString();
-
                     var config = new AmazonCloudWatchEventsConfig();
                     config.RegionEndpoint = DetermineAWSRegion();
 
                     this._cweClient = new AmazonCloudWatchEventsClient(DetermineAWSCredentials(), config);
+                    Utilities.SetUserAgentString((AmazonServiceClient)_cweClient, UserAgentString);
                 }
                 return this._cweClient;
             }
@@ -70,12 +69,11 @@ namespace Amazon.ECS.Tools.Commands
             {
                 if (this._cwlClient == null)
                 {
-                    SetUserAgentString();
-
                     var config = new AmazonCloudWatchLogsConfig();
                     config.RegionEndpoint = DetermineAWSRegion();
 
                     this._cwlClient = new AmazonCloudWatchLogsClient(DetermineAWSCredentials(), config);
+                    Utilities.SetUserAgentString((AmazonServiceClient)_cwlClient, UserAgentString);
                 }
                 return this._cwlClient;
             }
@@ -89,12 +87,11 @@ namespace Amazon.ECS.Tools.Commands
             {
                 if (this._ecsClient == null)
                 {
-                    SetUserAgentString();
-
                     var config = new AmazonECSConfig();
                     config.RegionEndpoint = DetermineAWSRegion();
 
                     this._ecsClient = new AmazonECSClient(DetermineAWSCredentials(), config);
+                    Utilities.SetUserAgentString((AmazonServiceClient)_ecsClient, UserAgentString);
                 }
                 return this._ecsClient;
             }
@@ -108,12 +105,11 @@ namespace Amazon.ECS.Tools.Commands
             {
                 if (this._ec2Client == null)
                 {
-                    SetUserAgentString();
-
                     var config = new AmazonEC2Config();
                     config.RegionEndpoint = DetermineAWSRegion();
 
                     this._ec2Client = new AmazonEC2Client(DetermineAWSCredentials(), config);
+                    Utilities.SetUserAgentString((AmazonServiceClient)_ec2Client, UserAgentString);
                 }
                 return this._ec2Client;
             }
