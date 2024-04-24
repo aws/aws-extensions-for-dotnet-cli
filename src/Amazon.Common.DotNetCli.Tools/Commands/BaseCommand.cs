@@ -82,6 +82,8 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             get;
         }
 
+        protected string UserAgentString => GetUserAgentString();
+
         /// <summary>
         /// The common options used by every command
         /// </summary>
@@ -753,11 +755,10 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
         public IToolLogger Logger { get; protected set; }
         public string WorkingDirectory { get; set; }
 
-        protected void SetUserAgentString()
+        protected string GetUserAgentString()
         {
             string version = this.GetType().GetTypeInfo().Assembly.GetName().Version.ToString();
-            Util.Internal.InternalSDKUtils.SetUserAgent(this.ToolName,
-                                          version);
+            return $"lib/{this.ToolName}#{version}";
         }
 
         IAmazonSecurityTokenService _stsClient;
@@ -767,12 +768,11 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             {
                 if (this._stsClient == null)
                 {
-                    SetUserAgentString();
-
                     var config = new AmazonSecurityTokenServiceConfig();
                     config.RegionEndpoint = DetermineAWSRegion();
 
                     this._stsClient = new AmazonSecurityTokenServiceClient(DetermineAWSCredentials(), config);
+                    Utilities.SetUserAgentString((AmazonServiceClient)_stsClient, UserAgentString);
                 }
                 return this._stsClient;
             }
@@ -786,12 +786,11 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             {
                 if (this._iamClient == null)
                 {
-                    SetUserAgentString();
-
                     var config = new AmazonIdentityManagementServiceConfig();
                     config.RegionEndpoint = DetermineAWSRegion();
 
                     this._iamClient = new AmazonIdentityManagementServiceClient(DetermineAWSCredentials(), config);
+                    Utilities.SetUserAgentString((AmazonServiceClient)_iamClient, UserAgentString);
                 }
                 return this._iamClient;
             }
@@ -805,13 +804,12 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             {
                 if (this._s3Client == null)
                 {
-                    SetUserAgentString();
-
                     var config = new AmazonS3Config();
                     config.RegionEndpoint = DetermineAWSRegion();
                     config.Timeout = TimeSpan.FromHours(1);
 
                     this._s3Client = new AmazonS3Client(DetermineAWSCredentials(), config);
+                    Utilities.SetUserAgentString((AmazonServiceClient)_s3Client, UserAgentString);
                 }
                 return this._s3Client;
             }
@@ -825,12 +823,11 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             {
                 if (this._ecrClient == null)
                 {
-                    SetUserAgentString();
-
                     var config = new AmazonECRConfig();
                     config.RegionEndpoint = DetermineAWSRegion();
 
                     this._ecrClient = new AmazonECRClient(DetermineAWSCredentials(), config);
+                    Utilities.SetUserAgentString((AmazonServiceClient)_ecrClient, UserAgentString);
                 }
                 return this._ecrClient;
             }
