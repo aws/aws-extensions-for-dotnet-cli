@@ -1,3 +1,11 @@
+### Release 2024-04-24
+* **Amazon.Lambda.Tools (5.10.5)**
+  * Update User-Agent string
+* **Amazon.ECS.Tools (3.5.6)**
+  * Update User-Agent string
+* **Amazon.ElasticBeanstalk.Tools (4.3.4)**
+  * Update User-Agent string
+
 ### Release 2024-04-04
 * **Amazon.Lambda.Tools (5.10.4)**
   * Fixed an issue where deploying .NET 8 Native AOT Web Apps fails because of a check that looks for the OutputType property explicitly in the .csproj.
