@@ -1,3 +1,11 @@
+### Release 2024-04-24
+* **Amazon.Lambda.Tools (5.10.5)**
+  * Update User-Agent string
+* **Amazon.ECS.Tools (3.5.6)**
+  * Update User-Agent string
+* **Amazon.ElasticBeanstalk.Tools (4.3.4)**
+  * Update User-Agent string
+
 ### Release 2024-03-14
 * **Amazon.Lambda.Tools (5.10.3)**
   * Fixed issue not correctly identifying running on Amazon Linux 2023 forcing a container build for Native AOT.
