@@ -100,6 +100,13 @@ namespace Amazon.Lambda.Tools.Test
         // mock the underlying calls to the dotnet CLI.
         public async Task AttemptToCreateAnOptmizedLayer()
         {
+            if (string.Equals(System.Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"), "true", StringComparison.OrdinalIgnoreCase) &&
+                RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                _testOutputHelper.WriteLine("Skipping test as the optimize feature does not work in CI on Linux.");
+                _testOutputHelper.WriteLine("https://github.com/aws/aws-extensions-for-dotnet-cli/issues/208");
+                return;
+            }
             var logger = new TestToolLogger(_testOutputHelper);
             var assembly = this.GetType().GetTypeInfo().Assembly;
 
