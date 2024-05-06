@@ -1,0 +1,21 @@
+version: 0.2
+
+env:
+  variables:
+    DOTNET_RUNNING_IN_CONTAINER: "true"
+phases:
+  install:
+    runtime-versions:
+      dotnet: 8.x
+  build:
+    commands:
+      - dotnet test --verbosity normal test/Amazon.Common.DotNetCli.Tools.Test/Amazon.Common.DotNetCli.Tools.Test.csproj --configuration Release --logger trx --results-directory ./testresults
+      - dotnet test --verbosity normal test/Amazon.ECS.Tools.Test/Amazon.ECS.Tools.Test.csproj --configuration Release --logger trx --results-directory ./testresults
+      - dotnet test --verbosity normal test/Amazon.Lambda.Tools.Test/Amazon.Lambda.Tools.Test.csproj --configuration Release --logger trx --results-directory ./testresults
+      - dotnet test --verbosity normal test/Amazon.ElasticBeanstalk.Tools.Test/Amazon.ElasticBeanstalk.Tools.Test.csproj --configuration Release --logger trx --results-directory ./testresults
+reports:
+    aws-dotnet-messaging-tests:
+        file-format: VisualStudioTrx
+        files:
+            - '**/*'
+        base-directory: './testresults'
