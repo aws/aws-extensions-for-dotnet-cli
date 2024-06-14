@@ -1,3 +1,7 @@
+### Release 2024-06-14
+* **Amazon.Lambda.Tools (5.10.6)**
+  * Update the dependencies for the embedded zipping utility used to set file permissions correctly when creating deployment bundles on Windows
+
 ### Release 2024-04-24
 * **Amazon.Lambda.Tools (5.10.5)**
   * Update User-Agent string
