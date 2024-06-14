@@ -15,7 +15,7 @@
     <Copyright>Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
     <Product>AWS Lambda Tools for .NET CLI</Product>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <Version>5.10.5</Version>
+    <Version>5.10.6</Version>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Resources\build-lambda-zip.exe">
@@ -46,8 +46,10 @@
     <NoWarn>1701;1702;1705;1591</NoWarn>
   </PropertyGroup>
 
-  <!-- To rebuild build-lambda-zip.exe you must have Go installed and run 'dotnet msbuild -target:build-lambda-zip'-->
+  <!-- To rebuild build-lambda-zip.exe you must have Go installed and run 'dotnet msbuild -target:build-lambda-zip'
+       You may also need to set $env:GOPROXY="direct" if you have trouble resolving dependencies -->
   <Target Name="build-lambda-zip">
-    <Exec Command="(set GOARCH=386) &amp; (set GOOS=windows) &amp; go build -o ./Resources/build-lambda-zip.exe .\BuildLambdaZip\build-lambda-zip.go" />
+    <Exec WorkingDirectory=".\BuildLambdaZip\" Command="(set GOARCH=386) &amp; (set GOOS=windows) &amp; 
+            go build -o /../Resources/build-lambda-zip.exe .\build-lambda-zip.go" />
   </Target>
 </Project>
