@@ -205,5 +205,14 @@ namespace Amazon.ElasticBeanstalk.Tools
                 ValueType = CommandOption.CommandOptionValueType.IntValue,
                 Description = $"The application port that will be redirect to port 80. The default is port {EBConstants.DEFAULT_APPLICATION_PORT}."
             };
+
+        public static readonly CommandOption ARGUMENT_DISABLE_IMDS_V1 =
+            new CommandOption
+            {
+                Name = "Disable IMDSv1",
+                Switch = "--disable-imds-v1",
+                ValueType = CommandOption.CommandOptionValueType.BoolValue,
+                Description = "If set to true then the IMDSv1 will be disabled on EC2 instances running the application."
+            };
     }
 }
