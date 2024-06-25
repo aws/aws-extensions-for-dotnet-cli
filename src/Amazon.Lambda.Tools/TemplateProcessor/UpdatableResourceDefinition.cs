@@ -121,7 +121,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                         string localPath;
                         var packageType = s.GetValue(LambdaConstants.CF_LAMBDA_PACKAGE_TYPE);
 
-                        if(isServerlessResource)
+                        if (isServerlessResource)
                         {
                             if (string.Equals(PackageType.Image.Value, packageType, StringComparison.OrdinalIgnoreCase))
                             {
@@ -134,6 +134,12 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                             else
                             {
                                 localPath = s.GetValue(LambdaConstants.CF_LAMBDA_CODEURI);
+
+                                // Get value from Globals section for AWS::Serverless::Function
+                                if (string.IsNullOrEmpty(localPath))
+                                {
+                                    localPath = s.GetValueFromRoot("Globals", "Function", LambdaConstants.CF_LAMBDA_CODEURI);
+                                }
                             }
                         }
                         else
