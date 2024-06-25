@@ -19,6 +19,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
         public string IISWebSite { get; set; }
         public bool? WaitForUpdate { get; set; }
         public bool? EnableXRay { get; set; }
+        public bool? DisableIMDSv1 { get; set; }
         public Dictionary<string,string> Tags { get; set; }
         public Dictionary<string, string> AdditionalOptions { get; set; }
 
@@ -92,6 +93,8 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 this.LoadBalancerType = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_ENABLE_STICKY_SESSIONS.Switch)) != null)
                 this.EnableStickySessions = tuple.Item2.BoolValue;
+            if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_DISABLE_IMDS_V1.Switch)) != null)
+                this.DisableIMDSv1 = tuple.Item2.BoolValue;
 
             if ((tuple = values.FindCommandOption(EBDefinedCommandOptions.ARGUMENT_PROXY_SERVER.Switch)) != null)
                 this.ProxyServer = tuple.Item2.StringValue;
@@ -119,6 +122,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_ENVIRONMENT_TYPE.ConfigFileKey, command.GetStringValueOrDefault(this.EnvironmentType, EBDefinedCommandOptions.ARGUMENT_ENVIRONMENT_TYPE, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_LOADBALANCER_TYPE.ConfigFileKey, command.GetStringValueOrDefault(this.LoadBalancerType, EBDefinedCommandOptions.ARGUMENT_LOADBALANCER_TYPE, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_ENABLE_STICKY_SESSIONS.ConfigFileKey, command.GetBoolValueOrDefault(this.EnableStickySessions, EBDefinedCommandOptions.ARGUMENT_ENABLE_STICKY_SESSIONS, false));
+            data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_DISABLE_IMDS_V1.ConfigFileKey, command.GetBoolValueOrDefault(this.DisableIMDSv1, EBDefinedCommandOptions.ARGUMENT_DISABLE_IMDS_V1, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_CNAME_PREFIX.ConfigFileKey, command.GetStringValueOrDefault(this.CNamePrefix, EBDefinedCommandOptions.ARGUMENT_CNAME_PREFIX, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_INSTANCE_TYPE.ConfigFileKey, command.GetStringValueOrDefault(this.InstanceType, EBDefinedCommandOptions.ARGUMENT_INSTANCE_TYPE, false));
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_EC2_KEYPAIR.ConfigFileKey, command.GetStringValueOrDefault(this.EC2KeyPair, EBDefinedCommandOptions.ARGUMENT_EC2_KEYPAIR, false));

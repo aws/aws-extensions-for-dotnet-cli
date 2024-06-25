@@ -40,6 +40,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             EBDefinedCommandOptions.ARGUMENT_INSTANCE_TYPE,
             EBDefinedCommandOptions.ARGUMENT_HEALTH_CHECK_URL,
             EBDefinedCommandOptions.ARGUMENT_ENABLE_XRAY,
+            EBDefinedCommandOptions.ARGUMENT_DISABLE_IMDS_V1,
             EBDefinedCommandOptions.ARGUMENT_ENHANCED_HEALTH_TYPE,
             EBDefinedCommandOptions.ARGUMENT_INSTANCE_PROFILE,
             EBDefinedCommandOptions.ARGUMENT_SERVICE_ROLE,
@@ -58,6 +59,9 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
         const string OPTIONS_NAME_PROXY_SERVER = "ProxyServer";
         const string OPTIONS_NAME_APPLICATION_PORT = "PORT";
+
+        const string OPTIONS_NAMESPACE_DISABLE_IMDS_V1 = "aws:autoscaling:launchconfiguration";
+        const string OPTIONS_NAME_DISABLE_IMDS_V1 = "DisableIMDSv1";
 
         public string Package { get; set; }
 
@@ -415,7 +419,6 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                     Value = loadBalancerType
                 });
             }
-           
 
             AddAdditionalOptions(createRequest.OptionSettings, true, isWindowsEnvironment);
 
@@ -452,6 +455,26 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                         Namespace = tokens[0],
                         OptionName = tokens[1],
                         Value = kvp.Value
+                    });
+                }
+            }
+
+            var disableIMDSv1 = this.GetBoolValueOrDefault(this.DeployEnvironmentOptions.DisableIMDSv1, EBDefinedCommandOptions.ARGUMENT_DISABLE_IMDS_V1, false);
+            if (disableIMDSv1.HasValue)
+            {
+                var existingSetting = settings.FirstOrDefault(s => s.Namespace == OPTIONS_NAMESPACE_DISABLE_IMDS_V1 && s.OptionName == OPTIONS_NAME_DISABLE_IMDS_V1);
+
+                if (existingSetting != null)
+                {
+                    existingSetting.Value = disableIMDSv1.Value.ToString(CultureInfo.InvariantCulture).ToLowerInvariant();
+                }
+                else
+                {
+                    settings.Add(new ConfigurationOptionSetting()
+                    {
+                        Namespace = OPTIONS_NAMESPACE_DISABLE_IMDS_V1,
+                        OptionName = OPTIONS_NAME_DISABLE_IMDS_V1,
+                        Value = disableIMDSv1.Value.ToString(CultureInfo.InvariantCulture).ToLowerInvariant()
                     });
                 }
             }
