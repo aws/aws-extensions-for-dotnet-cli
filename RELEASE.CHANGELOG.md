@@ -1,3 +1,9 @@
+### Release 2024-07-09
+* **Amazon.Lambda.Tools (5.10.7)**
+  * Fixed an issue where `CodeUri` set in `Globals` section is ignored for `AWS::Serverless::Function` resource.
+* **Amazon.ElasticBeanstalk.Tools (4.4.0)**
+  * Added support for new command line parameter `--disable-imds-v1` to disable IMDSv1 for Elastic BeanStalk environments.
+
 ### Release 2024-06-14
 * **Amazon.Lambda.Tools (5.10.6)**
   * Update the dependencies for the embedded zipping utility used to set file permissions correctly when creating deployment bundles on Windows
