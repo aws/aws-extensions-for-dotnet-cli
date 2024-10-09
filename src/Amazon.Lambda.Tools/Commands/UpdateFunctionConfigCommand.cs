@@ -54,7 +54,12 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_ENVIRONMENT_VARIABLES,
             LambdaDefinedCommandOptions.ARGUMENT_APPEND_ENVIRONMENT_VARIABLES,
             LambdaDefinedCommandOptions.ARGUMENT_KMS_KEY_ARN, 
-            LambdaDefinedCommandOptions.ARGUMENT_APPLY_DEFAULTS_FOR_UPDATE_OBSOLETE
+            LambdaDefinedCommandOptions.ARGUMENT_APPLY_DEFAULTS_FOR_UPDATE_OBSOLETE,
+
+            LambdaDefinedCommandOptions.ARGUMENT_LOG_FORMAT,
+            LambdaDefinedCommandOptions.ARGUMENT_LOG_APPLICATION_LEVEL,
+            LambdaDefinedCommandOptions.ARGUMENT_LOG_SYSTEM_LEVEL,
+            LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP,
         });
 
         public string FunctionName { get; set; }
@@ -87,6 +92,12 @@ namespace Amazon.Lambda.Tools.Commands
         public string FunctionUrlAuthType { get; set; }
 
         public string FunctionUrlLink { get; private set; }
+
+        public string LogFormat { get; set; }
+        public string LogApplicationLevel { get; set; }
+        public string LogSystemLevel { get; set; }
+        public string LogGroup { get; set; }
+
 
         public UpdateFunctionConfigCommand(IToolLogger logger, string workingDirectory, string[] args)
             : base(logger, workingDirectory, UpdateCommandOptions, args)
@@ -161,6 +172,15 @@ namespace Amazon.Lambda.Tools.Commands
                 this.FunctionUrlEnable = tuple.Item2.BoolValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_AUTH.Switch)) != null)
                 this.FunctionUrlAuthType = tuple.Item2.StringValue;
+
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_LOG_FORMAT.Switch)) != null)
+                this.LogFormat = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_LOG_APPLICATION_LEVEL.Switch)) != null)
+                this.LogApplicationLevel = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_LOG_SYSTEM_LEVEL.Switch)) != null)
+                this.LogSystemLevel = tuple.Item2.StringValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP.Switch)) != null)
+                this.LogGroup = tuple.Item2.StringValue;
         }
 
 
@@ -620,6 +640,66 @@ namespace Amazon.Lambda.Tools.Commands
                         request.ImageConfig.WorkingDirectory = imageWorkingDirectory;
                         different = true;
                     }
+                }
+            }
+
+            var logFormat = this.GetStringValueOrDefault(this.LogFormat, LambdaDefinedCommandOptions.ARGUMENT_LOG_FORMAT, false);
+            if (!string.IsNullOrEmpty(logFormat))
+            {
+                if (request.LoggingConfig == null)
+                {
+                    request.LoggingConfig = new LoggingConfig();
+                }
+
+                if (!string.Equals(request.LoggingConfig.LogFormat, existingConfiguration.LoggingConfig?.LogFormat, StringComparison.Ordinal))
+                {
+                    request.LoggingConfig.LogFormat = logFormat;
+                    different = true;
+                }
+            }
+
+            var logApplicationLevel = this.GetStringValueOrDefault(this.LogApplicationLevel, LambdaDefinedCommandOptions.ARGUMENT_LOG_APPLICATION_LEVEL, false);
+            if (!string.IsNullOrEmpty(logApplicationLevel))
+            {
+                if (request.LoggingConfig == null)
+                {
+                    request.LoggingConfig = new LoggingConfig();
+                }
+
+                if (!string.Equals(request.LoggingConfig.ApplicationLogLevel, existingConfiguration.LoggingConfig?.ApplicationLogLevel, StringComparison.Ordinal))
+                {
+                    request.LoggingConfig.ApplicationLogLevel = logApplicationLevel;
+                    different = true;
+                }
+            }
+
+            var logSystemLevel = this.GetStringValueOrDefault(this.LogSystemLevel, LambdaDefinedCommandOptions.ARGUMENT_LOG_APPLICATION_LEVEL, false);
+            if (!string.IsNullOrEmpty(logSystemLevel))
+            {
+                if (request.LoggingConfig == null)
+                {
+                    request.LoggingConfig = new LoggingConfig();
+                }
+
+                if (!string.Equals(request.LoggingConfig.SystemLogLevel, existingConfiguration.LoggingConfig?.SystemLogLevel, StringComparison.Ordinal))
+                {
+                    request.LoggingConfig.SystemLogLevel = logSystemLevel;
+                    different = true;
+                }
+            }
+
+            var logGroup = this.GetStringValueOrDefault(this.LogSystemLevel, LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP, false);
+            if (logGroup != null) // Allow empty string to reset back to Lambda's default log group.
+            {
+                if (request.LoggingConfig == null)
+                {
+                    request.LoggingConfig = new LoggingConfig();
+                }
+
+                if (!string.Equals(request.LoggingConfig.LogGroup, existingConfiguration.LoggingConfig?.LogGroup, StringComparison.Ordinal))
+                {
+                    request.LoggingConfig.LogGroup = logGroup;
+                    different = true;
                 }
             }
 

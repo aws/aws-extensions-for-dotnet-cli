@@ -79,7 +79,12 @@ namespace Amazon.Lambda.Tools.Commands
             
             LambdaDefinedCommandOptions.ARGUMENT_USE_CONTAINER_FOR_BUILD,
             LambdaDefinedCommandOptions.ARGUMENT_CONTAINER_IMAGE_FOR_BUILD,
-            LambdaDefinedCommandOptions.ARGUMENT_CODE_MOUNT_DIRECTORY
+            LambdaDefinedCommandOptions.ARGUMENT_CODE_MOUNT_DIRECTORY,
+
+            LambdaDefinedCommandOptions.ARGUMENT_LOG_FORMAT,
+            LambdaDefinedCommandOptions.ARGUMENT_LOG_APPLICATION_LEVEL,
+            LambdaDefinedCommandOptions.ARGUMENT_LOG_SYSTEM_LEVEL,
+            LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP,
         });
 
         public string Architecture { get; set; }
@@ -319,6 +324,13 @@ namespace Amazon.Lambda.Tools.Commands
                         {
                             SubnetIds = this.GetStringValuesOrDefault(this.SubnetIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SUBNETS, false)?.ToList(),
                             SecurityGroupIds = this.GetStringValuesOrDefault(this.SecurityGroupIds, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_SECURITY_GROUPS, false)?.ToList()
+                        },
+                        LoggingConfig = new LoggingConfig
+                        {
+                            LogFormat = this.GetStringValueOrDefault(this.LogFormat, LambdaDefinedCommandOptions.ARGUMENT_LOG_FORMAT, false),
+                            ApplicationLogLevel = this.GetStringValueOrDefault(this.LogApplicationLevel, LambdaDefinedCommandOptions.ARGUMENT_LOG_APPLICATION_LEVEL, false),
+                            SystemLogLevel = this.GetStringValueOrDefault(this.LogSystemLevel, LambdaDefinedCommandOptions.ARGUMENT_LOG_SYSTEM_LEVEL, false),
+                            LogGroup = this.GetStringValueOrDefault(this.LogGroup, LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP, false),
                         }
                     };
 
@@ -622,6 +634,11 @@ namespace Amazon.Lambda.Tools.Commands
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_USE_CONTAINER_FOR_BUILD.ConfigFileKey, this.GetBoolValueOrDefault(this.UseContainerForBuild, LambdaDefinedCommandOptions.ARGUMENT_USE_CONTAINER_FOR_BUILD, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_CONTAINER_IMAGE_FOR_BUILD.ConfigFileKey, this.GetStringValueOrDefault(this.ContainerImageForBuild, LambdaDefinedCommandOptions.ARGUMENT_CONTAINER_IMAGE_FOR_BUILD, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_CODE_MOUNT_DIRECTORY.ConfigFileKey, this.GetStringValueOrDefault(this.CodeMountDirectory, LambdaDefinedCommandOptions.ARGUMENT_CODE_MOUNT_DIRECTORY, false));
+
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_LOG_FORMAT.ConfigFileKey, this.GetStringValueOrDefault(this.LogFormat, LambdaDefinedCommandOptions.ARGUMENT_LOG_FORMAT, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_LOG_APPLICATION_LEVEL.ConfigFileKey, this.GetStringValueOrDefault(this.LogApplicationLevel, LambdaDefinedCommandOptions.ARGUMENT_LOG_APPLICATION_LEVEL, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_LOG_SYSTEM_LEVEL.ConfigFileKey, this.GetStringValueOrDefault(this.LogSystemLevel, LambdaDefinedCommandOptions.ARGUMENT_LOG_SYSTEM_LEVEL, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP.ConfigFileKey, this.GetStringValueOrDefault(this.LogGroup, LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP, false));
         }
     }
 }
