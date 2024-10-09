@@ -673,7 +673,7 @@ namespace Amazon.Lambda.Tools.Commands
                 }
             }
 
-            var logSystemLevel = this.GetStringValueOrDefault(this.LogSystemLevel, LambdaDefinedCommandOptions.ARGUMENT_LOG_APPLICATION_LEVEL, false);
+            var logSystemLevel = this.GetStringValueOrDefault(this.LogSystemLevel, LambdaDefinedCommandOptions.ARGUMENT_LOG_SYSTEM_LEVEL, false);
             if (!string.IsNullOrEmpty(logSystemLevel))
             {
                 if (request.LoggingConfig == null)
@@ -688,7 +688,7 @@ namespace Amazon.Lambda.Tools.Commands
                 }
             }
 
-            var logGroup = this.GetStringValueOrDefault(this.LogSystemLevel, LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP, false);
+            var logGroup = this.GetStringValueOrDefault(this.LogGroup, LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP, false);
             if (logGroup != null) // Allow empty string to reset back to Lambda's default log group.
             {
                 if (request.LoggingConfig == null)
