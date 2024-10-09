@@ -146,6 +146,15 @@ namespace Amazon.Lambda.Tools.Commands
                 this.Logger.WriteLine("   Auth: ".PadRight(PAD_SIZE) + urlConfig.AuthType.Value);
             }
 
+            if (response.LoggingConfig != null)
+            {
+                this.Logger.WriteLine("Logging Config");
+                this.Logger.WriteLine("   Format: ".PadRight(PAD_SIZE) + response.LoggingConfig.LogFormat);
+                this.Logger.WriteLine("   Application Log Level: ".PadRight(PAD_SIZE) + response.LoggingConfig.ApplicationLogLevel);
+                this.Logger.WriteLine("   System Log Level: ".PadRight(PAD_SIZE) + response.LoggingConfig.SystemLogLevel);
+                this.Logger.WriteLine("   Log Group: ".PadRight(PAD_SIZE) + response.LoggingConfig.LogGroup);
+            }
+
             return true;
         }
 
