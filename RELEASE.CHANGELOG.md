@@ -1,3 +1,8 @@
+### Release 2024-10-09
+* **Amazon.Lambda.Tools (5.11.0)**
+  * Add the `--log-format`, `--log-application-level`, `--log-system-level` and `--log-group` switches to the deploy-function command for configuring logging for the Lambda function.
+
+
 ### Release 2024-07-09
 * **Amazon.Lambda.Tools (5.10.7)**
   * Fixed an issue where `CodeUri` set in `Globals` section is ignored for `AWS::Serverless::Function` resource.
