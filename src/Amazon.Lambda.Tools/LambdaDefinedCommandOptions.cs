@@ -486,5 +486,41 @@ namespace Amazon.Lambda.Tools
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = $"Path to the directory to mount to the build container. Otherwise, look upward for a solution folder."
             };
+        public static readonly CommandOption ARGUMENT_LOG_FORMAT =
+            new CommandOption
+            {
+                Name = "Log Format",
+                Switch = "--log-format",
+                ShortSwitch = "-lf",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = $"The log format used by the Lambda function. Valid values are: Text or JSON. Default is Text"
+            };
+        public static readonly CommandOption ARGUMENT_LOG_APPLICATION_LEVEL =
+            new CommandOption
+            {
+                Name = "Application Log Level",
+                Switch = "--log-application-level",
+                ShortSwitch = "-lal",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = $"The log level. Valid values are: TRACE, DEBUG, INFO, WARN, ERROR or FATAL. Default is INFO."
+            };
+        public static readonly CommandOption ARGUMENT_LOG_SYSTEM_LEVEL =
+            new CommandOption
+            {
+                Name = "System Log",
+                Switch = "--log-system-level",
+                ShortSwitch = "-lsl",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = $"The log system level. Valid values are: DEBUG, INFO, WARN. Default is INFO."
+            };
+        public static readonly CommandOption ARGUMENT_LOG_GROUP =
+            new CommandOption
+            {
+                Name = "Log Group",
+                Switch = "--log-group",
+                ShortSwitch = "-lg",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = $"The name of the Amazon CloudWatch log group the function sends logs to. Default is /aws/lambda/<function name>."
+            };
     }
 }
