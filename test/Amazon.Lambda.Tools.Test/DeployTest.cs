@@ -310,7 +310,50 @@ namespace Amazon.Lambda.Tools.Test
                 }
             }
         }
-        
+
+        [Fact]
+        public async Task RunDeployAndInvokeWithIntegerPayloadCommand()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+            var toolLogger = new TestToolLogger(_testOutputHelper);
+
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestIntegerFunction");
+            var command = new DeployFunctionCommand(toolLogger, fullPath, new string[0]);
+            command.FunctionName = "test-function-intpayload-" + DateTime.Now.Ticks;
+            command.Handler = "TestIntegerFunction::TestIntegerFunction.Function::FunctionHandler";
+            command.Timeout = 10;
+            command.MemorySize = 512;
+            command.Role = await TestHelper.GetTestRoleArnAsync();
+            command.Configuration = "Release";
+            command.Runtime = "dotnet6";
+            command.DisableInteractive = true;
+
+            var created = await command.ExecuteAsync();
+            try
+            {
+                Assert.True(created);
+
+                await LambdaUtilities.WaitTillFunctionAvailableAsync(new TestToolLogger(_testOutputHelper), command.LambdaClient, command.FunctionName);
+
+                toolLogger.ClearBuffer();
+
+                var invokeCommand = new InvokeFunctionCommand(toolLogger, fullPath, new string[0]);
+                invokeCommand.FunctionName = command.FunctionName;
+                invokeCommand.Payload = "42";
+
+                await invokeCommand.ExecuteAsync();
+                
+                Assert.Contains("\"Hello 42\"", toolLogger.Buffer);
+            }
+            finally
+            {
+                if (created)
+                {
+                    await command.LambdaClient.DeleteFunctionAsync(command.FunctionName);
+                }
+            }
+        }
+
         [Fact]
         public async Task TestPowerShellLambdaParallelTestCommand()
         {

@@ -74,6 +74,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Amazon.Lambda.Tools\Amazon.Lambda.Tools.csproj" />
     <ProjectReference Include="..\..\testapps\TestFunction\TestFunction.csproj" />
+    <ProjectReference Include="..\..\testapps\TestIntegerFunction\TestIntegerFunction.csproj" />
     <ProjectReference Include="..\Amazon.Tools.TestHelpers\Amazon.Tools.TestHelpers.csproj" />
   </ItemGroup>
   <ItemGroup>

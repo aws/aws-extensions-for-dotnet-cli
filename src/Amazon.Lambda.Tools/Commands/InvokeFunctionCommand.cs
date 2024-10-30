@@ -62,7 +62,6 @@ namespace Amazon.Lambda.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
-
             var invokeRequest = new InvokeRequest
             {
                 FunctionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true),
@@ -81,9 +80,20 @@ namespace Amazon.Lambda.Tools.Commands
                     invokeRequest.Payload = this.Payload.Trim();
                 }
 
-                if(!invokeRequest.Payload.StartsWith("{"))
+                // We should still check for empty payload in case it is read from a file.
+                if (!string.IsNullOrEmpty(invokeRequest.Payload))
                 {
-                    invokeRequest.Payload = "\"" + invokeRequest.Payload + "\"";
+                    if (invokeRequest.Payload[0] != '\"' && invokeRequest.Payload[0] != '{' && invokeRequest.Payload[0] != '[')
+                    {
+                        double d;
+                        long l;
+                        bool b;
+                        if (!double.TryParse(invokeRequest.Payload, out d) && !long.TryParse(invokeRequest.Payload, out l) &&
+                            !bool.TryParse(invokeRequest.Payload, out b))
+                        {
+                            invokeRequest.Payload = "\"" + invokeRequest.Payload + "\"";
+                        }
+                    }
                 }
             }
 
