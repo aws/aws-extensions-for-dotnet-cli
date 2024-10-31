@@ -1,0 +1,20 @@
+{
+    "Projects": [
+      {
+        "Name": "Amazon.ECS.Tools",
+        "Path": "src/Amazon.ECS.Tools/Amazon.ECS.Tools.csproj"
+      },
+      {
+        "Name": "Amazon.ElasticBeanstalk.Tools",
+        "Path": "src/Amazon.ElasticBeanstalk.Tools/Amazon.ElasticBeanstalk.Tools.csproj"
+      },
+      {
+        "Name": "Amazon.Lambda.Tools",
+        "Path": "src/Amazon.Lambda.Tools/Amazon.Lambda.Tools.csproj"
+      }
+    ],
+    "UseCommitsForChangelog": false,
+    "UseSameVersionForAllProjects": false,
+    "DefaultIncrementType": "Patch",
+    "ChangeFilesDetermineIncrementType": true
+  }
