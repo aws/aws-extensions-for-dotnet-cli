@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\buildtools\common.props" />
   <PropertyGroup>
     <Description>Amazon.Lambda.Tools adds commands to the dotnet cli to deploy AWS Lambda functions.</Description>
@@ -15,7 +15,7 @@
     <Copyright>Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
     <Product>AWS Lambda Tools for .NET CLI</Product>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <Version>5.11.0</Version>
+    <Version>5.11.1</Version>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Resources\build-lambda-zip.exe">
@@ -49,7 +49,6 @@
   <!-- To rebuild build-lambda-zip.exe you must have Go installed and run 'dotnet msbuild -target:build-lambda-zip'
        You may also need to set $env:GOPROXY="direct" if you have trouble resolving dependencies -->
   <Target Name="build-lambda-zip">
-    <Exec WorkingDirectory=".\BuildLambdaZip\" Command="(set GOARCH=386) &amp; (set GOOS=windows) &amp; 
-            go build -o /../Resources/build-lambda-zip.exe .\build-lambda-zip.go" />
+    <Exec WorkingDirectory=".\BuildLambdaZip\" Command="(set GOARCH=386) &amp; (set GOOS=windows) &amp; &#xA;            go build -o /../Resources/build-lambda-zip.exe .\build-lambda-zip.go" />
   </Target>
 </Project>
