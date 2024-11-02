@@ -37,7 +37,7 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="AWSSDK.CloudFormation" Version="3.7.307.6" />
-    <PackageReference Include="AWSSDK.Lambda" Version="3.7.305.12" />
+    <PackageReference Include="AWSSDK.Lambda" Version="3.7.406.2" />
     <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.301.6" />
     <PackageReference Include="AWSSDK.S3" Version="3.7.307.21" />
     <PackageReference Include="YamlDotNet.Signed" Version="5.2.1" />

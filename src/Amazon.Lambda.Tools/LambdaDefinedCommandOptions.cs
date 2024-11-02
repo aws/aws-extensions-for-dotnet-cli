@@ -4,7 +4,7 @@ namespace Amazon.Lambda.Tools
 {
     /// <summary>
     /// This class defines all the possible options across all the commands. The individual commands will then
-    /// references the options that are appropiate.
+    /// references the options that are appropriate.
     /// </summary>
     public static class LambdaDefinedCommandOptions
     {
@@ -521,6 +521,15 @@ namespace Amazon.Lambda.Tools
                 ShortSwitch = "-lg",
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = $"The name of the Amazon CloudWatch log group the function sends logs to. Default is /aws/lambda/<function name>."
+            };
+        public static readonly CommandOption ARGUMENT_SNAP_START_APPLY_ON =
+            new CommandOption
+            {
+                Name = "SnapStart Apply On",
+                Switch = "--snap-start-apply-on",
+                ShortSwitch = "-sa",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "Configure when a snapshot of the initialized execution environment should be taken. Valid values are: PublishedVersions, None. Default is None.",
             };
     }
 }
