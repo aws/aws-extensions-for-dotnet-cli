@@ -109,7 +109,7 @@ namespace Amazon.Lambda.Tools.Test
                     Assert.Equal("DEBUG", request.LoggingConfig.ApplicationLogLevel);
                     Assert.Equal("WARN", request.LoggingConfig.SystemLogLevel);
                 })
-                .Returns((CreateFunctionRequest r, CancellationToken token) =>
+                .Returns((UpdateFunctionConfigurationRequest r, CancellationToken token) =>
                 {
                     return Task.FromResult(new UpdateFunctionConfigurationResponse());
                 });
