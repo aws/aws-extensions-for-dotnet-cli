@@ -651,7 +651,7 @@ namespace Amazon.Lambda.Tools.Commands
                     request.LoggingConfig = new LoggingConfig();
                 }
 
-                if (!string.Equals(request.LoggingConfig.LogFormat, existingConfiguration.LoggingConfig?.LogFormat, StringComparison.Ordinal))
+                if (!string.Equals(logFormat, existingConfiguration.LoggingConfig?.LogFormat, StringComparison.Ordinal))
                 {
                     request.LoggingConfig.LogFormat = logFormat;
                     different = true;
@@ -666,7 +666,7 @@ namespace Amazon.Lambda.Tools.Commands
                     request.LoggingConfig = new LoggingConfig();
                 }
 
-                if (!string.Equals(request.LoggingConfig.ApplicationLogLevel, existingConfiguration.LoggingConfig?.ApplicationLogLevel, StringComparison.Ordinal))
+                if (!string.Equals(logApplicationLevel, existingConfiguration.LoggingConfig?.ApplicationLogLevel, StringComparison.Ordinal))
                 {
                     request.LoggingConfig.ApplicationLogLevel = logApplicationLevel;
                     different = true;
@@ -681,7 +681,7 @@ namespace Amazon.Lambda.Tools.Commands
                     request.LoggingConfig = new LoggingConfig();
                 }
 
-                if (!string.Equals(request.LoggingConfig.SystemLogLevel, existingConfiguration.LoggingConfig?.SystemLogLevel, StringComparison.Ordinal))
+                if (!string.Equals(logSystemLevel, existingConfiguration.LoggingConfig?.SystemLogLevel, StringComparison.Ordinal))
                 {
                     request.LoggingConfig.SystemLogLevel = logSystemLevel;
                     different = true;
@@ -696,7 +696,7 @@ namespace Amazon.Lambda.Tools.Commands
                     request.LoggingConfig = new LoggingConfig();
                 }
 
-                if (!string.Equals(request.LoggingConfig.LogGroup, existingConfiguration.LoggingConfig?.LogGroup, StringComparison.Ordinal))
+                if (!string.Equals(logGroup, existingConfiguration.LoggingConfig?.LogGroup, StringComparison.Ordinal))
                 {
                     request.LoggingConfig.LogGroup = logGroup;
                     different = true;

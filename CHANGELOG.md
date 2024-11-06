@@ -2,6 +2,7 @@
 
 ### Amazon.Lambda.Tools (5.11.1)
 * Fixed an issue where primitive values in payload for InvokeFunctionCommand were not working.
+* Fixed issue detecting if log parameters have changed since previous deployment.
 
 ## Release 2024-10-09
 

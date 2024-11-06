@@ -25,8 +25,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amazon.ECS.Tools.Test", "te
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{90827CB6-7488-4B53-904B-F045BCC754F3}"
 	ProjectSection(SolutionItems) = preProject
+		CHANGELOG.md = CHANGELOG.md
 		README.md = README.md
-		RELEASE.CHANGELOG.md = RELEASE.CHANGELOG.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amazon.Lambda.Tools", "src\Amazon.Lambda.Tools\Amazon.Lambda.Tools.csproj", "{26CEBD54-FC5B-4437-A009-6643EE849413}"
