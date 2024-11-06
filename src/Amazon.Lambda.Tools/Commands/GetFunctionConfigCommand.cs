@@ -116,6 +116,12 @@ namespace Amazon.Lambda.Tools.Commands
                 this.Logger.WriteLine("Dead Letter Target:".PadRight(PAD_SIZE) + response.DeadLetterConfig.TargetArn);
             }
 
+            if (!string.IsNullOrEmpty(response.SnapStart?.ApplyOn?.Value))
+            {
+                this.Logger.WriteLine("SnapStart");
+                this.Logger.WriteLine("   Apply On:".PadRight(PAD_SIZE) + response.SnapStart.ApplyOn.Value);
+                this.Logger.WriteLine("   Optimization Status:".PadRight(PAD_SIZE) + response.SnapStart?.OptimizationStatus?.Value ?? "");
+            }
 
             if (response.Environment?.Variables?.Count > 0)
             {
