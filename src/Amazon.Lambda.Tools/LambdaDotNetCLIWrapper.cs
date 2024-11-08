@@ -217,7 +217,7 @@ namespace Amazon.Lambda.Tools
 
                 proc.EnableRaisingEvents = true;
 
-                proc.WaitForExit();
+                proc.WaitForExit(int.MaxValue);
 
                 exitCode = proc.ExitCode;
             }

@@ -1,0 +1,11 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.Lambda.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Fixed an issue causing 'lambda package' to hang when ran in CI/CD."
+      ]
+    }
+  ]
+}
