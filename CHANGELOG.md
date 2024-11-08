@@ -1,3 +1,8 @@
+## Release 2024-11-08
+
+### Amazon.Lambda.Tools (5.11.2)
+* Fixed an issue causing 'lambda package' to hang when ran in CI/CD.
+
 ## Release 2024-11-01
 
 ### Amazon.Lambda.Tools (5.11.1)
