@@ -38,10 +38,19 @@ namespace Amazon.Lambda.Tools
             { "netcoreapp1.1", Version.Parse("1.6.1") }
         };
 
-        private static bool IsAmazonLinux(IToolLogger logger)
+        public static bool IsAmazonLinux(IToolLogger logger)
         {
 #if !NETCOREAPP3_1_OR_GREATER
-    return false;
+        return false;
+#else
+            return IsAmazonLinux2(logger) || IsAmazonLinux2023(logger);
+#endif
+        }
+
+        public static bool IsAmazonLinux2(IToolLogger logger)
+        {
+#if !NETCOREAPP3_1_OR_GREATER
+        return false;
 #else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
@@ -55,6 +64,24 @@ namespace Amazon.Lambda.Tools
                             $"Linux distribution is Amazon Linux 2, NativeAOT container build is optional");
                         return true;
                     }
+                }
+            }
+
+            return false;
+#endif
+        }
+
+        public static bool IsAmazonLinux2023(IToolLogger logger)
+        {
+#if !NETCOREAPP3_1_OR_GREATER
+        return false;
+#else
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                if (File.Exists(LinuxOSReleaseFile))
+                {
+                    logger?.WriteLine($"Found {LinuxOSReleaseFile}");
+                    string readText = File.ReadAllText(LinuxOSReleaseFile);
                     if (readText.Contains(AmazonLinuxNameInOSReleaseFile) && readText.Contains(AmazonLinux2023InOSReleaseFile))
                     {
                         logger?.WriteLine(
@@ -110,10 +137,19 @@ namespace Amazon.Lambda.Tools
 
             LogDeprecationMessagesIfNecessary(logger, targetFramework);
 
-            if (string.Equals(architecture, LambdaConstants.ARCHITECTURE_ARM64) && msbuildParameters != null && msbuildParameters.Contains("--self-contained true"))
+            if (msbuildParameters != null && msbuildParameters.Contains("--self-contained true"))
             {
-                logger.WriteLine("WARNING: There is an issue with self contained ARM based .NET Lambda functions using custom runtimes that causes functions to fail to run. The following GitHub issue has further information and workaround.");
-                logger.WriteLine("https://github.com/aws/aws-lambda-dotnet/issues/920");
+                if (string.Equals(architecture, LambdaConstants.ARCHITECTURE_ARM64) && IsAmazonLinux2(logger))
+                {
+                    logger.WriteLine("WARNING: There is an issue with self-contained ARM-based .NET Lambda functions using custom runtimes on Amazon Linux 2 that causes functions to fail to run.");
+                    logger.WriteLine("For more information and workarounds, see: https://github.com/aws/aws-lambda-dotnet/issues/920");
+                }
+                else if (IsAmazonLinux2023(logger))
+                {
+                    logger.WriteLine("WARNING: There is an issue with self-contained .NET Lambda functions using custom runtimes on Amazon Linux 2023 that causes functions to fail to run.");
+                    logger.WriteLine("This applies to both AMD and ARM architectures.");
+                    logger.WriteLine("For more information and workarounds, see: https://github.com/aws/aws-lambda-dotnet/issues/920");
+                }
             }
 
             if (string.IsNullOrEmpty(configuration))
