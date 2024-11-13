@@ -38,7 +38,7 @@ namespace Amazon.Lambda.Tools
             { "netcoreapp1.1", Version.Parse("1.6.1") }
         };
 
-        public static bool IsAmazonLinux(IToolLogger logger)
+        private static bool IsAmazonLinux(IToolLogger logger)
         {
 #if !NETCOREAPP3_1_OR_GREATER
         return false;
@@ -47,7 +47,7 @@ namespace Amazon.Lambda.Tools
 #endif
         }
 
-        public static bool IsAmazonLinux2(IToolLogger logger)
+        private static bool IsAmazonLinux2(IToolLogger logger)
         {
 #if !NETCOREAPP3_1_OR_GREATER
         return false;
@@ -71,7 +71,7 @@ namespace Amazon.Lambda.Tools
 #endif
         }
 
-        public static bool IsAmazonLinux2023(IToolLogger logger)
+        private static bool IsAmazonLinux2023(IToolLogger logger)
         {
 #if !NETCOREAPP3_1_OR_GREATER
         return false;
