@@ -67,6 +67,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestNativeAotNet8WebApp", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestIntegerFunction", "testapps\TestIntegerFunction\TestIntegerFunction.csproj", "{D7F1DFA4-066B-469C-B04C-DF032CF152C1}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestFunctionBuildProps", "testapps\TestFunctionBuildProps\TestFunctionBuildProps\TestFunctionBuildProps.csproj", "{AFA71B8E-F0AA-4704-8C4E-C11130F82B13}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -169,6 +171,10 @@ Global
 		{D7F1DFA4-066B-469C-B04C-DF032CF152C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D7F1DFA4-066B-469C-B04C-DF032CF152C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D7F1DFA4-066B-469C-B04C-DF032CF152C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AFA71B8E-F0AA-4704-8C4E-C11130F82B13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFA71B8E-F0AA-4704-8C4E-C11130F82B13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFA71B8E-F0AA-4704-8C4E-C11130F82B13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFA71B8E-F0AA-4704-8C4E-C11130F82B13}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -200,6 +206,7 @@ Global
 		{AD31D053-97C5-4262-B187-EC42BFD51A9F} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 		{69FFA03C-D29F-40E0-9E7F-572D5E10AF77} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 		{D7F1DFA4-066B-469C-B04C-DF032CF152C1} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
+		{AFA71B8E-F0AA-4704-8C4E-C11130F82B13} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DBFC70D6-49A2-40A1-AB08-5D9504AB7112}

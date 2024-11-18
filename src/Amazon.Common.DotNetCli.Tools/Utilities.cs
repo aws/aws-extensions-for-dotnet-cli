@@ -18,6 +18,7 @@ using Amazon.Util;
 using System.Text.RegularExpressions;
 using System.Collections;
 using System.Xml;
+using System.Text.Json;
 
 namespace Amazon.Common.DotNetCli.Tools
 {
@@ -208,12 +209,74 @@ namespace Amazon.Common.DotNetCli.Tools
         public static string LookupTargetFrameworkFromProjectFile(string projectLocation)
         {
             var projectFile = FindProjectFileInDirectory(projectLocation);
+            if (string.IsNullOrEmpty(projectFile))
+            {
+                throw new FileNotFoundException("Could not find a project file in the specified directory.");
+            }
 
-            var xdoc = XDocument.Load(projectFile);
+            var arguments = new[]
+            {
+                "msbuild",
+                projectFile,
+                "--getProperty:TargetFramework,TargetFrameworks",
+                "-nologo"
+            };
 
-            var element = xdoc.XPathSelectElement("//PropertyGroup/TargetFramework");
-            return element?.Value;
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "dotnet",
+                    Arguments = string.Join(" ", arguments),
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+
+            process.Start();
+            string output = process.StandardOutput.ReadToEnd();
+            string error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+
+            if (process.ExitCode != 0)
+            {
+                throw new Exception($"MSBuild process exited with code {process.ExitCode}. Error: {error}");
+            }
+
+            try
+            {
+                using JsonDocument doc = JsonDocument.Parse(output);
+                JsonElement root = doc.RootElement;
+                JsonElement properties = root.GetProperty("Properties");
+
+                if (properties.TryGetProperty("TargetFramework", out JsonElement targetFramework))
+                {
+                    string framework = targetFramework.GetString();
+                    if (!string.IsNullOrEmpty(framework))
+                    {
+                        return framework;
+                    }
+                }
+
+                if (properties.TryGetProperty("TargetFrameworks", out JsonElement targetFrameworks))
+                {
+                    string frameworks = targetFrameworks.GetString();
+                    if (!string.IsNullOrEmpty(frameworks))
+                    {
+                        return frameworks.Split(';')[0];
+                    }
+                }
+            }
+            catch (JsonException ex)
+            {
+                throw new Exception($"Failed to parse MSBuild output: {ex.Message}. Output: {output}");
+            }
+
+            return null;
         }
+
 
         /// <summary>
         /// Retrieve the `OutputType` property of a given project
