@@ -60,6 +60,8 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_LOG_APPLICATION_LEVEL,
             LambdaDefinedCommandOptions.ARGUMENT_LOG_SYSTEM_LEVEL,
             LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP,
+
+            LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON
         });
 
         public string FunctionName { get; set; }
@@ -97,6 +99,7 @@ namespace Amazon.Lambda.Tools.Commands
         public string LogApplicationLevel { get; set; }
         public string LogSystemLevel { get; set; }
         public string LogGroup { get; set; }
+        public string SnapStartApplyOn { get; set; }
 
 
         public UpdateFunctionConfigCommand(IToolLogger logger, string workingDirectory, string[] args)
@@ -181,6 +184,9 @@ namespace Amazon.Lambda.Tools.Commands
                 this.LogSystemLevel = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP.Switch)) != null)
                 this.LogGroup = tuple.Item2.StringValue;
+
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON.Switch)) != null)
+                this.SnapStartApplyOn = tuple.Item2.StringValue;
         }
 
 
@@ -702,6 +708,20 @@ namespace Amazon.Lambda.Tools.Commands
                     different = true;
                 }
             }
+
+            var snapStartApplyOn = this.GetStringValueOrDefault(this.SnapStartApplyOn, LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON, false);
+            if (!string.IsNullOrEmpty(snapStartApplyOn))
+            {
+                if (null == request.SnapStart)
+                    request.SnapStart = new SnapStart();
+
+                if (!string.Equals(existingConfiguration?.SnapStart?.ApplyOn?.Value, snapStartApplyOn, StringComparison.Ordinal))
+                {
+                    request.SnapStart.ApplyOn = snapStartApplyOn;
+                    different = true;
+                }
+            }
+
 
             if (!different)
                 return null;

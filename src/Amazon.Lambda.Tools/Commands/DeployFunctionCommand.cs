@@ -85,6 +85,8 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_LOG_APPLICATION_LEVEL,
             LambdaDefinedCommandOptions.ARGUMENT_LOG_SYSTEM_LEVEL,
             LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP,
+
+            LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON
         });
 
         public string Architecture { get; set; }
@@ -181,6 +183,9 @@ namespace Amazon.Lambda.Tools.Commands
                 this.ContainerImageForBuild = tuple.Item2.StringValue;
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_CODE_MOUNT_DIRECTORY.Switch)) != null)
                 this.CodeMountDirectory = tuple.Item2.StringValue;
+
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON.Switch)) != null)
+                this.SnapStartApplyOn = tuple.Item2.StringValue;
         }
 
 
@@ -424,6 +429,11 @@ namespace Amazon.Lambda.Tools.Commands
                         createRequest.TracingConfig = new TracingConfig { Mode = tracingMode };
                     }
 
+                    var snapStartApplyOn = this.GetStringValueOrDefault(this.SnapStartApplyOn, LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON, false);
+                    if (!string.IsNullOrEmpty(snapStartApplyOn))
+                    {
+                        createRequest.SnapStart = new SnapStart {ApplyOn = Amazon.Lambda.SnapStartApplyOn.FindValue(snapStartApplyOn)};
+                    }
 
                     try
                     {
@@ -639,6 +649,9 @@ namespace Amazon.Lambda.Tools.Commands
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_LOG_APPLICATION_LEVEL.ConfigFileKey, this.GetStringValueOrDefault(this.LogApplicationLevel, LambdaDefinedCommandOptions.ARGUMENT_LOG_APPLICATION_LEVEL, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_LOG_SYSTEM_LEVEL.ConfigFileKey, this.GetStringValueOrDefault(this.LogSystemLevel, LambdaDefinedCommandOptions.ARGUMENT_LOG_SYSTEM_LEVEL, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP.ConfigFileKey, this.GetStringValueOrDefault(this.LogGroup, LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP, false));
+
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON.ConfigFileKey, this.GetStringValueOrDefault(this.SnapStartApplyOn, LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON, false));
+
         }
     }
 }
