@@ -1,3 +1,8 @@
+## Release 2024-11-18
+
+### Amazon.Lambda.Tools (5.12.0)
+* Added `--snap-start-apply-on` switch to enable Lambda SnapStart
+
 ## Release 2024-11-01
 
 ### Amazon.Lambda.Tools (5.11.1)
