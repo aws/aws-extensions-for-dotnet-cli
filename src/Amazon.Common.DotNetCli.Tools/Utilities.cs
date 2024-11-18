@@ -277,7 +277,6 @@ namespace Amazon.Common.DotNetCli.Tools
             return null;
         }
 
-
         /// <summary>
         /// Retrieve the `OutputType` property of a given project
         /// </summary>
