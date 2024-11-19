@@ -242,7 +242,7 @@ namespace Amazon.Common.DotNetCli.Tools
                 process.Start();
                 string output = process.StandardOutput.ReadToEnd();
                 string error = process.StandardError.ReadToEnd();
-                process.WaitForExit();
+                process.WaitForExit(5000);
 
                 if (process.ExitCode == 0)
                 {
@@ -311,7 +311,11 @@ namespace Amazon.Common.DotNetCli.Tools
             }
             if (properties.TryGetValue("TargetFrameworks", out var targetFrameworks) && !string.IsNullOrEmpty(targetFrameworks))
             {
-                return targetFrameworks.Split(';')[0];
+                var frameworks = targetFrameworks.Split(';');
+                if (frameworks.Length > 1 ){
+                    return null;
+                }
+                return frameworks[0];
             }
             return null;
         }
