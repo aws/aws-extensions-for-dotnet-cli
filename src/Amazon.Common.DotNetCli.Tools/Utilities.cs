@@ -208,7 +208,7 @@ namespace Amazon.Common.DotNetCli.Tools
 
 
         // <summary>
-        /// Looks up specified properties from a project file.
+        /// Looks up specified properties from a project.
         /// </summary>
         /// <param name="projectLocation">The location of the project file.</param>
         /// <param name="propertyNames">The names of the properties to look up.</param>
@@ -240,40 +240,48 @@ namespace Amazon.Common.DotNetCli.Tools
             try
             {
                 process.Start();
-                string output = process.StandardOutput.ReadToEnd();
+                string output = process.StandardOutput.ReadToEnd().Trim();
                 string error = process.StandardError.ReadToEnd();
                 process.WaitForExit(5000);
 
                 if (process.ExitCode == 0)
                 {
-                    using JsonDocument doc = JsonDocument.Parse(output);
-                    JsonElement root = doc.RootElement;
-                    JsonElement propertiesElement = root.GetProperty("Properties");
-
-                    foreach (var property in propertyNames)
+                    if (propertyNames.Length == 1)
                     {
-                        if (propertiesElement.TryGetProperty(property, out JsonElement propertyValue))
+                        // If only one property was requested, the output is the direct value
+                        properties[propertyNames[0]] = output;
+                    }
+                    else
+                    {
+                        // Multiple properties were requested, so we expect JSON output
+                        using JsonDocument doc = JsonDocument.Parse(output);
+                        JsonElement root = doc.RootElement;
+                        JsonElement propertiesElement = root.GetProperty("Properties");
+
+                        foreach (var property in propertyNames)
                         {
-                            properties[property] = propertyValue.GetString();
+                            if (propertiesElement.TryGetProperty(property, out JsonElement propertyValue))
+                            {
+                                properties[property] = propertyValue.GetString();
+                            }
                         }
                     }
                 }
                 else
                 {
-                    Console.WriteLine($"MSBuild process exited with code {process.ExitCode}. Error: {error}");
                     // Fallback to XML parsing
                     properties = LookupProjectPropertiesFromXml(projectFile, propertyNames);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error executing MSBuild or parsing output: {ex.Message}");
                 // Fallback to XML parsing
                 properties = LookupProjectPropertiesFromXml(projectFile, propertyNames);
             }
 
             return properties;
         }
+
 
         private static Dictionary<string, string> LookupProjectPropertiesFromXml(string projectFile, string[] propertyNames)
         {
@@ -290,9 +298,8 @@ namespace Amazon.Common.DotNetCli.Tools
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error parsing project file XML: {ex.Message}");
             }
             return properties;
         }                                   

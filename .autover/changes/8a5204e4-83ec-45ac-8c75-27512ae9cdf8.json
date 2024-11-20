@@ -4,7 +4,7 @@
       "Name": "Amazon.Lambda.Tools",
       "Type": "Patch",
       "ChangelogMessages": [
-        "Use MSBuild to find target framework"
+        "Update logic for finding project properties to use MSBuild instead of parsing the project file directly. See https://learn.microsoft.com/en-us/visualstudio/msbuild/customize-your-build?view=vs-2022 for more details."
       ]
     }
   ]
