@@ -1,0 +1,11 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.Lambda.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Updated message related to self-contained runtimes with lambda functions"
+      ]
+    }
+  ]
+}
