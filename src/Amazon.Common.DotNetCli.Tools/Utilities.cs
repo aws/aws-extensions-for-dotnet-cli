@@ -372,7 +372,7 @@ namespace Amazon.Common.DotNetCli.Tools
             var properties = LookupProjectProperties(projectLocation, "SelfContained");
             if (properties.TryGetValue("SelfContained", out var selfContained))
             {
-                return bool.TryParse(selfContained, out _);
+                return bool.TryParse(selfContained, out var isSelfContained) && isSelfContained;
             }
 
             return false;
