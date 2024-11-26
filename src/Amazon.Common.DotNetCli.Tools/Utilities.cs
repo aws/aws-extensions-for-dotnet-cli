@@ -18,6 +18,7 @@ using Amazon.Util;
 using System.Text.RegularExpressions;
 using System.Collections;
 using System.Xml;
+using System.Text.Json;
 
 namespace Amazon.Common.DotNetCli.Tools
 {
@@ -205,14 +206,125 @@ namespace Amazon.Common.DotNetCli.Tools
             return path;
         }
 
-        public static string LookupTargetFrameworkFromProjectFile(string projectLocation)
+
+        // <summary>
+        /// Looks up specified properties from a project.
+        /// </summary>
+        /// <param name="projectLocation">The location of the project file.</param>
+        /// <param name="propertyNames">The names of the properties to look up.</param>
+        /// <returns>A dictionary of property names and their values.</returns>        
+        public static Dictionary<string, string> LookupProjectProperties(string projectLocation, params string[] propertyNames)
         {
             var projectFile = FindProjectFileInDirectory(projectLocation);
+            var properties = new Dictionary<string, string>();
+            var arguments = new List<string>
+            {
+                "msbuild",
+                projectFile,
+                "-nologo",
+                $"--getProperty:{string.Join(',', propertyNames)}"
+            };
 
-            var xdoc = XDocument.Load(projectFile);
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "dotnet",
+                    Arguments = string.Join(" ", arguments),
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+            try
+            {
+                process.Start();
+                string output = process.StandardOutput.ReadToEnd().Trim();
+                string error = process.StandardError.ReadToEnd();
+                process.WaitForExit(5000);
 
-            var element = xdoc.XPathSelectElement("//PropertyGroup/TargetFramework");
-            return element?.Value;
+                if (process.ExitCode == 0)
+                {
+                    if (propertyNames.Length == 1)
+                    {
+                        // If only one property was requested, the output is the direct value
+                        properties[propertyNames[0]] = output;
+                    }
+                    else
+                    {
+                        // Multiple properties were requested, so we expect JSON output
+                        using JsonDocument doc = JsonDocument.Parse(output);
+                        JsonElement root = doc.RootElement;
+                        JsonElement propertiesElement = root.GetProperty("Properties");
+
+                        foreach (var property in propertyNames)
+                        {
+                            if (propertiesElement.TryGetProperty(property, out JsonElement propertyValue))
+                            {
+                                properties[property] = propertyValue.GetString();
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Fallback to XML parsing
+                    properties = LookupProjectPropertiesFromXml(projectFile, propertyNames);
+                }
+            }
+            catch (Exception)
+            {
+                // Fallback to XML parsing
+                properties = LookupProjectPropertiesFromXml(projectFile, propertyNames);
+            }
+
+            return properties;
+        }
+
+
+        private static Dictionary<string, string> LookupProjectPropertiesFromXml(string projectFile, string[] propertyNames)
+        {
+            var properties = new Dictionary<string, string>();
+            try
+            {
+                var xdoc = XDocument.Load(projectFile);
+                foreach (var propertyName in propertyNames)
+                {
+                    var element = xdoc.XPathSelectElement($"//PropertyGroup/{propertyName}");
+                    if (element != null && !string.IsNullOrWhiteSpace(element.Value))
+                    {
+                        properties[propertyName] = element.Value;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+            return properties;
+        }                                   
+
+        /// <summary>
+        /// Looks up the target framework from a project file.
+        /// </summary>
+        /// <param name="projectLocation">The location of the project file.</param>
+        /// <returns>The target framework of the project.</returns>
+        public static string LookupTargetFrameworkFromProjectFile(string projectLocation)
+        {
+            var properties = LookupProjectProperties(projectLocation, "TargetFramework", "TargetFrameworks");
+            if (properties.TryGetValue("TargetFramework", out var targetFramework) && !string.IsNullOrEmpty(targetFramework))
+            {
+                return targetFramework;
+            }
+            if (properties.TryGetValue("TargetFrameworks", out var targetFrameworks) && !string.IsNullOrEmpty(targetFrameworks))
+            {
+                var frameworks = targetFrameworks.Split(';');
+                if (frameworks.Length > 1 ){
+                    return null;
+                }
+                return frameworks[0];
+            }
+            return null;
         }
 
         /// <summary>
@@ -222,55 +334,8 @@ namespace Amazon.Common.DotNetCli.Tools
         /// <returns>The value of the `OutputType` property</returns>
         public static string LookupOutputTypeFromProjectFile(string projectLocation)
         {
-            var process = new Process();
-            var output = string.Empty;
-            var msbuildProcessFailed = false;
-            try
-            {
-                process.StartInfo = new ProcessStartInfo()
-                {
-                    FileName = "dotnet",
-                    Arguments = $"msbuild {projectLocation} -getProperty:OutputType",
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    WindowStyle = ProcessWindowStyle.Hidden
-                };
-
-                process.Start();
-                output = process.StandardOutput.ReadToEnd();
-                var hasExited = process.WaitForExit(5000);
-
-                // If it hasn't completed in the specified timeout, stop the process and give up
-                if (!hasExited) 
-                {
-                    process.Kill();
-                    msbuildProcessFailed = true;
-                }
-
-                // If it has completed but unsuccessfully, give up
-                if (process.ExitCode != 0)
-                {
-                    msbuildProcessFailed = true;
-                }
-            }
-            catch (Exception)
-            {
-                // swallow any exceptions related to `dotnet msbuild`
-                msbuildProcessFailed = true;
-            }
-
-            if (msbuildProcessFailed)
-            {
-                var projectFile = FindProjectFileInDirectory(projectLocation);
-                var xdoc = XDocument.Load(projectFile);
-                var element = xdoc.XPathSelectElement("//PropertyGroup/OutputType");
-                output = element?.Value;
-            }
-
-            return 
-                string.IsNullOrEmpty(output) ? 
-                    null : 
-                    output.Trim();
+            var properties = LookupProjectProperties(projectLocation, "OutputType");
+            return properties.TryGetValue("OutputType", out var outputType) ? outputType.Trim() : null;
         }
 
         public static bool LookPublishAotFlag(string projectLocation, string msBuildParameters)
@@ -288,20 +353,15 @@ namespace Amazon.Common.DotNetCli.Tools
                 }
             }
 
-            // If the property wasn't provided in msBuildParameters, fall back to searching project file
-            var projectFile = FindProjectFileInDirectory(projectLocation);
-
-            var xdoc = XDocument.Load(projectFile);
-
-            var element = xdoc.XPathSelectElement("//PropertyGroup/PublishAot");
-            
-            if (bool.TryParse(element?.Value, out bool result))
+            var properties = LookupProjectProperties(projectLocation, "PublishAot");
+            if (properties.TryGetValue("PublishAot", out var publishAot))
             {
-                return result;
+                return bool.TryParse(publishAot, out var result) && result;
             }
-
             return false;
         }
+
+
         public static bool HasExplicitSelfContainedFlag(string projectLocation, string msBuildParameters)
         {
             if (msBuildParameters != null && msBuildParameters.IndexOf("--self-contained", StringComparison.InvariantCultureIgnoreCase) != -1)
@@ -309,22 +369,16 @@ namespace Amazon.Common.DotNetCli.Tools
                 return true;
             }
 
-            // If the property wasn't provided in msBuildParameters, fall back to searching project file
-            var projectFile = FindProjectFileInDirectory(projectLocation);
-
-            var xdoc = XDocument.Load(projectFile);
-
-            var element = xdoc.XPathSelectElement("//PropertyGroup/SelfContained");
-
-            if (bool.TryParse(element?.Value, out _))
+            var properties = LookupProjectProperties(projectLocation, "SelfContained");
+            if (properties.TryGetValue("SelfContained", out var selfContained))
             {
-                return true;
+                return bool.TryParse(selfContained, out var isSelfContained) && isSelfContained;
             }
 
             return false;
         }
 
-        public static string FindProjectFileInDirectory(string directory)
+        private static string FindProjectFileInDirectory(string directory)
         {
             if (File.Exists(directory))
                 return directory;
