@@ -1,3 +1,10 @@
+## Release 2024-11-26
+
+### Amazon.Lambda.Tools (5.12.1)
+* Updated message related to self-contained runtimes with lambda functions
+* Update logic for finding project properties to use MSBuild instead of parsing the project file directly. See https://learn.microsoft.com/en-us/visualstudio/msbuild/customize-your-build?view=vs-2022 for more details.
+* Fix 'SelfContained' property reading logic to actually read the value from the properties. Previously we were only checking that the value could be parsed and not reading the actual value.
+
 ## Release 2024-11-18
 
 ### Amazon.Lambda.Tools (5.12.0)
