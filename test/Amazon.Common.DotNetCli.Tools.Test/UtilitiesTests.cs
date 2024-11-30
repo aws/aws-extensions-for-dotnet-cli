@@ -18,7 +18,7 @@ namespace Amazon.Common.DotNetCli.Tools.Test
         {
             var assembly = this.GetType().GetTypeInfo().Assembly;
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + projectPath);
-            var determinedFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectPath);
+            var determinedFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectPath, null);
             Assert.Equal(expectedFramework, determinedFramework);
         }
 
@@ -80,7 +80,7 @@ namespace Amazon.Common.DotNetCli.Tools.Test
         [InlineData("../../../../../testapps/TestNativeAotSingleProject", "Exe")]
         public void TestLookupOutputTypeFromProjectFile(string projectLocation, string expected)
         {
-            var result = Utilities.LookupOutputTypeFromProjectFile(projectLocation);
+            var result = Utilities.LookupOutputTypeFromProjectFile(projectLocation, null);
 
             Assert.Equal(expected, result);
         }
@@ -99,6 +99,18 @@ namespace Amazon.Common.DotNetCli.Tools.Test
             var result = Utilities.HasExplicitSelfContainedFlag(projectLocation, msBuildParameters);
 
             Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("TargetFramework", "", "net6.0")]
+        [InlineData("TargetFramework", "/p:NonExistence=net20.0", "net6.0")]
+        [InlineData("TargetFramework", "/p:TargetFramework=net20.0", "net20.0")]
+        public void TestPropertyEvaluationWithMSBuildParameters(string property, string msbuildparameters, string expectedValue)
+        {
+            var projectLocation = "../../../../../testapps/TestFunction";
+
+            var value = Utilities.LookupProjectProperties(projectLocation, msbuildparameters, property)[property];
+            Assert.Equal(expectedValue, value);
         }
     }
 }

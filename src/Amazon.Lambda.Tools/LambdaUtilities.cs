@@ -64,13 +64,13 @@ namespace Amazon.Lambda.Tools
             {Amazon.Lambda.Runtime.Dotnetcore10.Value, TargetFrameworkMonikers.netcoreapp10}
         };
 
-        public static string DetermineTargetFrameworkFromLambdaRuntime(string lambdaRuntime, string projectLocation)
+        public static string DetermineTargetFrameworkFromLambdaRuntime(string lambdaRuntime, string projectLocation, string msbuildParameters)
         {
             string framework;
             if (_lambdaRuntimeToDotnetFramework.TryGetValue(lambdaRuntime, out framework))
                 return framework;
 
-            framework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation);
+            framework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation, msbuildParameters);
             return framework;
         }
 
@@ -83,9 +83,9 @@ namespace Amazon.Lambda.Tools
             return kvp.Key;
         }
 
-        public static void ValidateTargetFramework(string projectLocation, string targetFramework, bool isNativeAot)
+        public static void ValidateTargetFramework(string projectLocation, string msbuildParameters, string targetFramework, bool isNativeAot)
         {
-            var outputType = Utilities.LookupOutputTypeFromProjectFile(projectLocation);
+            var outputType = Utilities.LookupOutputTypeFromProjectFile(projectLocation, msbuildParameters);
             var ouputTypeIsExe = outputType != null && outputType.ToLower().Equals("exe");
 
             if (isNativeAot && !ouputTypeIsExe)

@@ -206,10 +206,11 @@ namespace Amazon.Lambda.Tools.Commands
                 // Release will be the default configuration if nothing set.
                 var configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false);
 
+                var msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
                 var targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
                 if (string.IsNullOrEmpty(targetFramework))
                 {
-                    targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation);
+                    targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation, msbuildParameters);
 
                     // If we still don't know what the target framework is ask the user what targetframework to use.
                     // This is common when a project is using multi targeting.
@@ -221,7 +222,6 @@ namespace Amazon.Lambda.Tools.Commands
 
                 bool isNativeAot = Utilities.LookPublishAotFlag(projectLocation, this.MSBuildParameters);
 
-                var msbuildParameters = this.GetStringValueOrDefault(this.MSBuildParameters, CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS, false);
                 var architecture = this.GetStringValueOrDefault(this.Architecture, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE, false);
                 var disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
 
