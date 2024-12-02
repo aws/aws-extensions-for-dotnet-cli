@@ -105,6 +105,8 @@ namespace Amazon.Common.DotNetCli.Tools.Test
         [InlineData("TargetFramework", "", "net6.0")]
         [InlineData("TargetFramework", "/p:NonExistence=net20.0", "net6.0")]
         [InlineData("TargetFramework", "/p:TargetFramework=net20.0", "net20.0")]
+        [InlineData("TargetFramework", "/p:TargetFramework=net20.0 /p:OutputType=FutureDevice", "net20.0")]
+        [InlineData("OutputType", "/p:TargetFramework=net20.0 /p:OutputType=FutureDevice", "FutureDevice")]
         public void TestPropertyEvaluationWithMSBuildParameters(string property, string msbuildparameters, string expectedValue)
         {
             var projectLocation = "../../../../../testapps/TestFunction";

@@ -211,7 +211,7 @@ namespace Amazon.Common.DotNetCli.Tools
         /// Looks up specified properties from a project.
         /// </summary>
         /// <param name="projectLocation">The location of the project file.</param>
-        /// <param name="msBuildParameters">Additonal MSBuild paramteres passed by the user from the commandline</param>
+        /// <param name="msBuildParameters">Additional MSBuild parameters passed by the user from the commandline</param>
         /// <param name="propertyNames">The names of the properties to look up.</param>
         /// <returns>A dictionary of property names and their values.</returns>        
         public static Dictionary<string, string> LookupProjectProperties(string projectLocation, string msBuildParameters, params string[] propertyNames)
