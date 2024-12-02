@@ -216,12 +216,12 @@ namespace Amazon.Lambda.Tools.Test
         {
             if (shouldThrow)
             {
-                Assert.Throws<LambdaToolsException>(() => LambdaUtilities.ValidateTargetFramework(projectLocation, targetFramework, isNativeAot));
+                Assert.Throws<LambdaToolsException>(() => LambdaUtilities.ValidateTargetFramework(projectLocation, null, targetFramework, isNativeAot));
             }
             else
             {
                 // If this throws an exception, the test will fail, hench no assert is necessary
-                LambdaUtilities.ValidateTargetFramework(projectLocation, targetFramework, isNativeAot);
+                LambdaUtilities.ValidateTargetFramework(projectLocation, null, targetFramework, isNativeAot);
             }
         }
 

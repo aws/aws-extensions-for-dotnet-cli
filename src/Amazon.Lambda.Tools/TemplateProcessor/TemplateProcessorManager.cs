@@ -251,7 +251,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 var outputPackage = GenerateOutputZipFilename(field);
                 command.OutputPackageFileName = outputPackage;
                 command.TargetFramework =
-                    LambdaUtilities.DetermineTargetFrameworkFromLambdaRuntime(field.Resource.LambdaRuntime, location);
+                    LambdaUtilities.DetermineTargetFrameworkFromLambdaRuntime(field.Resource.LambdaRuntime, location, null);
 
                 command.Architecture = field.Resource.LambdaArchitecture;
                 command.LayerVersionArns = field.Resource.LambdaLayers;
