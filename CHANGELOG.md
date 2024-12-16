@@ -1,3 +1,8 @@
+## Release 2024-12-16
+
+### Amazon.Lambda.Tools (5.12.2)
+* Include user specified MSBuild parameters when evaluating MSBuild properties
+
 ## Release 2024-11-26
 
 ### Amazon.Lambda.Tools (5.12.1)
