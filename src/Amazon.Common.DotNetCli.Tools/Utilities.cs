@@ -211,9 +211,10 @@ namespace Amazon.Common.DotNetCli.Tools
         /// Looks up specified properties from a project.
         /// </summary>
         /// <param name="projectLocation">The location of the project file.</param>
+        /// <param name="msBuildParameters">Additional MSBuild parameters passed by the user from the commandline</param>
         /// <param name="propertyNames">The names of the properties to look up.</param>
         /// <returns>A dictionary of property names and their values.</returns>        
-        public static Dictionary<string, string> LookupProjectProperties(string projectLocation, params string[] propertyNames)
+        public static Dictionary<string, string> LookupProjectProperties(string projectLocation, string msBuildParameters, params string[] propertyNames)
         {
             var projectFile = FindProjectFileInDirectory(projectLocation);
             var properties = new Dictionary<string, string>();
@@ -224,6 +225,11 @@ namespace Amazon.Common.DotNetCli.Tools
                 "-nologo",
                 $"--getProperty:{string.Join(',', propertyNames)}"
             };
+
+            if (!string.IsNullOrEmpty(msBuildParameters))
+            {
+                arguments.Add(msBuildParameters);
+            }
 
             var process = new Process
             {
@@ -302,16 +308,17 @@ namespace Amazon.Common.DotNetCli.Tools
             {
             }
             return properties;
-        }                                   
+        }
 
         /// <summary>
         /// Looks up the target framework from a project file.
         /// </summary>
         /// <param name="projectLocation">The location of the project file.</param>
+        /// <param name="msBuildParameters">Additonal MSBuild paramteres passed by the user from the commandline</param>
         /// <returns>The target framework of the project.</returns>
-        public static string LookupTargetFrameworkFromProjectFile(string projectLocation)
+        public static string LookupTargetFrameworkFromProjectFile(string projectLocation, string msBuildParameters)
         {
-            var properties = LookupProjectProperties(projectLocation, "TargetFramework", "TargetFrameworks");
+            var properties = LookupProjectProperties(projectLocation, msBuildParameters, "TargetFramework", "TargetFrameworks");
             if (properties.TryGetValue("TargetFramework", out var targetFramework) && !string.IsNullOrEmpty(targetFramework))
             {
                 return targetFramework;
@@ -331,10 +338,11 @@ namespace Amazon.Common.DotNetCli.Tools
         /// Retrieve the `OutputType` property of a given project
         /// </summary>
         /// <param name="projectLocation">Path of the project</param>
+        /// <param name="msBuildParameters">Additonal MSBuild paramteres passed by the user from the commandline</param>
         /// <returns>The value of the `OutputType` property</returns>
-        public static string LookupOutputTypeFromProjectFile(string projectLocation)
+        public static string LookupOutputTypeFromProjectFile(string projectLocation, string msBuildParameters)
         {
-            var properties = LookupProjectProperties(projectLocation, "OutputType");
+            var properties = LookupProjectProperties(projectLocation, msBuildParameters, "OutputType");
             return properties.TryGetValue("OutputType", out var outputType) ? outputType.Trim() : null;
         }
 
@@ -353,7 +361,7 @@ namespace Amazon.Common.DotNetCli.Tools
                 }
             }
 
-            var properties = LookupProjectProperties(projectLocation, "PublishAot");
+            var properties = LookupProjectProperties(projectLocation, msBuildParameters, "PublishAot");
             if (properties.TryGetValue("PublishAot", out var publishAot))
             {
                 return bool.TryParse(publishAot, out var result) && result;
@@ -369,7 +377,7 @@ namespace Amazon.Common.DotNetCli.Tools
                 return true;
             }
 
-            var properties = LookupProjectProperties(projectLocation, "SelfContained");
+            var properties = LookupProjectProperties(projectLocation, msBuildParameters, "SelfContained");
             if (properties.TryGetValue("SelfContained", out var selfContained))
             {
                 return bool.TryParse(selfContained, out var isSelfContained) && isSelfContained;

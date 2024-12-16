@@ -114,7 +114,7 @@ namespace Amazon.Lambda.Tools
             bool? useContainerForBuild, string containerImageForBuild, string codeMountDirectory,
             out string publishLocation, ref string zipArchivePath)
         {
-            LambdaUtilities.ValidateTargetFramework(projectLocation, targetFramework, isNativeAot);
+            LambdaUtilities.ValidateTargetFramework(projectLocation, msbuildParameters, targetFramework, isNativeAot);
 
             LambdaUtilities.ValidateNativeAotArchitecture(architecture, isNativeAot);
 

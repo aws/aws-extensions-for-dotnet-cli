@@ -138,7 +138,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
 
                 if (string.IsNullOrEmpty(targetFramework))
                 {
-                    targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation);
+                    targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation, null);
                     if (string.IsNullOrEmpty(targetFramework))
                     {
                         targetFramework = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
