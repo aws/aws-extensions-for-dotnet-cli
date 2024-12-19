@@ -220,7 +220,7 @@ namespace Amazon.Lambda.Tools.Commands
                     }
                 }
 
-                bool isNativeAot = Utilities.LookPublishAotFlag(projectLocation, this.MSBuildParameters);
+                bool isNativeAot = Utilities.LookPublishAotFlag(projectLocation, msbuildParameters);
 
                 var architecture = this.GetStringValueOrDefault(this.Architecture, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE, false);
                 var disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
