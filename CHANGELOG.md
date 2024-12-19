@@ -1,3 +1,8 @@
+## Release 2024-12-19
+
+### Amazon.Lambda.Tools (5.12.3)
+* Fixed issue when evaluating MSBuild properties like 'PublishAot' to include settings made in the aws-lambda-tools-defaults.json
+
 ## Release 2024-12-16
 
 ### Amazon.Lambda.Tools (5.12.2)
