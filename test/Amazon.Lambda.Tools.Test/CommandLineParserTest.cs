@@ -93,5 +93,18 @@ namespace Amazon.Lambda.Tools.Test
             Assert.Equal(55, command.Timeout);
             Assert.Equal("netcore9.9", command.Runtime);
         }
+
+        [Fact]
+        public void BuildLambdaDeployCommandWithMSBuildParamAndSwitchDoubleQuotedValue()
+        {
+            var arguments = new List<string>();
+            arguments.AddRange(new string[] { "--region", "us-west-2" });
+            arguments.AddRange(new string[] { "--msbuild-parameters", "\"--no-restore --no-build\"" });
+            arguments.Add("/p:Foo=bar;Version=1.2.3");
+
+            var command = new DeployFunctionCommand(new ConsoleToolLogger(), ".", arguments.ToArray());
+            Assert.Equal("us-west-2", command.Region);
+            Assert.Equal("--no-restore --no-build /p:Foo=bar;Version=1.2.3", command.MSBuildParameters);
+        }
     }
 }

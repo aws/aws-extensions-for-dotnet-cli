@@ -81,5 +81,39 @@ namespace Amazon.Lambda.Tools.Test
             Assert.NotNull(param);
             Assert.Equal("us-west-2", param.Item2.StringValue);
         }
+
+        [Fact]
+        public void ParseMSBuildSwitchDoubleQuotedValue()
+        {
+            var values = CommandLineParser.ParseArguments(DeployFunctionCommand.DeployCommandOptions,
+                new[] { "myfunc", "--region", "us-west-2", "--msbuild-parameters", "\"--no-restore --no-build\"" });
+
+            Assert.Equal("myfunc", values.Arguments[0]);
+
+            var msbuildparametersParam = values.FindCommandOption("--msbuild-parameters");
+            Assert.NotNull(msbuildparametersParam);
+            Assert.Equal("--no-restore --no-build", msbuildparametersParam.Item2.StringValue);
+
+            var param = values.FindCommandOption("--region");
+            Assert.NotNull(param);
+            Assert.Equal("us-west-2", param.Item2.StringValue);
+        }
+
+        [Fact]
+        public void ParseMSBuildSwitchNotDoubleQuotedValue()
+        {
+            var values = CommandLineParser.ParseArguments(DeployFunctionCommand.DeployCommandOptions,
+                new[] { "myfunc", "--region", "us-west-2", "--msbuild-parameters", "--no-restore --no-build" });
+
+            Assert.Equal("myfunc", values.Arguments[0]);
+
+            var msbuildparametersParam = values.FindCommandOption("--msbuild-parameters");
+            Assert.NotNull(msbuildparametersParam);
+            Assert.Equal("--no-restore --no-build", msbuildparametersParam.Item2.StringValue);
+
+            var param = values.FindCommandOption("--region");
+            Assert.NotNull(param);
+            Assert.Equal("us-west-2", param.Item2.StringValue);
+        }
     }
 }
