@@ -1,3 +1,8 @@
+## Release 2025-01-13
+
+### Amazon.Lambda.Tools (5.12.4)
+* Added logic to handle extraneous double-quotes around value for --msbuild-parameters that could be passed in .NET argument for certain execution environments.
+
 ## Release 2024-12-19
 
 ### Amazon.Lambda.Tools (5.12.3)
