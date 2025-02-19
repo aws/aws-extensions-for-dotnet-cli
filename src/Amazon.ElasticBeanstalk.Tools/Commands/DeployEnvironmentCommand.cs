@@ -183,7 +183,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                     }
 
                     this.Logger?.WriteLine("Configuring application bundle for a Linux deployment");
-                    EBUtilities.SetupPackageForLinux(this.Logger, this, this.DeployEnvironmentOptions, publishLocation, proxyServer, applicationPort);
+                    EBUtilities.SetupPackageForLinux(this.Logger, this, this.DeployEnvironmentOptions, publishLocation, proxyServer, applicationPort, projectLocation);
                 }
 
                 zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, new DirectoryInfo(projectLocation).Name + "-" + DateTime.Now.Ticks + ".zip");
