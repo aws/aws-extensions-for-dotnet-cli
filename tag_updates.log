@@ -1,0 +1,24 @@
+[2025-05-01 14:58:41] Checking out dev branch...
+[2025-05-01 14:58:42] Processing workflow file: C:\dev\testing\aws-repos\aws-extensions-for-dotnet-cli\.github\workflows\aws-ci.yml
+[2025-05-01 14:58:42] Processing workflow file: C:\dev\testing\aws-repos\aws-extensions-for-dotnet-cli\.github\workflows\change-file-in-pr.yml
+[2025-05-01 14:58:42] Found action with version tag: actions/checkout@v3
+[2025-05-01 14:58:42] Resolving commit hash for actions/checkout@v3...
+[2025-05-01 14:58:42] API Request: GET repos/actions/checkout/git/refs/tags/v3
+[2025-05-01 14:58:42] Resolved to commit: f43a0e5ff2bd294095638e18286ca9a3d1956744
+[2025-05-01 14:58:42] Updating action from actions/checkout@v3 to actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+[2025-05-01 14:58:42] Writing changes to C:\dev\testing\aws-repos\aws-extensions-for-dotnet-cli\.github\workflows\change-file-in-pr.yml
+[2025-05-01 14:58:42] Processing workflow file: C:\dev\testing\aws-repos\aws-extensions-for-dotnet-cli\.github\workflows\closed-issue-message.yml
+[2025-05-01 14:58:42] Processing workflow file: C:\dev\testing\aws-repos\aws-extensions-for-dotnet-cli\.github\workflows\create-release-pr.yml
+[2025-05-01 14:58:42] Processing workflow file: C:\dev\testing\aws-repos\aws-extensions-for-dotnet-cli\.github\workflows\handle-stale-discussions.yml
+[2025-05-01 14:58:42] Processing workflow file: C:\dev\testing\aws-repos\aws-extensions-for-dotnet-cli\.github\workflows\issue-regression-labeler.yml
+[2025-05-01 14:58:42] Found action with version tag: actions/github-script@v7
+[2025-05-01 14:58:42] Resolving commit hash for actions/github-script@v7...
+[2025-05-01 14:58:42] API Request: GET repos/actions/github-script/git/refs/tags/v7
+[2025-05-01 14:58:43] Found annotated tag, resolving actual commit...
+[2025-05-01 14:58:43] API Request: GET repos/actions/github-script/git/tags/5c56fde4671bc2d3592fb0f2c5b5bab9ddae03b1
+[2025-05-01 14:58:43] Resolved to commit: 60a0d83039c74a4aee543508d2ffcb1c3799cdea
+[2025-05-01 14:58:43] Updating action from actions/github-script@v7 to actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+[2025-05-01 14:58:43] Writing changes to C:\dev\testing\aws-repos\aws-extensions-for-dotnet-cli\.github\workflows\issue-regression-labeler.yml
+[2025-05-01 14:58:43] Processing workflow file: C:\dev\testing\aws-repos\aws-extensions-for-dotnet-cli\.github\workflows\stale_issues.yml
+[2025-05-01 14:58:43] Processing workflow file: C:\dev\testing\aws-repos\aws-extensions-for-dotnet-cli\.github\workflows\sync-master-dev.yml
+[2025-05-01 14:58:43] Committing changes...
