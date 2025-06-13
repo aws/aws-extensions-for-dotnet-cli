@@ -1,3 +1,8 @@
+## Release 2025-06-13
+
+### Amazon.Lambda.Tools (5.13.0)
+* Add container build support for .NET 9. This allows Native AOT .NET 9 Lambda function builds.
+
 ## Release 2025-01-13
 
 ### Amazon.Lambda.Tools (5.12.4)
