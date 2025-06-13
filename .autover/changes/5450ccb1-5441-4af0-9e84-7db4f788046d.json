@@ -1,0 +1,11 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.Lambda.Tools",
+      "Type": "Minor",
+      "ChangelogMessages": [
+        "Add container build support for .NET 9. This allows Native AOT .NET 9 Lambda function builds."
+      ]
+    }
+  ]
+}
