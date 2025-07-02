@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Amazon.Common.DotNetCli.Tools;
+using Amazon.Common.DotNetCli.Tools.Options;
 using Amazon.ElasticBeanstalk.Model;
 using Amazon.ElasticBeanstalk.Tools.Commands;
 using ThirdParty.Json.LitJson;
@@ -114,20 +115,21 @@ namespace Amazon.ElasticBeanstalk.Tools
             // Setup Procfile
             var procfilePath = Path.Combine(publishLocation, "Procfile");
 
-            if(File.Exists(procfilePath))
+            if (File.Exists(procfilePath))
             {
                 logger?.WriteLine("Found existing Procfile file found and using that for deployment");
                 return;
             }
 
             logger?.WriteLine("Writing Procfile for deployment bundle");
+            var projectLocation = Utilities.DetermineProjectLocation(command.WorkingDirectory,
+                                    command.GetStringValueOrDefault(command.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false));
 
-            var runtimeConfigFilePath = Directory.GetFiles(publishLocation, "*.runtimeconfig.json").FirstOrDefault();
-            var runtimeConfigFileName = Path.GetFileName(runtimeConfigFilePath);
-            var executingAssembly = runtimeConfigFileName.Substring(0, runtimeConfigFileName.Length - "runtimeconfig.json".Length - 1);
+            var executingAssembly = Utilities.LookupAssemblyNameFromProjectFile(projectLocation, null);
+            var runtimeConfigFilePath = Directory.GetFiles(publishLocation, $"{executingAssembly}.runtimeconfig.json").FirstOrDefault();
 
             string webCommandLine;
-            if(IsSelfContainedPublish(runtimeConfigFilePath))
+            if (IsSelfContainedPublish(runtimeConfigFilePath))
             {
                 webCommandLine = $"./{executingAssembly}";
             }
@@ -136,7 +138,7 @@ namespace Amazon.ElasticBeanstalk.Tools
                 webCommandLine = $"dotnet exec ./{executingAssembly}.dll";
             }
 
-            if(string.Equals(reverseProxy, EBConstants.PROXY_SERVER_NONE, StringComparison.InvariantCulture))
+            if (string.Equals(reverseProxy, EBConstants.PROXY_SERVER_NONE, StringComparison.InvariantCulture))
             {
                 logger?.WriteLine("... Proxy server disabled, configuring Kestrel to listen to traffic from all hosts");
                 var port = applicationPort.HasValue ? applicationPort.Value : EBConstants.DEFAULT_APPLICATION_PORT;
