@@ -338,7 +338,7 @@ namespace Amazon.Common.DotNetCli.Tools
         /// Looks up the assembly name from a project file.
         /// </summary>
         /// <param name="projectLocation">The location of the project file.</param>
-        /// <param name="msBuildParameters">Additonal MSBuild paramteres passed by the user from the commandline</param>
+        /// <param name="msBuildParameters">Additional MSBuild parameters passed by the user from the commandline</param>
         /// <returns>The assembly name of the project.</returns>
         public static string LookupAssemblyNameFromProjectFile(string projectLocation, string msBuildParameters)
         {
