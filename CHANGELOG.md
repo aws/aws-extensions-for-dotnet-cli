@@ -1,3 +1,8 @@
+## Release 2025-07-30
+
+### Amazon.ElasticBeanstalk.Tools (4.4.1)
+* Fixed an ElasticBeanstalk deployment issue for Linux platform where Procfile was sometimes being generated with incorrect entrypoint when multiple runtimeconfig.json files were present.
+
 ## Release 2025-06-13
 
 ### Amazon.Lambda.Tools (5.13.0)
