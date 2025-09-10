@@ -13,25 +13,25 @@ namespace Amazon.Common.DotNetCli.Tools.Test
         public void ParseNullParameter()
         {
             var parameters = Utilities.ParseKeyValueOption(null);
-            Assert.Equal(0, parameters.Count);
+            Assert.Empty(parameters);
 
             parameters = Utilities.ParseKeyValueOption(string.Empty);
-            Assert.Equal(0, parameters.Count);
+            Assert.Empty(parameters);
         }
 
         [Fact]
         public void ParseKeyValueParameter()
         {
             var parameters = Utilities.ParseKeyValueOption("Table=Blog");
-            Assert.Equal(1, parameters.Count);
+            Assert.Single(parameters);
             Assert.Equal("Blog", parameters["Table"]);
 
             parameters = Utilities.ParseKeyValueOption("Table=Blog;");
-            Assert.Equal(1, parameters.Count);
+            Assert.Single(parameters);
             Assert.Equal("Blog", parameters["Table"]);
 
             parameters = Utilities.ParseKeyValueOption("\"ConnectionString\"=\"User=foo;Password=test\"");
-            Assert.Equal(1, parameters.Count);
+            Assert.Single(parameters);
             Assert.Equal("User=foo;Password=test", parameters["ConnectionString"]);
         }
 
@@ -67,7 +67,7 @@ namespace Amazon.Common.DotNetCli.Tools.Test
         [Fact]
         public void ParseErrors()
         {
-            Assert.Throws(typeof(ToolsException), () => Utilities.ParseKeyValueOption("=aaa"));
+            Assert.Throws<ToolsException>(() => Utilities.ParseKeyValueOption("=aaa"));
         }
     }
 }

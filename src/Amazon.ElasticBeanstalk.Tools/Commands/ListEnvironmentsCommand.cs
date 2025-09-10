@@ -4,7 +4,6 @@ using Amazon.ElasticBeanstalk.Model;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using ThirdParty.Json.LitJson;
 
 namespace Amazon.ElasticBeanstalk.Tools.Commands
 {
@@ -45,12 +44,15 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                         NextToken = response.NextToken
                     });
 
-                    foreach(var environment in response.Environments)
+                    if (response.Environments != null)
                     {
-                        if (environment.Status == EnvironmentStatus.Terminated)
-                            continue;
+                        foreach(var environment in response.Environments)
+                        {
+                            if (environment.Status == EnvironmentStatus.Terminated)
+                                continue;
 
-                        this.Logger?.WriteLine((environment.EnvironmentName + " (" + environment.Status + "/" + environment.Health + ")").PadRight(45) + "  http://" + (environment.CNAME ?? environment.EndpointURL) + "/");
+                            this.Logger?.WriteLine((environment.EnvironmentName + " (" + environment.Status + "/" + environment.Health + ")").PadRight(45) + "  http://" + (environment.CNAME ?? environment.EndpointURL) + "/");
+                        }
                     }
 
                 } while (!string.IsNullOrEmpty(response.NextToken));
@@ -63,7 +65,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             return true;
         }
 
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
             
         }

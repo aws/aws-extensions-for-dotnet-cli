@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
 using Amazon.Lambda.Model;
-using ThirdParty.Json.LitJson;
 
 namespace Amazon.Lambda.Tools.Commands
 {
@@ -55,10 +54,13 @@ namespace Amazon.Lambda.Tools.Commands
                     throw new LambdaToolsException("Error listing Lambda functions: " + e.Message, LambdaToolsException.LambdaErrorCode.LambdaListFunctions, e);
                 }
 
-                foreach (var function in response.Functions)
+                if (response.Functions != null)
                 {
-                    var extraInfo = function.PackageType == Lambda.PackageType.Zip ? "Runtime: " + function.Runtime.Value : "Package Type: " + function.PackageType.Value;
-                    this.Logger.WriteLine((function.FunctionName.PadRight(40) + " (" + extraInfo + ")").PadRight(10) + "\t" + function.Description);
+                    foreach (var function in response.Functions)
+                    {
+                        var extraInfo = function.PackageType == Lambda.PackageType.Zip ? "Runtime: " + function.Runtime.Value : "Package Type: " + function.PackageType.Value;
+                        this.Logger.WriteLine((function.FunctionName.PadRight(40) + " (" + extraInfo + ")").PadRight(10) + "\t" + function.Description);
+                    }
                 }
 
             } while (!string.IsNullOrEmpty(response.NextMarker));
@@ -66,7 +68,7 @@ namespace Amazon.Lambda.Tools.Commands
             return true;
         }
         
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
             
         }

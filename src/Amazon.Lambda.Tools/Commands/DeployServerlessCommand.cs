@@ -9,7 +9,6 @@ using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 
 
-using ThirdParty.Json.LitJson;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
 using Amazon.Lambda.Tools.TemplateProcessor;
@@ -253,7 +252,7 @@ namespace Amazon.Lambda.Tools.Commands
                 var templateParameters = GetTemplateParameters(changeSetType == ChangeSetType.UPDATE ? existingStack : null, definedParameters);
                 if (templateParameters != null && templateParameters.Any())
                 {
-                    var setParameters = templateParameters.Where(x => !x.UsePreviousValue);
+                    var setParameters = templateParameters.Where(x => !x.UsePreviousValue.GetValueOrDefault());
                     // ReSharper disable once PossibleMultipleEnumeration
                     if (setParameters.Any())
                     {
@@ -299,7 +298,7 @@ namespace Amazon.Lambda.Tools.Commands
                     tagList = new List<Tag>();
                 }
 
-                if(tagList.FirstOrDefault(x => string.Equals(x.Key, LambdaConstants.SERVERLESS_TAG_NAME)) == null)
+                if(tagList != null && tagList.FirstOrDefault(x => string.Equals(x.Key, LambdaConstants.SERVERLESS_TAG_NAME)) == null)
                 {
                     tagList.Add(new Tag { Key = LambdaConstants.SERVERLESS_TAG_NAME, Value = "true" });
                 }
@@ -314,7 +313,7 @@ namespace Amazon.Lambda.Tools.Commands
                     RoleARN = this.GetStringValueOrDefault(this.CloudFormationRole, LambdaDefinedCommandOptions.ARGUMENT_CLOUDFORMATION_ROLE, false),
                     Tags = tagList
                 };
-
+                
                 if(templateBody.Length < LambdaConstants.MAX_TEMPLATE_BODY_IN_REQUEST_SIZE)
                 {
                     changeSetRequest.TemplateBody = templateBody;
@@ -390,7 +389,7 @@ namespace Amazon.Lambda.Tools.Commands
 
         private void DisplayOutputs(Stack stack)
         {
-            if (stack.Outputs.Count == 0)
+            if (stack.Outputs == null || stack.Outputs.Count == 0)
                 return;
 
             const int OUTPUT_NAME_WIDTH = 30;
@@ -399,7 +398,7 @@ namespace Amazon.Lambda.Tools.Commands
             this.Logger.WriteLine("   ");
             this.Logger.WriteLine("Output Name".PadRight(OUTPUT_NAME_WIDTH) + " " + "Value".PadRight(OUTPUT_VALUE_WIDTH));
             this.Logger.WriteLine($"{new string('-', OUTPUT_NAME_WIDTH)} {new string('-', OUTPUT_VALUE_WIDTH)}");
-            foreach (var output in stack.Outputs)
+            foreach (var output in stack.Outputs ?? new List<Output>())
             {
                 string line = output.OutputKey.PadRight(OUTPUT_NAME_WIDTH) + " " + output.OutputValue?.PadRight(OUTPUT_VALUE_WIDTH);
                 this.Logger.WriteLine(line);
@@ -437,7 +436,7 @@ namespace Amazon.Lambda.Tools.Commands
                 for (int i = events.Count - 1; i >= 0; i--)
                 {
                     string line =
-                        events[i].Timestamp.ToString("g").PadRight(TIMESTAMP_WIDTH) + " " +
+                        events[i].Timestamp.GetValueOrDefault().ToString("g").PadRight(TIMESTAMP_WIDTH) + " " +
                         events[i].LogicalResourceId.PadRight(LOGICAL_RESOURCE_WIDTH) + " " +
                         events[i].ResourceStatus.ToString().PadRight(RESOURCE_STATUS);
 
@@ -474,7 +473,7 @@ namespace Amazon.Lambda.Tools.Commands
                 {
                     throw new LambdaToolsException($"Error getting events for stack: {e.Message}", LambdaToolsException.LambdaErrorCode.CloudFormationDescribeStackEvents, e);
                 }
-                foreach (var evnt in response.StackEvents)
+                foreach (var evnt in response.StackEvents ?? new List<StackEvent>())
                 {
                     if (string.Equals(evnt.EventId, mostRecentEventId) || evnt.Timestamp < mintimeStampForEvents)
                     {
@@ -561,7 +560,7 @@ namespace Amazon.Lambda.Tools.Commands
             try
             {
                 var response = await this.CloudFormationClient.DescribeStacksAsync(new DescribeStacksRequest { StackName = stackName });
-                if (response.Stacks.Count != 1)
+                if (response.Stacks == null || response.Stacks.Count != 1)
                     return null;
 
                 return response.Stacks[0];
@@ -599,7 +598,7 @@ namespace Amazon.Lambda.Tools.Commands
                 }
             }
 
-            if (stack != null)
+            if (stack?.Parameters != null)
             {
                 foreach (var existingParameter in stack.Parameters)
                 {
@@ -637,7 +636,7 @@ namespace Amazon.Lambda.Tools.Commands
         }
 
 
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION.ConfigFileKey, this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false));
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK.ConfigFileKey, this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false));

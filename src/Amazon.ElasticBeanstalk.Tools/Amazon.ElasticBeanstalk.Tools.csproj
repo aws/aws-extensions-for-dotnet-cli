@@ -1,10 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\buildtools\common.props" />
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
+    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
     <PackageId>Amazon.ElasticBeanstalk.Tools</PackageId>
     <PackageTags>AWS;Amazon;Beanstalk</PackageTags>
     <PackAsTool>true</PackAsTool>
@@ -16,6 +16,11 @@
     <Copyright>Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
     <Product>AWS Elastic Beanstalk Tools for .NET CLI</Product>
     <Description>Amazon.ElasticBeanstalk.Tools adds commands to the dotnet cli to deploy ASP.NET Core applications to AWS Elastic Beanstalk. For example to deploy an ASP.NET Core application from the command execute "dotnet eb deploy-environment" on the command line.</Description>
+    <!-- 
+        This is explicitly set to 7.3 to match what the AWS VS Toolkit uses. This is required because
+        the source code here is also copied into the AWS VS Toolkit.
+    -->
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,13 +30,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.ElasticBeanstalk" Version="3.7.300.80" />
-    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.301.6" />
-    <PackageReference Include="AWSSDK.S3" Version="3.7.307.21" />
+    <PackageReference Include="AWSSDK.ElasticBeanstalk" Version="4.0.1.1" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="4.0.3.2" />
+    <PackageReference Include="AWSSDK.S3" Version="4.0.6.13" />
   </ItemGroup>
   
   <PropertyGroup>
-    <NoWarn>1701;1702;1705;1591</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>1701;1702;1705;1591;NETSDK1138</NoWarn>
   </PropertyGroup>
 
 </Project>

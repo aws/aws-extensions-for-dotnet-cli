@@ -79,7 +79,7 @@ namespace Amazon.Common.DotNetCli.Tools.Test
                 Assert.Equal(1, x.Count);
 
                 var option = x.FindCommandOption("-b");
-                Assert.Equal(true, option.Item2.BoolValue);
+                Assert.True(option.Item2.BoolValue);
             };
 
             var options = new List<CommandOption>

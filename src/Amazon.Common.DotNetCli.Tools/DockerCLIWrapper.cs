@@ -30,19 +30,13 @@ namespace Amazon.Common.DotNetCli.Tools
 
             var arguments = new StringBuilder();
 
-#if NETCOREAPP3_1_OR_GREATER
-            var runningOnLinuxArm64 = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
-#else
-            var runningOnLinuxArm64 = false;
-#endif
-            if (arm64Build && !runningOnLinuxArm64)
+            if (arm64Build)
             {
-                _logger?.WriteLine("The docker CLI \"buildx\" command is used to build ARM64 images. This requires version 20 or later of the docker CLI.");
-                arguments.Append($"buildx build --platform linux/arm64 ");
+                arguments.Append($"buildx build --platform linux/arm64 --provenance=false ");
             }
             else
             {
-                arguments.Append($"build ");
+                arguments.Append($"buildx build --platform linux/amd64 --provenance=false ");
             }
 
             arguments.Append($" -f \"{dockerFile}\" -t {imageTag}");

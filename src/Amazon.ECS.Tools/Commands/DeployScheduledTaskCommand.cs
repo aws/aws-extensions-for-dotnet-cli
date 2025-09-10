@@ -9,7 +9,6 @@ using Amazon.ECR;
 using Amazon.ECR.Model;
 using Amazon.ECS;
 using Amazon.ECS.Model;
-using ThirdParty.Json.LitJson;
 using System.IO;
 using Amazon.Common.DotNetCli.Tools.Options;
 using Amazon.Common.DotNetCli.Tools;
@@ -207,7 +206,7 @@ namespace Amazon.ECS.Tools.Commands
             return true;
         }
 
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
             this.PushDockerImageProperties.PersistSettings(this, data);
             this.TaskDefinitionProperties.PersistSettings(this, data);

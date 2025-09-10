@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
-using ThirdParty.Json.LitJson;
 
 using Amazon.Lambda.Model;
 using System.Runtime.InteropServices;
@@ -131,7 +131,7 @@ namespace Amazon.Lambda.Tools.Commands
                     S3Bucket = s3Bucket,
                     S3Key = s3ZipKey
                 },
-                CompatibleRuntimes = createResult.CompatibleRuntimes,
+                CompatibleRuntimes = createResult.CompatibleRuntimes ?? new List<string>(),
                 LicenseInfo = this.GetStringValueOrDefault(this.LayerLicenseInfo, LambdaDefinedCommandOptions.ARGUMENT_LAYER_LICENSE_INFO, false)
             };
 
@@ -146,7 +146,7 @@ namespace Amazon.Lambda.Tools.Commands
                 var publishResponse = await this.LambdaClient.PublishLayerVersionAsync(request);
                 this.NewLayerArn = publishResponse.LayerArn;
                 this.NewLayerVersionArn = publishResponse.LayerVersionArn;
-                this.NewLayerVersionNumber = publishResponse.Version;
+                this.NewLayerVersionNumber = publishResponse.Version.GetValueOrDefault();
             }
             catch(Exception e)
             {
@@ -311,7 +311,7 @@ namespace Amazon.Lambda.Tools.Commands
             manifestDescription.Key = s3Key;
             manifestDescription.Op = enableOptimization ? LayerDescriptionManifest.OptimizedState.Optimized : LayerDescriptionManifest.OptimizedState.NoOptimized;
 
-            var json = JsonMapper.ToJson(manifestDescription);
+            var json = JsonSerializer.Serialize(manifestDescription);
             return json;
         }
 
@@ -329,7 +329,7 @@ namespace Amazon.Lambda.Tools.Commands
         }
         
 
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK.ConfigFileKey, this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false));
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE.ConfigFileKey, this.GetStringValueOrDefault(this.Architecture, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE, false));

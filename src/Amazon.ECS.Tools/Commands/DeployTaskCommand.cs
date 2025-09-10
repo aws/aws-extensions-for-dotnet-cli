@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ThirdParty.Json.LitJson;
 
 namespace Amazon.ECS.Tools.Commands
 {
@@ -165,10 +164,17 @@ namespace Amazon.ECS.Tools.Commands
             try
             {
                 var response = await this.ECSClient.RunTaskAsync(runTaskRequest);
-                this.Logger?.WriteLine($"Started {response.Tasks.Count} task:");
-                foreach(var task in response.Tasks)
+                if (response.Tasks != null)
                 {
-                    this.Logger?.WriteLine($"\t{task.TaskArn}");
+                    this.Logger?.WriteLine($"Started {response.Tasks.Count} task:");
+                    foreach(var task in response.Tasks)
+                    {
+                        this.Logger?.WriteLine($"\t{task.TaskArn}");
+                    }
+                }
+                else
+                {
+                    this.Logger?.WriteLine("No tasks were started");
                 }
             }
             catch(Exception e)
@@ -184,7 +190,7 @@ namespace Amazon.ECS.Tools.Commands
             return true;
         }
 
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
             this.PushDockerImageProperties.PersistSettings(this, data);
             this.TaskDefinitionProperties.PersistSettings(this, data);

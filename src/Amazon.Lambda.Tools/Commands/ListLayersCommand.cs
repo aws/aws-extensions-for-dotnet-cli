@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
 using Amazon.Lambda.Model;
-using ThirdParty.Json.LitJson;
 
 namespace Amazon.Lambda.Tools.Commands
 {
@@ -61,15 +60,19 @@ namespace Amazon.Lambda.Tools.Commands
                     throw new LambdaToolsException("Error listing Lambda layers: " + e.Message, LambdaToolsException.LambdaErrorCode.LambdaListLayers, e);
                 }
 
-                foreach (var layer in response.Layers)
+                if (response.Layers != null)
                 {
-                    var latestVersion = layer.LatestMatchingVersion;
-                    this.Logger.WriteLine(layer.LayerName.PadRight(LAYER_NAME_WIDTH) + " " + 
-                                                    LambdaUtilities.DetermineListDisplayLayerDescription(latestVersion.Description, LAYER_DESCRIPTION_WIDTH).PadRight(LAYER_DESCRIPTION_WIDTH) + " " +
-                                                    string.Join(", ", latestVersion.CompatibleRuntimes.ToArray()).PadRight(LAYER_COMPATIBLE_RUNTIMES_WIDTH) + " " +
-                                                    DateTime.Parse(latestVersion.CreatedDate).ToString("g").PadRight(TIMESTAMP_WIDTH) + " " +
-                                                    latestVersion.LayerVersionArn
-                                          );
+                    foreach (var layer in response.Layers)
+                    {
+                        var latestVersion = layer.LatestMatchingVersion;
+                        var compatibleRuntimes = latestVersion.CompatibleRuntimes != null ? string.Join(", ", latestVersion.CompatibleRuntimes.ToArray()) : "";
+                        this.Logger.WriteLine(layer.LayerName.PadRight(LAYER_NAME_WIDTH) + " " + 
+                                                        LambdaUtilities.DetermineListDisplayLayerDescription(latestVersion.Description, LAYER_DESCRIPTION_WIDTH).PadRight(LAYER_DESCRIPTION_WIDTH) + " " +
+                                                        compatibleRuntimes.PadRight(LAYER_COMPATIBLE_RUNTIMES_WIDTH) + " " +
+                                                        DateTime.Parse(latestVersion.CreatedDate).ToString("g").PadRight(TIMESTAMP_WIDTH) + " " +
+                                                        latestVersion.LayerVersionArn
+                                              );
+                    }
                 }
 
             } while (!string.IsNullOrEmpty(response.NextMarker));
@@ -77,7 +80,7 @@ namespace Amazon.Lambda.Tools.Commands
             return true;
         }
         
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
             
         }

@@ -33,7 +33,7 @@ namespace Amazon.Lambda.Tools.Test
             var root = JsonConvert.DeserializeObject(newTemplateBody) as JObject;
             var value = root.SelectToken("$.Resources.WorkFlow.Properties.DefinitionString.Fn::Sub") as JValue;
             Assert.NotNull(value);
-            Assert.Equal(value.Type, JTokenType.String);
+            Assert.Equal(JTokenType.String, value.Type);
 
             var stateMachineContent = File.ReadAllText(Path.Combine(fullPath, "state-machine.json"));
             Assert.Equal(stateMachineContent, value.Value);

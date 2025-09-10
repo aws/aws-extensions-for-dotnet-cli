@@ -1,9 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\buildtools\common.props" />
   <PropertyGroup>
     <Description>Amazon.Lambda.Tools adds commands to the dotnet cli to deploy AWS Lambda functions.</Description>
     <AssemblyTitle>Amazon.Lambda.Tools</AssemblyTitle>
-    <TargetFrameworks>netcoreapp3.1;net6.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
     <AssemblyName>dotnet-lambda</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>Amazon.Lambda.Tools</PackageId>
@@ -16,6 +16,11 @@
     <Product>AWS Lambda Tools for .NET CLI</Product>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <Version>5.13.0</Version>
+    <!-- 
+        This is explicitly set to 7.3 to match what the AWS VS Toolkit uses. This is required because
+        the source code here is also copied into the AWS VS Toolkit.
+    -->
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Resources\build-lambda-zip.exe">
@@ -36,14 +41,15 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="AWSSDK.CloudFormation" Version="3.7.307.6" />
-    <PackageReference Include="AWSSDK.Lambda" Version="3.7.406.2" />
-    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.301.6" />
-    <PackageReference Include="AWSSDK.S3" Version="3.7.307.21" />
+    <PackageReference Include="AWSSDK.CloudFormation" Version="4.0.3" />
+    <PackageReference Include="AWSSDK.Lambda" Version="4.0.2.8" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="4.0.3.2" />
+    <PackageReference Include="AWSSDK.S3" Version="4.0.6.13" />
     <PackageReference Include="YamlDotNet.Signed" Version="5.2.1" />
   </ItemGroup>
   <PropertyGroup>
-    <NoWarn>1701;1702;1705;1591</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>1701;1702;1705;1591;NETSDK1138</NoWarn>
   </PropertyGroup>
 
   <!-- To rebuild build-lambda-zip.exe you must have Go installed and run 'dotnet msbuild -target:build-lambda-zip'
