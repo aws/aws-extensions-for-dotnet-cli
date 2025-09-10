@@ -30,6 +30,10 @@ namespace Amazon.Common.DotNetCli.Tools
 
             var arguments = new StringBuilder();
 
+            // The --provenance=false switch is added to force docker to not build an image index which is an image with a manifest.
+            // Lambda does not support containers of this type. This can be verified by running "docker inspect" on the build
+            // image. The mediaType should be application/vnd.docker.distribution.manifest.v2+json but without
+            // the --provenance=false the mediaType will be application/vnd.oci.image.index.v1+json.
             if (arm64Build)
             {
                 arguments.Append($"buildx build --platform linux/arm64 --provenance=false ");
