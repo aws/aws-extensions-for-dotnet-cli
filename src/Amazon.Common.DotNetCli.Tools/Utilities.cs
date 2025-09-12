@@ -223,7 +223,7 @@ namespace Amazon.Common.DotNetCli.Tools
                 "msbuild",
                 projectFile,
                 "-nologo",
-                $"--getProperty:{string.Join(',', propertyNames)}"
+                $"--getProperty:{string.Join(",", propertyNames)}"
             };
 
             if (!string.IsNullOrEmpty(msBuildParameters))
