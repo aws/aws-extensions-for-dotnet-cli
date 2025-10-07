@@ -12,7 +12,7 @@ namespace Amazon.Common.DotNetCli.Tools.Test
         [Theory]
         [InlineData("../../../../../testapps/TestFunction", "net6.0")]
         [InlineData("../../../../../testapps/ServerlessWithYamlFunction", "net6.0")]
-        [InlineData("../../../../../testapps/TestBeanstalkWebApp", "netcoreapp3.1")]
+        [InlineData("../../../../../testapps/TestBeanstalkWebApp", "net8.0")]
         [InlineData("../../../../../testapps/TestFunctionBuildProps/TestFunctionBuildProps", "net6.0")]
         public void CheckFramework(string projectPath, string expectedFramework)
         {

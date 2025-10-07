@@ -14,7 +14,6 @@ using Amazon.ECR;
 using Amazon.ECS;
 
 using System.Reflection;
-using ThirdParty.Json.LitJson;
 using System.Text;
 using System.IO;
 using Amazon.Common.DotNetCli.Tools.Commands;

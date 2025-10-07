@@ -76,6 +76,8 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             var solutionStacks = new List<string>();
 
             var allSolutionStacks = (await this.EBClient.ListAvailableSolutionStacksAsync()).SolutionStacks;
+            if (allSolutionStacks == null)
+                return new List<string>();
             foreach (var stack in allSolutionStacks.OrderByDescending(x => x))
             {
                 if (EBUtilities.IsSolutionStackWindows(stack) || EBUtilities.IsSolutionStackLinuxNETCore(stack))

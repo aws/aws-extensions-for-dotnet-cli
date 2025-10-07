@@ -8,7 +8,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using ThirdParty.Json.LitJson;
 
 namespace Amazon.ElasticBeanstalk.Tools.Commands
 {
@@ -111,7 +110,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                     EnvironmentName = environmentDescription.EnvironmentName
                 });
 
-                if(response.ConfigurationSettings.Count != 1)
+                if(response.ConfigurationSettings == null || response.ConfigurationSettings.Count != 1)
                 {
                     throw new ElasticBeanstalkExceptions($"Unknown error to retrieving settings for existing Beanstalk environment.", ElasticBeanstalkExceptions.EBCode.FailedToDescribeEnvironmentSettings);
                 }
@@ -330,6 +329,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 ApplicationName = application,
                 EnvironmentName = environment,
                 VersionLabel = versionLabel,
+                OptionSettings = new List<ConfigurationOptionSetting>(),
                 SolutionStackName = this.GetSolutionStackOrDefault(this.DeployEnvironmentOptions.SolutionStack, EBDefinedCommandOptions.ARGUMENT_SOLUTION_STACK, true),
                 CNAMEPrefix = this.GetStringValueOrDefault(this.DeployEnvironmentOptions.CNamePrefix, EBDefinedCommandOptions.ARGUMENT_CNAME_PREFIX, false)
             };
@@ -420,11 +420,13 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 });
             }
 
-            AddAdditionalOptions(createRequest.OptionSettings, true, isWindowsEnvironment);
+            createRequest.OptionSettings = AddAdditionalOptions(createRequest.OptionSettings, true, isWindowsEnvironment);
 
             var tags = ConvertToTagsCollection();
             if (tags != null && tags.Count > 0)
+            {
                 createRequest.Tags = tags;
+            }
 
             try
             {
@@ -437,8 +439,11 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             }
         }
 
-        private void AddAdditionalOptions(IList<ConfigurationOptionSetting> settings, bool createEnvironmentMode, bool isWindowsEnvironment)
+        private List<ConfigurationOptionSetting> AddAdditionalOptions(List<ConfigurationOptionSetting> settings, bool createEnvironmentMode, bool isWindowsEnvironment)
         {
+            if (settings == null)
+                settings = new List<ConfigurationOptionSetting>();
+
             var additionalOptions = this.GetKeyValuePairOrDefault(this.DeployEnvironmentOptions.AdditionalOptions, EBDefinedCommandOptions.ARGUMENT_EB_ADDITIONAL_OPTIONS, false);
             if (additionalOptions != null && additionalOptions.Count > 0)
             {
@@ -449,6 +454,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                     {
                         throw new ToolsException("Additional option \"" + kvp.Key + "=" + kvp.Value + "\" in incorrect format. Format should be <option-namespace>,<option-name>=<option-value>.", ToolsException.CommonErrorCode.DefaultsParseFail);
                     }
+
 
                     settings.Add(new ConfigurationOptionSetting
                     {
@@ -582,6 +588,8 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                     Value = enableStickySessions.Value.ToString(CultureInfo.InvariantCulture).ToLowerInvariant()
                 });
             }
+
+            return settings;
         }
 
         private async Task<string> UpdateEnvironment(EnvironmentDescription environmentDescription, string versionLabel)
@@ -594,7 +602,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 VersionLabel = versionLabel
             };
 
-            AddAdditionalOptions(updateRequest.OptionSettings, false, EBUtilities.IsSolutionStackWindows(environmentDescription.SolutionStackName));
+            updateRequest.OptionSettings = AddAdditionalOptions(updateRequest.OptionSettings, false, EBUtilities.IsSolutionStackWindows(environmentDescription.SolutionStackName));
 
             try
             {
@@ -626,17 +634,21 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
         private async Task<bool> DoesApplicationExist(string applicationName)
         {
             var request = new DescribeApplicationsRequest();
+            if (request.ApplicationNames == null)
+                request.ApplicationNames = new List<string>();
             request.ApplicationNames.Add(applicationName);
             var response = await this.EBClient.DescribeApplicationsAsync(request);
-            return response.Applications.Count == 1;
+            return response.Applications != null && response.Applications.Count == 1;
         }
 
         private async Task<EnvironmentDescription> GetEnvironmentDescription(string applicationName, string environmentName)
         {
             var request = new DescribeEnvironmentsRequest { ApplicationName = applicationName };
+            if (request.EnvironmentNames == null)
+                request.EnvironmentNames = new List<string>();
             request.EnvironmentNames.Add(environmentName);
             var response = await this.EBClient.DescribeEnvironmentsAsync(request);
-            if (response.Environments.Where(x => x.Status != EnvironmentStatus.Terminated && x.Status != EnvironmentStatus.Terminating).Count() != 1)
+            if (response.Environments == null || response.Environments.Where(x => x.Status != EnvironmentStatus.Terminated && x.Status != EnvironmentStatus.Terminating).Count() != 1)
                 return null;
 
             var environment = response.Environments[0];
@@ -659,7 +671,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             {
                 ApplicationName = applicationName,
                 EnvironmentName = environmentName,
-                StartTimeUtc = startingEventDate
+                StartTime = startingEventDate
             };
 
             var success = true;
@@ -670,14 +682,14 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                 Thread.Sleep(5000);
 
                 var responseEnvironments = await this.EBClient.DescribeEnvironmentsAsync(requestEnvironment);
-                if (responseEnvironments.Environments.Count == 0)
+                if (responseEnvironments.Environments == null || responseEnvironments.Environments.Count == 0)
                     throw new ElasticBeanstalkExceptions("Failed to find environment when waiting for deployment completion", ElasticBeanstalkExceptions.EBCode.FailedToFindEnvironment );
 
                 environment = responseEnvironments.Environments[0];
 
-                requestEvents.StartTimeUtc = lastPrintedEventDate;
+                requestEvents.StartTime = lastPrintedEventDate;
                 var responseEvents = await this.EBClient.DescribeEventsAsync(requestEvents);
-                if(responseEvents.Events.Count > 0)
+                if(responseEvents.Events != null && responseEvents.Events.Count > 0)
                 {
                     for(int i = responseEvents.Events.Count - 1; i >= 0; i--)
                     {
@@ -685,7 +697,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                         if (evnt.EventDate <= lastPrintedEventDate)
                             continue;
 
-                        this.Logger?.WriteLine(evnt.EventDate.ToLocalTime() + "    " + evnt.Severity + "    " + evnt.Message);
+                        this.Logger?.WriteLine(evnt.EventDate.Value.ToLocalTime() + "    " + evnt.Severity + "    " + evnt.Message);
                         if(evnt.Message.StartsWith("Failed to deploy application", StringComparison.OrdinalIgnoreCase) ||
                            evnt.Message.StartsWith("Failed to launch environment", StringComparison.OrdinalIgnoreCase) ||
                            evnt.Message.StartsWith("Error occurred during build: Command hooks failed", StringComparison.OrdinalIgnoreCase))
@@ -694,7 +706,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
                         }
                     }
 
-                    lastPrintedEventDate = responseEvents.Events[0].EventDate;
+                    lastPrintedEventDate = responseEvents.Events[0].EventDate.Value;
                 }
 
             } while (environment.Status == EnvironmentStatus.Launching || environment.Status == EnvironmentStatus.Updating);
@@ -716,10 +728,10 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             };
 
             var response = await this.EBClient.DescribeEventsAsync(request);
-            if (response.Events.Count == 0)
+            if (response.Events == null || response.Events.Count == 0)
                 return DateTime.Now;
 
-            return response.Events[0].EventDate;
+            return response.Events[0].EventDate.Value;
         }
 
         private async Task<S3Location> UploadDeploymentPackageAsync(string application, string versionLabel, string deploymentPackage)
@@ -749,7 +761,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
         }
 
 
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
             this.DeployEnvironmentOptions.PersistSettings(this, data);
         }

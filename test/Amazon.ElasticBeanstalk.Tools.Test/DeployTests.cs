@@ -21,12 +21,13 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 using Moq;
+using Amazon.Runtime;
 
 namespace Amazon.ElasticBeanstalk.Tools.Test
 {
     public class DeployTests
     {
-        [Fact(Skip = "Trouble running in CodeBuild.  Need to debug.")]
+        [Fact()]
         public async Task CreateEnvironmentTest()
         {
             var application = "TestApp";
@@ -35,6 +36,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
             var iamProfile = "arn:aws:fake-profile";
 
             var mockS3Client = new Mock<IAmazonS3>();
+            mockS3Client.Setup(client => client.Config).Returns(new AmazonS3Config());
 
             var calls = new Dictionary<string, int>();
             Action<string> addCall = x =>
@@ -107,7 +109,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
                     Assert.Equal(iamSetting.Value, iamProfile);
 
                     var xraySetting = request.OptionSettings.FirstOrDefault(x => string.Equals(x.OptionName, "XRayEnabled") && string.Equals(x.Namespace, "aws:elasticbeanstalk:xray"));
-                    Assert.Equal(xraySetting.Value.ToLower(), "true");
+                    Assert.Equal("true", xraySetting.Value.ToLower());
                 })
                 .Returns((CreateEnvironmentRequest r, CancellationToken token) =>
                 {
@@ -150,7 +152,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
             Assert.True(calls.ContainsKey("CreateEnvironmentAsync"));
         }
 
-        [Fact(Skip = "Trouble running in CodeBuild.  Need to debug.")]
+        [Fact()]
         public async Task CreateEnvironmentWithPackageTest()
         {
             var application = "TestApp";
@@ -159,6 +161,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
             var iamProfile = "arn:aws:fake-profile";
 
             var mockS3Client = new Mock<IAmazonS3>();
+            mockS3Client.Setup(client => client.Config).Returns(new AmazonS3Config());
 
             var calls = new Dictionary<string, int>();
             Action<string> addCall = x =>
@@ -231,7 +234,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
                     Assert.Equal(iamSetting.Value, iamProfile);
 
                     var xraySetting = request.OptionSettings.FirstOrDefault(x => string.Equals(x.OptionName, "XRayEnabled") && string.Equals(x.Namespace, "aws:elasticbeanstalk:xray"));
-                    Assert.Equal(xraySetting.Value.ToLower(), "true");
+                    Assert.Equal("true", xraySetting.Value.ToLower());
                 })
                 .Returns((CreateEnvironmentRequest r, CancellationToken token) =>
                 {
@@ -281,7 +284,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
             Assert.True(calls.ContainsKey("CreateEnvironmentAsync"));
         }
 
-        [Fact(Skip = "Trouble running in CodeBuild.  Need to debug.")]
+        [Fact()]
         public async Task UpdateEnvironmentTest()
         {
             var application = "TestApp";
@@ -290,6 +293,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
             var iamProfile = "arn:aws:fake-profile";
 
             var mockS3Client = new Mock<IAmazonS3>();
+            mockS3Client.Setup(client => client.Config).Returns(new AmazonS3Config());
 
             var calls = new Dictionary<string, int>();
             Action<string> addCall = x =>
@@ -373,7 +377,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
                     Assert.Equal(environment, request.EnvironmentName);
 
                     var xraySetting = request.OptionSettings.FirstOrDefault(x => string.Equals(x.OptionName, "XRayEnabled") && string.Equals(x.Namespace, "aws:elasticbeanstalk:xray"));
-                    Assert.Equal(xraySetting.Value.ToLower(), "true");
+                    Assert.Equal("true", xraySetting.Value.ToLower());
                 })
                 .Returns((UpdateEnvironmentRequest r, CancellationToken token) =>
                 {
@@ -395,7 +399,33 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
                                 EnvironmentName = environment,
                                 DateCreated = DateTime.Now.AddMinutes(-1),
                                 DateUpdated = DateTime.Now,
-                                Status = EnvironmentStatus.Ready
+                                Status = EnvironmentStatus.Ready,
+                                SolutionStackName = ".NET Linux"
+                            }
+                        }
+                    });
+                });
+            mockEbClient.Setup(client => client.DescribeConfigurationSettingsAsync(It.IsAny<DescribeConfigurationSettingsRequest>(), It.IsAny<CancellationToken>()))
+                .Returns((DescribeConfigurationSettingsRequest r, CancellationToken token) =>
+                {
+                    addCall("DescribeEnvironmentsAsync");
+
+                    return Task.FromResult(new DescribeConfigurationSettingsResponse
+                    {
+                        ConfigurationSettings = new List<ConfigurationSettingsDescription>()
+                        {
+                            new ConfigurationSettingsDescription
+                            {
+                                OptionSettings = new List<ConfigurationOptionSetting>()
+                                {
+                                    new ConfigurationOptionSetting
+                                    {
+                                        Namespace = "aws",
+                                        OptionName = "IamInstanceProfile",
+                                        Value = iamProfile,
+                                        ResourceName = "name"
+                                    }
+                                }
                             }
                         }
                     });

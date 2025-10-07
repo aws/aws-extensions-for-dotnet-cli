@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
-using ThirdParty.Json.LitJson;
 
 namespace Amazon.ElasticBeanstalk.Tools.Commands
 {
@@ -104,7 +103,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             return Task.FromResult(true);
         }
 
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
             this.DeployEnvironmentOptions.PersistSettings(this, data);
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE.ConfigFileKey, this.GetStringValueOrDefault(this.OutputPackageFileName, EBDefinedCommandOptions.ARGUMENT_OUTPUT_PACKAGE, false));

@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using ThirdParty.Json.LitJson;
 
 namespace Amazon.ElasticBeanstalk.Tools.Commands
 {
@@ -80,7 +79,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
             return true;
         }
 
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
             this.DeleteEnvironmentProperties.PersistSettings(this, data);
         }

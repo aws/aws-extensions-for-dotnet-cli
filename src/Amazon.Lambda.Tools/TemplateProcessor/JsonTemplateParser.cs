@@ -1,7 +1,8 @@
-﻿using System;
+﻿using Amazon.Common.DotNetCli.Tools;
+using System;
 using System.Collections.Generic;
 using System.Text;
-using ThirdParty.Json.LitJson;
+using System.Text.Json;
 
 namespace Amazon.Lambda.Tools.TemplateProcessor
 {
@@ -10,12 +11,15 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
     /// </summary>
     public class JsonTemplateParser : ITemplateParser
     {
-        JsonData Root { get; }
+        Dictionary<string, object> Root { get; }
         public JsonTemplateParser(string templateBody)
         {
             try
             {
-                this.Root = JsonMapper.ToObject(templateBody);
+                using (JsonDocument doc = JsonDocument.Parse(templateBody))
+                {
+                    this.Root = doc.RootElement.GetJsonValue() as Dictionary<string, object>;
+                }
             }
             catch (Exception e)
             {
@@ -25,33 +29,29 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
 
         public string GetUpdatedTemplate()
         {
-            var json = JsonMapper.ToJson(this.Root);
-            return json;
+            return JsonSerializer.Serialize(this.Root);
         }
 
         public IEnumerable<IUpdatableResource> UpdatableResources()
         {
-            var resources = this.Root["Resources"];
-            if (resources == null)
+            if (!this.Root.ContainsKey("Resources") || !(this.Root["Resources"] is Dictionary<string, object> resources))
                 throw new LambdaToolsException("CloudFormation template does not define any AWS resources", LambdaToolsException.LambdaErrorCode.ServerlessTemplateMissingResourceSection);
 
-            foreach (var field in resources.PropertyNames)
+            foreach (var kvp in resources)
             {
-                var resource = resources[field];
-                if (resource == null)
+                if (!(kvp.Value is Dictionary<string, object> resource))
                     continue;
 
-                var properties = resource["Properties"];
-                if (properties == null)
+                if (!resource.ContainsKey("Properties") || !(resource["Properties"] is Dictionary<string, object> properties))
                     continue;
 
-                var type = resource["Type"]?.ToString();
+                var type = resource.ContainsKey("Type") ? resource["Type"]?.ToString() : null;
                 UpdatableResourceDefinition updatableResourceDefinition;
                 if (!UpdatableResourceDefinition.ValidUpdatableResourceDefinitions.TryGetValue(type,
                     out updatableResourceDefinition))
                     continue;
                 
-                var updatableResource = new UpdatableResource(field, updatableResourceDefinition, new JsonUpdatableResourceDataSource(this.Root, resource, properties));
+                var updatableResource = new UpdatableResource(kvp.Key, updatableResourceDefinition, new JsonUpdatableResourceDataSource(this.Root, resource, properties));
                 yield return updatableResource;
             }
         }
@@ -61,11 +61,11 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// </summary>
         public class JsonUpdatableResourceDataSource : IUpdatableResourceDataSource
         {
-            JsonData Root { get; }
-            JsonData Resource { get; }
-            JsonData Properties { get; }
+            Dictionary<string, object> Root { get; }
+            Dictionary<string, object> Resource { get; }
+            Dictionary<string, object> Properties { get; }
 
-            public JsonUpdatableResourceDataSource(JsonData root, JsonData resource, JsonData properties)
+            public JsonUpdatableResourceDataSource(Dictionary<string, object> root, Dictionary<string, object> resource, Dictionary<string, object> properties)
             {
                 this.Root = root;
                 this.Resource = resource;
@@ -92,17 +92,18 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 return GetValue(this.Properties, keyPath);
             }
 
-            private static string GetValue(JsonData node, params string[] keyPath)
+            private static string GetValue(Dictionary<string, object> node, params string[] keyPath)
             {
+                object current = node;
                 foreach (var key in keyPath)
                 {
-                    if (node == null)
+                    if (!(current is Dictionary<string, object> dict) || !dict.ContainsKey(key))
                         return null;
 
-                    node = node[key];
+                    current = dict[key];
                 }
 
-                return node?.ToString();
+                return current?.ToString();
             }
             
             public string[] GetValueList(params string[] keyPath)
@@ -115,23 +116,24 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 return GetValueDictionaryFromResource(this.Resource, keyPath);
             }
 
-            private static string[] GetValueList(JsonData node, params string[] keyPath)
+            private static string[] GetValueList(Dictionary<string, object> node, params string[] keyPath)
             {
+                object current = node;
                 foreach (var key in keyPath)
                 {
-                    if (node == null)
+                    if (!(current is Dictionary<string, object> dict) || !dict.ContainsKey(key))
                         return null;
 
-                    node = node[key];
+                    current = dict[key];
                 }
 
-                if (node == null || !node.IsArray || node.Count == 0)
+                if (!(current is List<object> list) || list.Count == 0)
                     return null;
 
-                var values = new string[node.Count];
+                var values = new string[list.Count];
                 for (var i = 0; i < values.Length; i++)
                 {
-                    values[i] = node[i]?.ToString();
+                    values[i] = list[i]?.ToString();
                 }
                 
                 return values;
@@ -139,45 +141,37 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
 
             public void SetValue(string value, params string[] keyPath)
             {
-                JsonData node = Properties;
+                Dictionary<string, object> node = Properties;
                 for (int i = 0; i < keyPath.Length - 1; i++)
                 {
-                    var childNode = node[keyPath[i]];
-                    if (childNode == null)
+                    if (!node.ContainsKey(keyPath[i]) || !(node[keyPath[i]] is Dictionary<string, object>))
                     {
-                        childNode = new JsonData();
-                        node[keyPath[i]] = childNode;
+                        node[keyPath[i]] = new Dictionary<string, object>();
                     }
-                    node = childNode;
+                    node = (Dictionary<string, object>)node[keyPath[i]];
                 }
 
                 node[keyPath[keyPath.Length - 1]] = value;
             }
 
-            private static Dictionary<string, string> GetValueDictionaryFromResource(JsonData node, params string[] keyPath)
+            private static Dictionary<string, string> GetValueDictionaryFromResource(Dictionary<string, object> node, params string[] keyPath)
             {
+                object current = node;
                 foreach (var key in keyPath)
                 {
-                    if (node == null)
+                    if (!(current is Dictionary<string, object> dict) || !dict.ContainsKey(key))
                         return null;
 
-                    node = node[key];
+                    current = dict[key];
                 }
 
-                if (node == null || !node.IsObject || node.Count == 0)
+                if (!(current is Dictionary<string, object> targetDict) || targetDict.Count == 0)
                     return null;
 
-                var dictionary = new Dictionary<string, string>(node.Count);
-                foreach (string key in node.PropertyNames)
+                var dictionary = new Dictionary<string, string>(targetDict.Count);
+                foreach (var kvp in targetDict)
                 {
-                    if (dictionary.ContainsKey(key))
-                    {
-                        dictionary[key] = node[key]?.ToString();
-                    }
-                    else
-                    {
-                        dictionary.Add(key, node[key]?.ToString());
-                    }
+                    dictionary[kvp.Key] = kvp.Value?.ToString();
                 }
 
                 return dictionary;

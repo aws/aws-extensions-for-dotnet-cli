@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.Text.Json;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
-using ThirdParty.Json.LitJson;
 
 namespace Amazon.Lambda.Tools
 {
@@ -22,11 +21,11 @@ namespace Amazon.Lambda.Tools
         }
 
         public LambdaToolsDefaults(string sourceFile)
-            : this(new JsonData(), sourceFile)
+            : this(new JsonElement(), sourceFile)
         {
         }
 
-        public LambdaToolsDefaults(JsonData data, string sourceFile)
+        public LambdaToolsDefaults(JsonElement data, string sourceFile)
             : base(data, sourceFile)
         {
         }
@@ -56,9 +55,9 @@ namespace Amazon.Lambda.Tools
             get
             {
                 var data = GetValue(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_MEMORY_SIZE);
-                if (data != null && data.IsInt)
+                if (data.ValueKind == JsonValueKind.Number)
                 {
-                    return (int)data;
+                    return data.GetInt32();
                 }
                 return null;
             }
@@ -69,9 +68,9 @@ namespace Amazon.Lambda.Tools
             get
             {
                 var data = GetValue(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT);
-                if (data != null && data.IsInt)
+                if (data.ValueKind == JsonValueKind.Number)
                 {
-                    return (int)data;
+                    return data.GetInt32();
                 }
                 return null;
             }

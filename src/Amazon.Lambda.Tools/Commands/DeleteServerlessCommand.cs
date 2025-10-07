@@ -6,8 +6,6 @@ using Amazon.CloudFormation.Model;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
 
-using ThirdParty.Json.LitJson;
-
 namespace Amazon.Lambda.Tools.Commands
 {
     public class DeleteServerlessCommand : LambdaBaseCommand
@@ -73,7 +71,7 @@ namespace Amazon.Lambda.Tools.Commands
             return true;
         }
         
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_STACK_NAME.ConfigFileKey, this.GetStringValueOrDefault(this.StackName, LambdaDefinedCommandOptions.ARGUMENT_STACK_NAME, false));    
         }

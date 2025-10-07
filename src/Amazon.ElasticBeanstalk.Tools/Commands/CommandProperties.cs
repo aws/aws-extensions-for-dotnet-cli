@@ -3,7 +3,6 @@ using Amazon.Common.DotNetCli.Tools.Options;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using ThirdParty.Json.LitJson;
 
 namespace Amazon.ElasticBeanstalk.Tools.Commands
 {
@@ -103,7 +102,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
         }
 
 
-        internal void PersistSettings(EBBaseCommand command, JsonData data)
+        internal void PersistSettings(EBBaseCommand command, Dictionary<string, object> data)
         {
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION.ConfigFileKey, command.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false));
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK.ConfigFileKey, command.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false));
@@ -147,7 +146,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Commands
         }
 
 
-        internal void PersistSettings(EBBaseCommand command, JsonData data)
+        internal void PersistSettings(EBBaseCommand command, Dictionary<string, object> data)
         {
             data.SetIfNotNull(EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT.ConfigFileKey, command.GetStringValueOrDefault(this.Environment, EBDefinedCommandOptions.ARGUMENT_EB_ENVIRONMENT, false));
         }

@@ -4,11 +4,10 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using Amazon.Common.DotNetCli.Tools;
-using Amazon.Common.DotNetCli.Tools.Options;
 using Amazon.ElasticBeanstalk.Model;
 using Amazon.ElasticBeanstalk.Tools.Commands;
-using ThirdParty.Json.LitJson;
 
 namespace Amazon.ElasticBeanstalk.Tools
 {
@@ -25,48 +24,52 @@ namespace Amazon.ElasticBeanstalk.Tools
             {
                 logger?.WriteLine("Updating existing deployment manifest");
 
-                Func<string, JsonData, JsonData> getOrCreateNode = (name, node) =>
+                var data = new Dictionary<string, object>();
+                string existingJson = File.ReadAllText(pathToManifest);
+                using (JsonDocument doc = JsonDocument.Parse(existingJson))
                 {
-                    JsonData child = node[name] as JsonData;
-                    if (child == null)
+                    foreach (JsonProperty prop in doc.RootElement.EnumerateObject())
                     {
-                        child = new JsonData();
-                        node[name] = child;
+                        data[prop.Name] = prop.Value.GetJsonValue();
                     }
-                    return child;
-                };
-
-                JsonData root = JsonMapper.ToObject(File.ReadAllText(pathToManifest));
-                if (root["manifestVersion"] == null || !root["manifestVersion"].IsInt)
-                {
-                    root["manifestVersion"] = 1;
                 }
 
-                JsonData deploymentNode = getOrCreateNode("deployments", root);
-
-                JsonData aspNetCoreWebNode = getOrCreateNode("aspNetCoreWeb", deploymentNode);
-
-                JsonData appNode;
-                if (aspNetCoreWebNode.GetJsonType() == JsonType.None || aspNetCoreWebNode.Count == 0)
+                if (!data.ContainsKey("manifestVersion") || !(data["manifestVersion"] is int))
                 {
-                    appNode = new JsonData();
-                    aspNetCoreWebNode.Add(appNode);
+                    data["manifestVersion"] = 1;
+                }
+
+                if (!data.ContainsKey("deployments"))
+                    data["deployments"] = new Dictionary<string, object>();
+                var deployments = (Dictionary<string, object>)data["deployments"];
+
+                if (!deployments.ContainsKey("aspNetCoreWeb"))
+                    deployments["aspNetCoreWeb"] = new List<object>();
+                var aspNetCoreWeb = (List<object>)deployments["aspNetCoreWeb"];
+
+                Dictionary<string, object> appNode;
+                if (aspNetCoreWeb.Count == 0)
+                {
+                    appNode = new Dictionary<string, object>();
+                    aspNetCoreWeb.Add(appNode);
                 }
                 else
-                    appNode = aspNetCoreWebNode[0];
+                    appNode = (Dictionary<string, object>)aspNetCoreWeb[0];
 
-
-                if (appNode["name"] == null || !appNode["name"].IsString || string.IsNullOrEmpty((string)appNode["name"]))
+                if (!appNode.ContainsKey("name") || !(appNode["name"] is string name) || string.IsNullOrEmpty(name))
                 {
                     appNode["name"] = "app";
                 }
 
-                JsonData parametersNode = getOrCreateNode("parameters", appNode);
-                parametersNode["appBundle"] = ".";
-                parametersNode["iisPath"] = iisAppPath;
-                parametersNode["iisWebSite"] = iisWebSite;
+                if (!appNode.ContainsKey("parameters"))
+                    appNode["parameters"] = new Dictionary<string, object>();
+                var parameters = (Dictionary<string, object>)appNode["parameters"];
+                parameters["appBundle"] = ".";
+                parameters["iisPath"] = iisAppPath;
+                parameters["iisWebSite"] = iisWebSite;
 
-                manifest = root.ToJson();
+                var jsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true };
+                manifest = JsonSerializer.Serialize(data, jsonSerializerOptions);
             }
             else
             {
@@ -155,19 +158,24 @@ namespace Amazon.ElasticBeanstalk.Tools
                 runtimeConfigFile = File.ReadAllText(runtimeConfigFile);
             }
 
+            try
+            {
+                using (JsonDocument doc = JsonDocument.Parse(runtimeConfigFile))
+                {
+                    if (!doc.RootElement.TryGetProperty("runtimeOptions", out JsonElement runtimeOptions))
+                        return false;
 
-            JsonData root = JsonMapper.ToObject(runtimeConfigFile);
-            var runtimeOptions = root["runtimeOptions"] as JsonData;
-            if(runtimeOptions == null)
+                    if (!runtimeOptions.TryGetProperty("includedFrameworks", out JsonElement includedFrameworks))
+                        return false;
+
+                    return includedFrameworks.ValueKind == JsonValueKind.Array && includedFrameworks.GetArrayLength() > 0;
+                }
+            }
+            catch
             {
                 return false;
             }
-
-            var includedFrameworks = runtimeOptions["includedFrameworks"] as JsonData;
-
-            return includedFrameworks != null && includedFrameworks.Count > 0;
         }
-
 
         public static string FindExistingValue(this List<ConfigurationOptionSetting> settings, string ns, string name)
         {

@@ -6,8 +6,8 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
 using Amazon.Common.DotNetCli.Tools;
-using ThirdParty.Json.LitJson;
 
 namespace Amazon.Lambda.Tools
 {
@@ -233,15 +233,15 @@ namespace Amazon.Lambda.Tools
             // If there is no target node then this means the tool is being used on a future version of .NET Core
             // then was available when the this tool was written. Go ahead and continue the deployment with warnings so the
             // user can see if the future version will work.
-            if (depsJsonTargetNode != null && string.Equals(targetFramework, "netcoreapp1.0", StringComparison.OrdinalIgnoreCase))
+            if (depsJsonTargetNode.HasValue && string.Equals(targetFramework, "netcoreapp1.0", StringComparison.OrdinalIgnoreCase))
             {
                 // Make sure the project is not pulling in dependencies requiring a later version of .NET Core then the declared target framework
-                if (!ValidateDependencies(logger, targetFramework, depsJsonTargetNode, disableVersionCheck))
+                if (!ValidateDependencies(logger, targetFramework, depsJsonTargetNode.Value, disableVersionCheck))
                     return false;
 
                 // Flatten the runtime folder which reduces the package size by not including native dependencies
                 // for other platforms.
-                flattenRuntime = FlattenRuntimeFolder(logger, publishLocation, depsJsonTargetNode);
+                flattenRuntime = FlattenRuntimeFolder(logger, publishLocation, depsJsonTargetNode.Value);
             }
 
             FlattenPowerShellRuntimeModules(logger, publishLocation, targetFramework);
@@ -351,7 +351,7 @@ namespace Amazon.Lambda.Tools
         /// <param name="logger"></param>
         /// <param name="publishLocation"></param>
         /// <returns></returns>
-        private static JsonData GetDepsJsonTargetNode(IToolLogger logger, string publishLocation)
+        private static JsonElement? GetDepsJsonTargetNode(IToolLogger logger, string publishLocation)
         {
             var depsJsonFilepath = Directory.GetFiles(publishLocation, "*.deps.json", SearchOption.TopDirectoryOnly).FirstOrDefault();
             if (!File.Exists(depsJsonFilepath))
@@ -360,38 +360,45 @@ namespace Amazon.Lambda.Tools
                 return null;
             }
 
-            var depsRootData = JsonMapper.ToObject(File.ReadAllText(depsJsonFilepath));
-            var runtimeTargetNode = depsRootData["runtimeTarget"];
-            if (runtimeTargetNode == null)
+            try
             {
-                logger?.WriteLine($"Missing runtimeTarget node. Skipping flattening runtime folder because {depsJsonFilepath} is an unrecognized format");
+                using (JsonDocument doc = JsonDocument.Parse(File.ReadAllText(depsJsonFilepath)))
+                {
+                    if (!doc.RootElement.TryGetProperty("runtimeTarget", out JsonElement runtimeTargetNode))
+                    {
+                        logger?.WriteLine($"Missing runtimeTarget node. Skipping flattening runtime folder because {depsJsonFilepath} is an unrecognized format");
+                        return null;
+                    }
+
+                    string runtimeTarget;
+                    if (runtimeTargetNode.ValueKind == JsonValueKind.String)
+                    {
+                        runtimeTarget = runtimeTargetNode.GetString();
+                    }
+                    else if (runtimeTargetNode.TryGetProperty("name", out JsonElement nameElement))
+                    {
+                        runtimeTarget = nameElement.GetString();
+                    }
+                    else
+                    {
+                        logger?.WriteLine($"Missing runtimeTarget name. Skipping flattening runtime folder because {depsJsonFilepath} is an unrecognized format");
+                        return null;
+                    }
+
+                    if (!doc.RootElement.TryGetProperty("targets", out JsonElement targets) || !targets.TryGetProperty(runtimeTarget, out JsonElement target))
+                    {
+                        logger?.WriteLine($"Missing targets node. Skipping flattening runtime folder because {depsJsonFilepath} is an unrecognized format");
+                        return null;
+                    }
+
+                    return target.Clone();
+                }
+            }
+            catch (Exception e)
+            {
+                logger?.WriteLine($"Error parsing deps.json file: {e.Message}");
                 return null;
             }
-
-            string runtimeTarget;
-            if (runtimeTargetNode.IsString)
-            {
-                runtimeTarget = runtimeTargetNode.ToString();
-            }
-            else
-            {
-                runtimeTarget = runtimeTargetNode["name"]?.ToString();
-            }
-
-            if (runtimeTarget == null)
-            {
-                logger?.WriteLine($"Missing runtimeTarget name. Skipping flattening runtime folder because {depsJsonFilepath} is an unrecognized format");
-                return null;
-            }
-
-            var target = depsRootData["targets"]?[runtimeTarget];
-            if (target == null)
-            {
-                logger?.WriteLine($"Missing targets node. Skipping flattening runtime folder because {depsJsonFilepath} is an unrecognized format");
-                return null;
-            }
-
-            return target;
         }
 
         /// <summary>
@@ -403,7 +410,7 @@ namespace Amazon.Lambda.Tools
         /// <param name="depsJsonTargetNode"></param>
         /// <param name="disableVersionCheck"></param>
         /// <returns></returns>
-        private static bool ValidateDependencies(IToolLogger logger, string targetFramework, JsonData depsJsonTargetNode, bool disableVersionCheck)
+        private static bool ValidateDependencies(IToolLogger logger, string targetFramework, JsonElement depsJsonTargetNode, bool disableVersionCheck)
         {
             Version maxNETStandardLibraryVersion;
             // If we don't know the NETStandard.Library NuGet package version then skip validation. This is to handle
@@ -417,9 +424,9 @@ namespace Amazon.Lambda.Tools
 
             var errorLevel = disableVersionCheck ? "Warning" : "Error";
 
-            foreach (KeyValuePair<string, JsonData> dependencyNode in depsJsonTargetNode)
+            foreach (JsonProperty dependencyNode in depsJsonTargetNode.EnumerateObject())
             {
-                var nameAndVersion = dependencyNode.Key.Split('/');
+                var nameAndVersion = dependencyNode.Name.Split('/');
                 if (nameAndVersion.Length != 2)
                     continue;
 
@@ -434,12 +441,11 @@ namespace Amazon.Lambda.Tools
                 // Collect the dependencies that are pulling in the NETStandard.Library metapackage
                 else
                 {
-                    var subDependencies = dependencyNode.Value["dependencies"];
-                    if (subDependencies != null)
+                    if (dependencyNode.Value.TryGetProperty("dependencies", out JsonElement subDependencies))
                     {
-                        foreach (KeyValuePair<string, JsonData> subDependency in subDependencies)
+                        foreach (JsonProperty subDependency in subDependencies.EnumerateObject())
                         {
-                            if (string.Equals(subDependency.Key, "netstandard.library", StringComparison.OrdinalIgnoreCase))
+                            if (string.Equals(subDependency.Name, "netstandard.library", StringComparison.OrdinalIgnoreCase))
                             {
                                 dependenciesUsingNETStandard.Add(nameAndVersion[0] + " : " + nameAndVersion[1]);
                                 break;
@@ -514,7 +520,7 @@ namespace Amazon.Lambda.Tools
         /// In that case we want to publish the archive untouched so the tooling doesn't get in the way and let the user see if the  
         /// Lambda runtime has been updated to support the future changes. Warning messages will be written in case of failures.
         /// </returns>
-        private static bool FlattenRuntimeFolder(IToolLogger logger, string publishLocation, JsonData depsJsonTargetNode)
+        private static bool FlattenRuntimeFolder(IToolLogger logger, string publishLocation, JsonElement depsJsonTargetNode)
         {
 
             bool flattenAny = false;
@@ -543,19 +549,20 @@ namespace Amazon.Lambda.Tools
             // Loop through all the valid runtimes in precedence order so we copy over the first match
             foreach (var runtime in runtimeHierarchy)
             {
-                foreach (KeyValuePair<string, JsonData> dependencyNode in depsJsonTargetNode)
+                foreach (JsonProperty dependencyNode in depsJsonTargetNode.EnumerateObject())
                 {
-                    var depRuntimeTargets = dependencyNode.Value["runtimeTargets"];
-                    if (depRuntimeTargets == null)
+                    if (!dependencyNode.Value.TryGetProperty("runtimeTargets", out JsonElement depRuntimeTargets))
                         continue;
 
-                    foreach (KeyValuePair<string, JsonData> depRuntimeTarget in depRuntimeTargets)
+                    foreach (JsonProperty depRuntimeTarget in depRuntimeTargets.EnumerateObject())
                     {
-                        var rid = depRuntimeTarget.Value["rid"]?.ToString();
-
-                        if(string.Equals(rid, runtime, StringComparison.Ordinal))
+                        if (depRuntimeTarget.Value.TryGetProperty("rid", out JsonElement ridElement))
                         {
-                            copyFileIfNotExist(depRuntimeTarget.Key);
+                            var rid = ridElement.GetString();
+                            if(string.Equals(rid, runtime, StringComparison.Ordinal))
+                            {
+                                copyFileIfNotExist(depRuntimeTarget.Name);
+                            }
                         }
                     }
                 }
@@ -580,27 +587,30 @@ namespace Amazon.Lambda.Tools
             using (var stream = typeof(LambdaPackager).GetTypeInfo().Assembly.GetManifestResourceStream(manifestName))
             using (var reader = new StreamReader(stream))
             {
-                var rootData = JsonMapper.ToObject(reader.ReadToEnd());
-                var runtimes = rootData["runtimes"];
-
-                // Use a queue to do a breadth first search through the list of runtimes.
-                var queue = new Queue<string>();
-                queue.Enqueue(LambdaConstants.LEGACY_RUNTIME_HIERARCHY_STARTING_POINT);
-
-                while(queue.Count > 0)
+                using (JsonDocument doc = JsonDocument.Parse(reader.ReadToEnd()))
                 {
-                    var runtime = queue.Dequeue();
-                    if (runtimeHierarchy.Contains(runtime))
-                        continue;
+                    if (!doc.RootElement.TryGetProperty("runtimes", out JsonElement runtimes))
+                        return runtimeHierarchy;
 
-                    runtimeHierarchy.Add(runtime);
+                    // Use a queue to do a breadth first search through the list of runtimes.
+                    var queue = new Queue<string>();
+                    queue.Enqueue(LambdaConstants.LEGACY_RUNTIME_HIERARCHY_STARTING_POINT);
 
-                    var imports = runtimes[runtime]["#import"];
-                    if (imports != null)
+                    while(queue.Count > 0)
                     {
-                        foreach (JsonData importedRuntime in imports)
+                        var runtime = queue.Dequeue();
+                        if (runtimeHierarchy.Contains(runtime))
+                            continue;
+
+                        runtimeHierarchy.Add(runtime);
+
+                        if (runtimes.TryGetProperty(runtime, out JsonElement runtimeElement) && 
+                            runtimeElement.TryGetProperty("#import", out JsonElement imports))
                         {
-                            queue.Enqueue(importedRuntime.ToString());
+                            foreach (JsonElement importedRuntime in imports.EnumerateArray())
+                            {
+                                queue.Enqueue(importedRuntime.GetString());
+                            }
                         }
                     }
                 }

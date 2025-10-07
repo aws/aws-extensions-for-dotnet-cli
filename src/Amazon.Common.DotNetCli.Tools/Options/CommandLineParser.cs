@@ -63,7 +63,7 @@ namespace Amazon.Common.DotNetCli.Tools.Options
 
                             // --msbuild-parameters is a special case where multiple parameters separated by space character are enclosed in double quotes. In certain environments (like JavaScript action runner), the leading and trailing double quotes characters are also passed to .NET command arguments.
                             if (option == CommonDefinedCommandOptions.ARGUMENT_MSBUILD_PARAMETERS && !string.IsNullOrEmpty(value.StringValue) 
-                                && (value.StringValue.Trim().StartsWith('\"') && value.StringValue.Trim().EndsWith('\"')))
+                                && (value.StringValue.Trim().StartsWith("\"") && value.StringValue.Trim().EndsWith("\"")))
                             {
                                 value.StringValue = value.StringValue.Trim().Trim('\"');
                             }

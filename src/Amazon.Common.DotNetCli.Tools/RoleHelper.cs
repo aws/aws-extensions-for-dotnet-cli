@@ -31,10 +31,14 @@ namespace Amazon.Common.DotNetCli.Tools
             var response = new ListRolesResponse();
             do
             {
-                var roles = iamClient.ListRolesAsync(new ListRolesRequest { Marker = response.Marker }).Result.Roles;
-                roles.ForEach(x => existingRoleNames.Add(x.RoleName));
+                var listResponse = iamClient.ListRolesAsync(new ListRolesRequest { Marker = response.Marker }).Result;
+                response = listResponse;
+                if (listResponse.Roles != null)
+                {
+                    listResponse.Roles.ForEach(x => existingRoleNames.Add(x.RoleName));
+                }
 
-            } while (response.IsTruncated);
+            } while (response.IsTruncated.GetValueOrDefault());
 
             if (!existingRoleNames.Contains(baseName))
                 return baseName;
@@ -120,11 +124,14 @@ namespace Amazon.Common.DotNetCli.Tools
                 {
                     var listRequest = new ListPoliciesRequest { Marker = listResponse.Marker, Scope = PolicyScopeType.All };
                     listResponse = await iamClient.ListPoliciesAsync(listRequest).ConfigureAwait(false);
-                    var policy = listResponse.Policies.FirstOrDefault(x => string.Equals(managedPolicy, x.PolicyName));
-                    if (policy != null)
-                        return policy.Arn;
+                    if (listResponse.Policies != null)
+                    {
+                        var policy = listResponse.Policies.FirstOrDefault(x => string.Equals(managedPolicy, x.PolicyName));
+                        if (policy != null)
+                            return policy.Arn;
+                    }
 
-                } while (listResponse.IsTruncated);
+                } while (listResponse.IsTruncated.GetValueOrDefault());
 
                 return null;
             });
@@ -240,34 +247,40 @@ namespace Amazon.Common.DotNetCli.Tools
                 request.Marker = response?.Marker;
                 response = await iamClient.ListPoliciesAsync(request).ConfigureAwait(false);
 
-                foreach (var policy in response.Policies)
+                if (response.Policies != null)
                 {
-                    if (policy.IsAttachable &&
-                        (promptInfo.KnownManagedPolicyDescription.ContainsKey(policy.PolicyName) ||
-                         (promptInfo.AWSManagedPolicyNamePrefix != null && policy.PolicyName.StartsWith(promptInfo.AWSManagedPolicyNamePrefix)))
-                    )
+                    foreach (var policy in response.Policies)
                     {
-                        policies.Add(policy);
-                    }
+                        if (policy.IsAttachable.GetValueOrDefault() &&
+                            (promptInfo.KnownManagedPolicyDescription.ContainsKey(policy.PolicyName) ||
+                             (promptInfo.AWSManagedPolicyNamePrefix != null && policy.PolicyName.StartsWith(promptInfo.AWSManagedPolicyNamePrefix)))
+                        )
+                        {
+                            policies.Add(policy);
+                        }
 
-                    if (policies.Count == maxPolicies)
-                        return policies;
+                        if (policies.Count == maxPolicies)
+                            return policies;
+                    }
                 }
 
-            } while (response.IsTruncated);
+            } while (response.IsTruncated.GetValueOrDefault());
 
             response = await iamClient.ListPoliciesAsync(new ListPoliciesRequest
             {
                 Scope = PolicyScopeType.Local
             });
 
-            foreach (var policy in response.Policies)
+            if (response.Policies != null)
             {
-                if (policy.IsAttachable)
-                    policies.Add(policy);
+                foreach (var policy in response.Policies)
+                {
+                    if (policy.IsAttachable.GetValueOrDefault())
+                        policies.Add(policy);
 
-                if (policies.Count == maxPolicies)
-                    return policies;
+                    if (policies.Count == maxPolicies)
+                        return policies;
+                }
             }
 
 
@@ -287,19 +300,22 @@ namespace Amazon.Common.DotNetCli.Tools
 
                 response = await iamClient.ListRolesAsync(request).ConfigureAwait(false);
 
-                foreach (var role in response.Roles)
+                if (response.Roles != null)
                 {
-                    if (AssumeRoleServicePrincipalSelector(role, assumeRolePrincpal))
+                    foreach (var role in response.Roles)
                     {
-                        roles.Add(role);
-                        if (roles.Count == maxRoles)
+                        if (AssumeRoleServicePrincipalSelector(role, assumeRolePrincpal))
                         {
-                            break;
+                            roles.Add(role);
+                            if (roles.Count == maxRoles)
+                            {
+                                break;
+                            }
                         }
                     }
                 }
 
-            } while (response.IsTruncated && roles.Count < maxRoles);
+            } while (response.IsTruncated.GetValueOrDefault() && roles.Count < maxRoles);
 
             return roles;
 
@@ -353,12 +369,15 @@ namespace Amazon.Common.DotNetCli.Tools
 
                 response = await iamClient.ListInstanceProfilesAsync(request).ConfigureAwait(false);
 
-                foreach (var profile in response.InstanceProfiles)
+                if (response.InstanceProfiles != null)
                 {
-                    profiles.Add(profile);
+                    foreach (var profile in response.InstanceProfiles)
+                    {
+                        profiles.Add(profile);
+                    }
                 }
 
-            } while (response.IsTruncated && profiles.Count < maxRoles);
+            } while (response.IsTruncated.GetValueOrDefault() && profiles.Count < maxRoles);
 
             return profiles;
         }

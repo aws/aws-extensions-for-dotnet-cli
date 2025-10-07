@@ -7,14 +7,15 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
-using ThirdParty.Json.LitJson;
 
 using Amazon.ECR;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 using Amazon.S3;
 using Amazon.SecurityToken;
+using Amazon.Runtime.Credentials;
 
 namespace Amazon.Common.DotNetCli.Tools.Commands
 {
@@ -36,7 +37,7 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
         public BaseCommand(IToolLogger logger, string workingDirectory, IList<CommandOption> possibleOptions, string[] args)
             : this(logger, workingDirectory)
         {
-            args = args ?? new string[0];
+            args = args ?? Array.Empty<string>();
             this.OriginalCommandLineArguments = args;
             var values = CommandLineParser.ParseArguments(possibleOptions, args);
             ParseCommandArguments(values);
@@ -250,12 +251,12 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
                     var chain = new CredentialProfileStoreChain(this.ProfileLocation);
                     if (!chain.TryGetAWSCredentials(profile, out this._resolvedCredentials))
                     {
-                        this._resolvedCredentials = FallbackCredentialsFactory.GetCredentials();
+                        this._resolvedCredentials = DefaultAWSCredentialsIdentityResolver.GetCredentials();
                     }
                 }
                 else
                 {
-                    this._resolvedCredentials = FallbackCredentialsFactory.GetCredentials();
+                    this._resolvedCredentials = DefaultAWSCredentialsIdentityResolver.GetCredentials();
                 }
 
                 if(this._resolvedCredentials is AssumeRoleAWSCredentials)
@@ -384,12 +385,12 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
         }
 
         /// <summary>
-        /// Complex parameters are formatted as a JSON string. This method parses the string into the JsonData object
+        /// Complex parameters are formatted as a JSON string. This method parses the string into the JsonElement object
         /// </summary>
         /// <param name="propertyValue"></param>
         /// <param name="option"></param>
         /// <returns></returns>
-        public JsonData GetJsonValueOrDefault(string propertyValue, CommandOption option)
+        public JsonElement? GetJsonValueOrDefault(string propertyValue, CommandOption option)
         {
             string jsonContent = GetStringValueOrDefault(propertyValue, option, false);
             if (string.IsNullOrWhiteSpace(jsonContent))
@@ -397,8 +398,10 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
 
             try
             {
-                var data = JsonMapper.ToObject(jsonContent);
-                return data;
+                using (JsonDocument doc = JsonDocument.Parse(jsonContent))
+                {
+                    return doc.RootElement.Clone();
+                }
             }
             catch(Exception e)
             {
@@ -697,7 +700,7 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
                 return cachedValue;
             }
 
-            string input = null;
+            string input;
 
 
             Console.Out.WriteLine($"Enter {option.Name}: ({option.Description})");
@@ -838,29 +841,27 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
         {
             try
             {
-                JsonData data;
+                var data = new Dictionary<string, object>();
                 if (File.Exists(this.DefaultConfig.SourceFile))
                 {
-                    data = JsonMapper.ToObject(File.ReadAllText(this.DefaultConfig.SourceFile));
-                }
-                else
-                {
-                    data = new JsonData();
+                    string existingJson = File.ReadAllText(this.DefaultConfig.SourceFile);
+                    using (JsonDocument doc = JsonDocument.Parse(existingJson))
+                    {
+                        foreach (JsonProperty prop in doc.RootElement.EnumerateObject())
+                        {
+                            data[prop.Name] = prop.Value.GetJsonValue();
+                        }
+                    }
                 }
 
                 data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_AWS_REGION.ConfigFileKey, this.GetStringValueOrDefault(this.Region, CommonDefinedCommandOptions.ARGUMENT_AWS_REGION, false));
                 data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_AWS_PROFILE.ConfigFileKey, this.GetStringValueOrDefault(this.Profile, CommonDefinedCommandOptions.ARGUMENT_AWS_PROFILE, false));
                 data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_AWS_PROFILE_LOCATION.ConfigFileKey, this.GetStringValueOrDefault(this.ProfileLocation, CommonDefinedCommandOptions.ARGUMENT_AWS_PROFILE_LOCATION, false));
 
-
                 SaveConfigFile(data);
 
-                StringBuilder sb = new StringBuilder();
-                JsonWriter writer = new JsonWriter(sb);
-                writer.PrettyPrint = true;
-                JsonMapper.ToJson(data, writer);
-
-                var json = sb.ToString();
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                var json = JsonSerializer.Serialize(data, options);
                 File.WriteAllText(this.DefaultConfig.SourceFile, json);
                 this.Logger?.WriteLine($"Config settings saved to {this.DefaultConfig.SourceFile}");
             }
@@ -870,7 +871,7 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             }
         }
 
-        protected abstract void SaveConfigFile(JsonData data);
+        protected abstract void SaveConfigFile(Dictionary<string, object> data);
 
         public bool ConfirmDeletion(string resource)
         {

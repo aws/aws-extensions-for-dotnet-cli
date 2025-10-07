@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-
-using ThirdParty.Json.LitJson;
+using System.Text.Json;
 using Amazon.Common.DotNetCli.Tools;
 
 namespace Amazon.ElasticBeanstalk.Tools
@@ -17,11 +16,11 @@ namespace Amazon.ElasticBeanstalk.Tools
         }
 
         public ElasticBeanstalkToolsDefaults(string sourceFile)
-            : this(new JsonData(), sourceFile)
+            : this(new JsonElement(), sourceFile)
         {
         }
 
-        public ElasticBeanstalkToolsDefaults(JsonData data, string sourceFile)
+        public ElasticBeanstalkToolsDefaults(JsonElement data, string sourceFile)
             : base(data, sourceFile)
         {
         }

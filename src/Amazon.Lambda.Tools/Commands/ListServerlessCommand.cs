@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Amazon.CloudFormation.Model;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
-using ThirdParty.Json.LitJson;
 
 namespace Amazon.Lambda.Tools.Commands
 {
@@ -77,8 +76,8 @@ namespace Amazon.Lambda.Tools.Commands
                         this.Logger.WriteLine(
                             stack.StackName.PadRight(STACK_NAME_WIDTH) + " " + 
                             stack.StackStatus.ToString().PadRight(STACK_STATUS_WIDTH) + " " + 
-                            stack.CreationTime.ToString("g").PadRight(STACK_STATUS_WIDTH) + " " +
-                            stack.LastUpdatedTime.ToString("g").PadRight(TIMESTAMP_WIDTH)
+                            stack.CreationTime.GetValueOrDefault().ToString("g").PadRight(STACK_STATUS_WIDTH) + " " +
+                            stack.LastUpdatedTime.GetValueOrDefault().ToString("g").PadRight(TIMESTAMP_WIDTH)
                             );
                     }
                 }
@@ -88,7 +87,7 @@ namespace Amazon.Lambda.Tools.Commands
             return true;
         }
         
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
             
         }
