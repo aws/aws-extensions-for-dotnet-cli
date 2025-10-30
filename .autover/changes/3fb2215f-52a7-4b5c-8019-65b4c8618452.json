@@ -1,0 +1,11 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.Lambda.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Fix: Use function architecture to determine artifact path instead of hardcoded \u0027x64\u0027."
+      ]
+    }
+  ]
+}
