@@ -409,7 +409,7 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
                     {
                         var noSpaceLine = line.Replace(" ", "");
 
-                        if (noSpaceLine.StartsWith("COPY") && (noSpaceLine.EndsWith(".sln./") || (projectFilename != null && noSpaceLine.Contains("/" + projectFilename))))
+                        if (noSpaceLine.StartsWith("COPY") && (noSpaceLine.EndsWith(".sln./") || noSpaceLine.EndsWith(".slnx./") || (projectFilename != null && noSpaceLine.Contains("/" + projectFilename))))
                         {
                             details.BuildFromSolutionDirectory = true;
                             logger?.WriteLine("... Determined that docker build needs to be run from solution folder.");
@@ -436,6 +436,9 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
         public static string DetermineSolutionDirectory(string projectLocation)
         {
             if (Directory.GetFiles(projectLocation, "*.sln", SearchOption.TopDirectoryOnly).Length != 0)
+                return projectLocation;
+            
+            if (Directory.GetFiles(projectLocation, "*.slnx", SearchOption.TopDirectoryOnly).Length != 0)
                 return projectLocation;
 
             var parent = Directory.GetParent(projectLocation)?.FullName;
