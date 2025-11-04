@@ -175,6 +175,11 @@ namespace Amazon.Common.DotNetCli.Tools
                     return currentDirectory.TrimEnd('\\', '/');
                 }
 
+                if (Directory.EnumerateFiles(currentDirectory).Any(x => x.EndsWith(".slnx", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return currentDirectory.TrimEnd('\\', '/');
+                }
+                
                 DirectoryInfo dirInfo = Directory.GetParent(currentDirectory);
                 if ((dirInfo == null) || !dirInfo.Exists) 
                 {
