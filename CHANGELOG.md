@@ -1,3 +1,8 @@
+## Release 2025-11-10
+
+### Amazon.Lambda.Tools (5.13.1)
+* Add support for solutions migrated to slnx
+
 ## Release 2025-07-30
 
 ### Amazon.ElasticBeanstalk.Tools (4.4.1)
