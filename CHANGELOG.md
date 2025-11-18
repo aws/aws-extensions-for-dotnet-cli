@@ -1,3 +1,8 @@
+## Release 2025-11-18
+
+### Amazon.Lambda.Tools (5.13.2)
+* Fix: Use function architecture to determine artifact path instead of hardcoded 'x64'.
+
 ## Release 2025-11-10
 
 ### Amazon.Lambda.Tools (5.13.1)
