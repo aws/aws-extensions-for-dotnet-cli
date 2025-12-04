@@ -4,6 +4,9 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
 
+permissions:
+  contents: read
+
 jobs:
   check-files-in-directory:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'Release Not Needed') && !contains(github.event.pull_request.labels.*.name, 'Release PR') }}
@@ -12,11 +15,11 @@ jobs:
 
     steps:
       - name: Checkout PR code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Get List of Changed Files
         id: changed-files
-        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c #v45
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 #v45
 
       - name: Check for Change File(s) in .autover/changes/
         run: |

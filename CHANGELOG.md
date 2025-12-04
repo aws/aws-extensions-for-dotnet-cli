@@ -1,3 +1,13 @@
+## Release 2025-11-18
+
+### Amazon.Lambda.Tools (5.13.2)
+* Fix: Use function architecture to determine artifact path instead of hardcoded 'x64'.
+
+## Release 2025-11-10
+
+### Amazon.Lambda.Tools (5.13.1)
+* Add support for solutions migrated to slnx
+
 ## Release 2025-07-30
 
 ### Amazon.ElasticBeanstalk.Tools (4.4.1)
