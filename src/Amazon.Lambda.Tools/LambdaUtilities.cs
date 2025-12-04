@@ -26,6 +26,7 @@ namespace Amazon.Lambda.Tools
 {
     public static class TargetFrameworkMonikers
     {
+        public const string net10_0 = "net10.0";
         public const string net90 = "net9.0";
         public const string net80 = "net8.0";
         public const string net70 = "net7.0";
@@ -58,6 +59,7 @@ namespace Amazon.Lambda.Tools
 
         public static readonly IReadOnlyDictionary<string, string> _lambdaRuntimeToDotnetFramework = new Dictionary<string, string>()
         {
+            {"dotnet10", TargetFrameworkMonikers.net10_0},
             {Amazon.Lambda.Runtime.Dotnet8.Value, TargetFrameworkMonikers.net80},
             {Amazon.Lambda.Runtime.Dotnet6.Value, TargetFrameworkMonikers.net60},
             {Amazon.Lambda.Runtime.Dotnetcore31.Value, TargetFrameworkMonikers.netcoreapp31},
@@ -85,12 +87,26 @@ namespace Amazon.Lambda.Tools
             return kvp.Key;
         }
 
+        public static string DetermineTargetFrameworkForSingleFile(string lambdaRuntime)
+        {
+            string targetFramework;
+            if (lambdaRuntime != null && _lambdaRuntimeToDotnetFramework.TryGetValue(lambdaRuntime, out targetFramework))
+            {
+                return targetFramework;
+            }
+
+            // TODO: Figure out what to do when we don't have a lambdaRuntime to base it on.
+            targetFramework = "net10.0";
+
+            return targetFramework;
+        }
+
         public static void ValidateTargetFramework(string projectLocation, string msbuildParameters, string targetFramework, bool isNativeAot)
         {
             var outputType = Utilities.LookupOutputTypeFromProjectFile(projectLocation, msbuildParameters);
             var ouputTypeIsExe = outputType != null && outputType.ToLower().Equals("exe");
 
-            if (isNativeAot && !ouputTypeIsExe)
+            if (isNativeAot && !ouputTypeIsExe && !Utilities.IsSingleFileCSharpFile(projectLocation))
             {
                 throw new LambdaToolsException($"Native AOT applications must have output type 'exe'.",
                     LambdaToolsException.LambdaErrorCode.NativeAotOutputTypeError);
@@ -123,6 +139,8 @@ namespace Amazon.Lambda.Tools
 
             switch (targetFramework?.ToLower())
             {
+                case TargetFrameworkMonikers.net10_0:
+                    return $"mcr.microsoft.com/dotnet/sdk:10.0-aot";
                 case TargetFrameworkMonikers.net90:
                     return $"public.ecr.aws/sam/build-dotnet9:latest-{architecture}";
                 case TargetFrameworkMonikers.net80:

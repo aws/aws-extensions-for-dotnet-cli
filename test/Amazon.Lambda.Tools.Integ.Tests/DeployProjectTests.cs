@@ -1,3 +1,5 @@
+using Amazon.CloudFormation;
+using Amazon.CloudFormation.Model;
 using Amazon.Lambda.Model;
 using Amazon.Lambda.Tools.Commands;
 using System;
@@ -7,7 +9,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
-
 using static Amazon.Lambda.Tools.Integ.Tests.TestConstants;
 
 namespace Amazon.Lambda.Tools.Integ.Tests
@@ -331,6 +332,58 @@ namespace Amazon.Lambda.Tools.Integ.Tests
                     await command.LambdaClient.DeleteFunctionAsync(functionName);
                 }
                 catch { }
+            }
+        }
+
+        [Fact]
+        public async Task TestDeploySingleCSharpFile()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+            var toolLogger = new TestToolLogger(_testOutputHelper);
+            var csharpFile = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/SingeFileLambdaFunctions/ToUpperFunctionNoAOT.cs");
+
+            var functionName = "TestDeploySingleCSharpFile-" + DateTime.Now.Ticks;
+            var deployFunctionCommand = new DeployFunctionCommand(toolLogger, System.Environment.CurrentDirectory, new string[] { csharpFile });
+            deployFunctionCommand.Role = await TestHelper.GetTestRoleArnAsync();
+            deployFunctionCommand.DisableInteractive = true;
+            deployFunctionCommand.Runtime = "dotnet10";
+            deployFunctionCommand.Timeout = 30;
+            deployFunctionCommand.MemorySize = 512;
+            deployFunctionCommand.Region = TEST_REGION;
+            deployFunctionCommand.Configuration = "Release";
+            deployFunctionCommand.FunctionName = functionName;
+
+            var created = false;
+            try
+            {
+                created = await deployFunctionCommand.ExecuteAsync();
+                Assert.True(created);
+
+                toolLogger.ClearBuffer();
+                var invokeCommand = new InvokeFunctionCommand(toolLogger, System.Environment.CurrentDirectory, new string[0]);
+                invokeCommand.FunctionName = functionName;
+                invokeCommand.Payload = "hello world";
+                invokeCommand.Region = TEST_REGION;
+
+                await invokeCommand.ExecuteAsync();
+                Assert.Contains("HELLO WORLD", toolLogger.Buffer);
+            }
+            finally
+            {
+                if (created)
+                {
+                    try
+                    {
+                        var deleteCommand = new DeleteFunctionCommand(toolLogger, System.Environment.CurrentDirectory, new string[0]);
+                        deleteCommand.FunctionName = functionName;
+                        deleteCommand.Region = TEST_REGION;
+                        await deleteCommand.ExecuteAsync();
+                    }
+                    catch
+                    {
+                        // Bury exception because we don't want to lose any exceptions during the deploy stage.
+                    }
+                }
             }
         }
 

@@ -153,7 +153,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 results = new UpdateResourceResults { ImageUri = localPath };
             }
             // Uploading a single file as the code for the resource. If the single file is not a zip file then zip the file first.
-            else if (File.Exists(localPath))
+            else if (File.Exists(localPath) && !Utilities.IsSingleFileCSharpFile(localPath))
             {
                 if(field.IsCode && !string.Equals(Path.GetExtension(localPath), ".zip", StringComparison.OrdinalIgnoreCase))
                 {
@@ -172,7 +172,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
             {
                 throw new LambdaToolsException($"File that the field {field.Resource.Name}/{field.Name} is pointing to doesn't exist", LambdaToolsException.LambdaErrorCode.ServerlessTemplateMissingLocalPath);                
             }
-            else if (!Directory.Exists(localPath))
+            else if (!Directory.Exists(localPath) && !Utilities.IsSingleFileCSharpFile(localPath))
             {
                 throw new LambdaToolsException($"Directory that the field {field.Resource.Name}/{field.Name} is pointing doesn't exist", LambdaToolsException.LambdaErrorCode.ServerlessTemplateMissingLocalPath);
             }
@@ -187,7 +187,7 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
                 // If the function is image upload then run the .NET tools to handle running
                 // docker build even if the current folder is not a .NET project. The .NET
                 // could be in a sub folder or be a self contained Docker build.
-                if (IsDotnetProjectDirectory(localPath) || field.Resource.UploadType == CodeUploadType.Image)
+                if (RequiredDotnetPackaging(localPath) || field.Resource.UploadType == CodeUploadType.Image)
                 {
                     results = await PackageDotnetProjectAsync(field, localPath, args);
                 }
@@ -240,8 +240,9 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         {
             if (field.Resource.UploadType == CodeUploadType.Zip)
             {
-                var command = new Commands.PackageCommand(this.Logger, location, args);
+                var command = new Commands.PackageCommand(this.Logger, null, args);
 
+                command.ProjectLocation = location;
                 command.LambdaClient = this.OriginatingCommand?.LambdaClient;
                 command.S3Client = this.OriginatingCommand?.S3Client;
                 command.IAMClient = this.OriginatingCommand?.IAMClient;
@@ -365,8 +366,11 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         /// </summary>
         /// <param name="localPath"></param>
         /// <returns></returns>
-        private bool IsDotnetProjectDirectory(string localPath)
+        private bool RequiredDotnetPackaging(string localPath)
         {
+            if (Utilities.IsSingleFileCSharpFile(localPath)) 
+                return true;
+
             if (!Directory.Exists(localPath))
                 return false;
 

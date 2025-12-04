@@ -12,7 +12,6 @@ using ThirdParty.Json.LitJson;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Commands;
 using Amazon.Common.DotNetCli.Tools.Options;
-using Amazon.Runtime.Internal;
 
 namespace Amazon.Lambda.Tools.Commands
 {
@@ -25,7 +24,7 @@ namespace Amazon.Lambda.Tools.Commands
     {
         public const string COMMAND_DEPLOY_NAME = "deploy-function";
         public const string COMMAND_DEPLOY_DESCRIPTION = "Command to deploy the project to AWS Lambda";
-        public const string COMMAND_DEPLOY_ARGUMENTS = "<FUNCTION-NAME> The name of the function to deploy";
+        public const string COMMAND_DEPLOY_ARGUMENTS = "<FUNCTION-NAME> <file-based C# Lambda (Optional)>";
 
         public static readonly IList<CommandOption> DeployCommandOptions = BuildLineOptions(new List<CommandOption>
         {
@@ -114,6 +113,8 @@ namespace Amazon.Lambda.Tools.Commands
         public string ContainerImageForBuild { get; set; }
         public string CodeMountDirectory { get;  set; }
 
+        public string InputSingleCSharpFile { get; set; }
+
         public DeployFunctionCommand(IToolLogger logger, string workingDirectory, string[] args)
             : base(logger, workingDirectory, DeployCommandOptions, args)
         {
@@ -127,9 +128,20 @@ namespace Amazon.Lambda.Tools.Commands
         protected override void ParseCommandArguments(CommandOptions values)
         {
             base.ParseCommandArguments(values);
+
             if (values.Arguments.Count > 0)
             {
-                this.FunctionName = values.Arguments[0];
+                foreach (var arg in values.Arguments)
+                {
+                    if (Utilities.IsSingleFileCSharpFile(arg))
+                    {
+                        this.InputSingleCSharpFile = arg;
+                    }
+                    else
+                    {
+                        this.FunctionName = arg;
+                    }
+                }
             }
 
             Tuple<CommandOption, CommandOptionValue> tuple;
@@ -201,6 +213,9 @@ namespace Amazon.Lambda.Tools.Commands
 
             var architecture = this.GetStringValueOrDefault(this.Architecture, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE, false);
 
+            // Get the current Lambda configuration. If this returns null then the function does not exist and we will create it.
+            var currentConfiguration = await GetFunctionConfigurationAsync();
+
             Lambda.PackageType packageType = DeterminePackageType();
             string ecrImageUri = null;
 
@@ -222,7 +237,19 @@ namespace Amazon.Lambda.Tools.Commands
             {
                 if (string.IsNullOrEmpty(package))
                 {
-                    EnsureInProjectDirectory();
+                    var lambdaRuntime = currentConfiguration?.Runtime ?? this.GetStringValueOrDefault(this.Runtime, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME, true);
+
+                    if (!string.IsNullOrEmpty(this.InputSingleCSharpFile))
+                    {
+                        if (Path.IsPathFullyQualified(this.InputSingleCSharpFile))
+                            projectLocation = this.InputSingleCSharpFile;
+                        else
+                            projectLocation = Path.Combine(projectLocation, this.InputSingleCSharpFile);
+                    }
+                    else if (!Utilities.IsSingleFileCSharpFile(projectLocation))
+                    {
+                        EnsureInProjectDirectory();
+                    }
 
                     // Release will be the default configuration if nothing set.
                     string configuration = this.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false);
@@ -231,11 +258,18 @@ namespace Amazon.Lambda.Tools.Commands
                     var targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
                     if (string.IsNullOrEmpty(targetFramework))
                     {
-                        targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation, msbuildParameters);
+                        if (Utilities.IsSingleFileCSharpFile(projectLocation))
+                        {
+                            targetFramework = LambdaUtilities.DetermineTargetFrameworkForSingleFile(lambdaRuntime);
+                        }
+                        else
+                        {
+                            targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation, msbuildParameters);
+                        }
 
                         // If we still don't know what the target framework is ask the user what targetframework to use.
                         // This is common when a project is using multi targeting.
-                        if(string.IsNullOrEmpty(targetFramework))
+                        if (string.IsNullOrEmpty(targetFramework))
                         {
                             targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, true);
                         }
@@ -243,7 +277,7 @@ namespace Amazon.Lambda.Tools.Commands
 
                     bool isNativeAot = Utilities.LookPublishAotFlag(projectLocation, this.MSBuildParameters);
 
-                    ValidateTargetFrameworkAndLambdaRuntime(targetFramework);
+                    LambdaUtilities.ValidateTargetFrameworkAndLambdaRuntime(lambdaRuntime, targetFramework);
 
                     bool disableVersionCheck = this.GetBoolValueOrDefault(this.DisableVersionCheck, LambdaDefinedCommandOptions.ARGUMENT_DISABLE_VERSION_CHECK, false).GetValueOrDefault();
                     string publishLocation;
@@ -306,9 +340,7 @@ namespace Amazon.Lambda.Tools.Commands
                     var s3Prefix = this.GetStringValueOrDefault(this.S3Prefix, LambdaDefinedCommandOptions.ARGUMENT_S3_PREFIX, false);
                     s3Key = await Utilities.UploadToS3Async(this.Logger, this.S3Client, s3Bucket, s3Prefix, functionName, lambdaZipArchiveStream);
                 }
-
-
-                var currentConfiguration = await GetFunctionConfigurationAsync();
+                
                 if (currentConfiguration == null)
                 {
                     this.Logger.WriteLine($"Creating new Lambda function {this.FunctionName}");
@@ -355,7 +387,22 @@ namespace Amazon.Lambda.Tools.Commands
 
                     if(packageType == Lambda.PackageType.Zip)
                     {
-                        createRequest.Handler = this.GetStringValueOrDefault(this.Handler, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER, true);
+                        string handler;
+                        if (Utilities.IsSingleFileCSharpFile(projectLocation))
+                        {
+                            handler = this.GetStringValueOrDefault(this.Handler, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER, false);
+                            if (string.IsNullOrEmpty(handler))
+                            {
+                                // In a file based Lambda function it is always an executable and the assembly is the file name.
+                                handler = Path.GetFileNameWithoutExtension(projectLocation);
+                            }
+                        }
+                        else
+                        {
+                            handler = this.GetStringValueOrDefault(this.Handler, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_HANDLER, true);
+                        }
+
+                        createRequest.Handler = handler;
                         createRequest.Runtime = this.GetStringValueOrDefault(this.Runtime, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME, true);
                         createRequest.Layers = layerVersionArns?.ToList();
 
@@ -576,14 +623,6 @@ namespace Amazon.Lambda.Tools.Commands
             result.LastException = pushCommand.LastException;
 
             return result;
-        }
-
-
-
-        private void ValidateTargetFrameworkAndLambdaRuntime(string targetFramework)
-        {
-            string runtimeName = this.GetStringValueOrDefault(this.Runtime, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_RUNTIME, true);
-            LambdaUtilities.ValidateTargetFrameworkAndLambdaRuntime(runtimeName, targetFramework);
         }
 
         protected override void SaveConfigFile(JsonData data)
