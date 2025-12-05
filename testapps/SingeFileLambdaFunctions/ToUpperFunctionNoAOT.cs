@@ -1,6 +1,7 @@
 #:package Amazon.Lambda.Core@2.8.0
 #:package Amazon.Lambda.RuntimeSupport@1.14.1
 #:package Amazon.Lambda.Serialization.SystemTextJson@2.4.4
+#:property TargetFramework=net10.0
 #:property PublishAot=false
 
 using Amazon.Lambda.Core;
