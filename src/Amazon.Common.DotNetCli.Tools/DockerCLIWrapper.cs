@@ -30,19 +30,17 @@ namespace Amazon.Common.DotNetCli.Tools
 
             var arguments = new StringBuilder();
 
-#if NETCOREAPP3_1_OR_GREATER
-            var runningOnLinuxArm64 = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
-#else
-            var runningOnLinuxArm64 = false;
-#endif
-            if (arm64Build && !runningOnLinuxArm64)
+            // The --provenance=false switch is added to force docker to not build an image index which is an image with a manifest.
+            // Lambda does not support containers of this type. This can be verified by running "docker inspect" on the build
+            // image. The mediaType should be application/vnd.docker.distribution.manifest.v2+json but without
+            // the --provenance=false the mediaType will be application/vnd.oci.image.index.v1+json.
+            if (arm64Build)
             {
-                _logger?.WriteLine("The docker CLI \"buildx\" command is used to build ARM64 images. This requires version 20 or later of the docker CLI.");
-                arguments.Append($"buildx build --platform linux/arm64 ");
+                arguments.Append($"buildx build --platform linux/arm64 --provenance=false ");
             }
             else
             {
-                arguments.Append($"build ");
+                arguments.Append($"buildx build --platform linux/amd64 --provenance=false ");
             }
 
             arguments.Append($" -f \"{dockerFile}\" -t {imageTag}");

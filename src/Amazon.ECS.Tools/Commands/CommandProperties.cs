@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ThirdParty.Json.LitJson;
 
 namespace Amazon.ECS.Tools.Commands
 {
@@ -37,7 +36,7 @@ namespace Amazon.ECS.Tools.Commands
         }
 
 
-        internal void PersistSettings(ECSBaseCommand command, JsonData data)
+        internal void PersistSettings(ECSBaseCommand command, Dictionary<string, object> data)
         {
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION.ConfigFileKey, command.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false));
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK.ConfigFileKey, command.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false));
@@ -92,7 +91,7 @@ namespace Amazon.ECS.Tools.Commands
                 this.AssignPublicIpAddress = tuple.Item2.BoolValue;
         }
 
-        internal void PersistSettings(ECSBaseCommand command, JsonData data)
+        internal void PersistSettings(ECSBaseCommand command, Dictionary<string, object> data)
         {
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_ECS_CLUSTER.ConfigFileKey, command.GetStringValueOrDefault(this.ECSCluster, ECSDefinedCommandOptions.ARGUMENT_ECS_CLUSTER, false));
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_LAUNCH_TYPE.ConfigFileKey, command.GetStringValueOrDefault(this.LaunchType, ECSDefinedCommandOptions.ARGUMENT_LAUNCH_TYPE, false));
@@ -253,7 +252,7 @@ namespace Amazon.ECS.Tools.Commands
                 this.TaskDefinitionVolumes = tuple.Item2.StringValue;
         }
 
-        internal void PersistSettings(ECSBaseCommand command, JsonData data)
+        internal void PersistSettings(ECSBaseCommand command, Dictionary<string, object> data)
         {
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_TD_NAME.ConfigFileKey, command.GetStringValueOrDefault(this.TaskDefinitionName, ECSDefinedCommandOptions.ARGUMENT_TD_NAME, false));
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_TD_NETWORK_MODE.ConfigFileKey, command.GetStringValueOrDefault(this.TaskDefinitionNetworkMode, ECSDefinedCommandOptions.ARGUMENT_TD_NETWORK_MODE, false));
@@ -340,7 +339,7 @@ namespace Amazon.ECS.Tools.Commands
                 this.PlacementStrategy = tuple.Item2.StringValues;
         }
 
-        internal void PersistSettings(ECSBaseCommand command, JsonData data)
+        internal void PersistSettings(ECSBaseCommand command, Dictionary<string, object> data)
         {
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_SKIP_IMAGE_PUSH.ConfigFileKey, command.GetBoolValueOrDefault(this.SkipImagePush, ECSDefinedCommandOptions.ARGUMENT_SKIP_IMAGE_PUSH, false));
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_ECS_SERVICE.ConfigFileKey, command.GetStringValueOrDefault(this.ECSService, ECSDefinedCommandOptions.ARGUMENT_ECS_SERVICE, false));
@@ -377,7 +376,7 @@ namespace Amazon.ECS.Tools.Commands
                 this.PlacementStrategy = tuple.Item2.StringValues;
         }
 
-        internal void PersistSettings(ECSBaseCommand command, JsonData data)
+        internal void PersistSettings(ECSBaseCommand command, Dictionary<string, object> data)
         {
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_ECS_TASK_GROUP.ConfigFileKey, command.GetStringValueOrDefault(this.TaskGroup, ECSDefinedCommandOptions.ARGUMENT_ECS_TASK_GROUP, false));
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_ECS_TASK_COUNT.ConfigFileKey, command.GetIntValueOrDefault(this.TaskCount, ECSDefinedCommandOptions.ARGUMENT_ECS_TASK_COUNT, false));
@@ -412,7 +411,7 @@ namespace Amazon.ECS.Tools.Commands
                 this.DesiredCount = tuple.Item2.IntValue;
         }
 
-        internal void PersistSettings(ECSBaseCommand command, JsonData data)
+        internal void PersistSettings(ECSBaseCommand command, Dictionary<string, object> data)
         {
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_SCHEDULED_RULE_NAME.ConfigFileKey, command.GetStringValueOrDefault(this.ScheduleTaskRule, ECSDefinedCommandOptions.ARGUMENT_SCHEDULED_RULE_NAME, false));
             data.SetIfNotNull(ECSDefinedCommandOptions.ARGUMENT_SCHEDULED_RULE_TARGET.ConfigFileKey, command.GetStringValueOrDefault(this.ScheduleTaskRuleTarget, ECSDefinedCommandOptions.ARGUMENT_SCHEDULED_RULE_TARGET, false));

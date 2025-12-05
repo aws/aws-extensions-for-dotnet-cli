@@ -2,13 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using System.Text.Json;
 using YamlDotNet.RepresentationModel;
-using YamlDotNet.Serialization;
-
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using ThirdParty.Json.LitJson;
 using System.Xml.Linq;
 using Amazon.Common.DotNetCli.Tools;
 
@@ -19,7 +16,6 @@ using System.Threading.Tasks;
 using System.Xml.XPath;
 using Environment = System.Environment;
 using Amazon.SecurityToken;
-using System.ComponentModel;
 using System.Runtime.InteropServices;
 
 namespace Amazon.Lambda.Tools
@@ -355,32 +351,35 @@ namespace Amazon.Lambda.Tools
         public static string UpdateCodeLocationInJsonTemplate(string templateBody, string s3Bucket, string s3Key)
         {
             var s3Url = $"s3://{s3Bucket}/{s3Key}";
-            JsonData root;
+            var data = new Dictionary<string, object>();
+            
             try
             {
-                root = JsonMapper.ToObject(templateBody);
+                using (JsonDocument doc = JsonDocument.Parse(templateBody))
+                {
+                    foreach (JsonProperty prop in doc.RootElement.EnumerateObject())
+                    {
+                        data[prop.Name] = prop.Value.GetJsonValue();
+                    }
+                }
             }
             catch (Exception e)
             {
                 throw new LambdaToolsException($"Error parsing CloudFormation template: {e.Message}", LambdaToolsException.LambdaErrorCode.ServerlessTemplateParseError, e);
             }
 
-            var resources = root["Resources"];
-            if (resources == null)
+            if (!data.ContainsKey("Resources") || !(data["Resources"] is Dictionary<string, object> resources))
                 throw new LambdaToolsException("CloudFormation template does not define any AWS resources", LambdaToolsException.LambdaErrorCode.ServerlessTemplateMissingResourceSection);
 
-
-            foreach (var field in resources.PropertyNames)
+            foreach (var kvp in resources)
             {
-                var resource = resources[field];
-                if (resource == null)
+                if (!(kvp.Value is Dictionary<string, object> resource))
                     continue;
 
-                var properties = resource["Properties"];
-                if (properties == null)
+                if (!resource.ContainsKey("Properties") || !(resource["Properties"] is Dictionary<string, object> properties))
                     continue;
 
-                var type = resource["Type"]?.ToString();
+                var type = resource.ContainsKey("Type") ? resource["Type"]?.ToString() : null;
                 if (string.Equals(type, "AWS::Serverless::Function", StringComparison.Ordinal))
                 {
                     properties["CodeUri"] = s3Url;
@@ -388,15 +387,16 @@ namespace Amazon.Lambda.Tools
 
                 if (string.Equals(type, "AWS::Lambda::Function", StringComparison.Ordinal))
                 {
-                    var code = new JsonData();
-                    code["S3Bucket"] = s3Bucket;
-                    code["S3Key"] = s3Key;
+                    var code = new Dictionary<string, object>
+                    {
+                        ["S3Bucket"] = s3Bucket,
+                        ["S3Key"] = s3Key
+                    };
                     properties["Code"] = code;
                 }
             }
 
-            var json = JsonMapper.ToJson(root);
-            return json;
+            return System.Text.Json.JsonSerializer.Serialize(data);
         }
 
         public static string UpdateCodeLocationInYamlTemplate(string templateBody, string s3Bucket, string s3Key)
@@ -480,29 +480,29 @@ namespace Amazon.Lambda.Tools
         {
             try
             {
-                var root = Newtonsoft.Json.JsonConvert.DeserializeObject(templateBody) as JObject;
-                if (root == null)
-                    return null;
-
-                var parameters = root["Parameters"] as JObject;
-
-                var parms = new List<Tuple<string, bool>>();
-                if (parameters == null)
-                    return parms;
-
-                foreach (var property in parameters.Properties())
+                using (JsonDocument doc = JsonDocument.Parse(templateBody))
                 {
-                    var noEcho = false;
-                    var prop = parameters[property.Name] as JObject;
-                    if (prop != null && prop["NoEcho"] != null)
+                    var parms = new List<Tuple<string, bool>>();
+                    
+                    if (!doc.RootElement.TryGetProperty("Parameters", out JsonElement parameters))
+                        return parms;
+
+                    foreach (JsonProperty property in parameters.EnumerateObject())
                     {
-                        noEcho = Boolean.Parse(prop["NoEcho"].ToString());
+                        var noEcho = false;
+                        if (property.Value.TryGetProperty("NoEcho", out JsonElement noEchoElement))
+                        {
+                            if (noEchoElement.ValueKind == JsonValueKind.True)
+                                noEcho = true;
+                            else if (noEchoElement.ValueKind == JsonValueKind.String)
+                                bool.TryParse(noEchoElement.GetString(), out noEcho);
+                        }
+
+                        parms.Add(new Tuple<string, bool>(property.Name, noEcho));
                     }
 
-                    parms.Add(new Tuple<string, bool>(property.Name, noEcho));
+                    return parms;
                 }
-
-                return parms;
             }
             catch
             {
@@ -622,7 +622,7 @@ namespace Amazon.Lambda.Tools
 
             try
             {
-                manifest = JsonMapper.ToObject<LayerDescriptionManifest>(json);
+                manifest = System.Text.Json.JsonSerializer.Deserialize<LayerDescriptionManifest>(json);
                 return true;
             }
             catch
@@ -951,7 +951,8 @@ namespace Amazon.Lambda.Tools
                 var accountId = (await stsClient.GetCallerIdentityAsync(new SecurityToken.Model.GetCallerIdentityRequest())).Account;
                 var bucketName = $"{LambdaConstants.DEFAULT_BUCKET_NAME_PREFIX}{region}-{accountId}";
 
-                if (!(await s3Client.ListBucketsAsync(new ListBucketsRequest())).Buckets.Any(x => string.Equals(x.BucketName, bucketName, StringComparison.CurrentCultureIgnoreCase)))
+                var buckets = (await s3Client.ListBucketsAsync(new ListBucketsRequest())).Buckets;
+                if (buckets == null || !buckets.Any(x => string.Equals(x.BucketName, bucketName, StringComparison.CurrentCultureIgnoreCase)))
                 {
                     logger?.WriteLine($"Creating S3 bucket {bucketName} for storage of deployment bundles");
                     await s3Client.PutBucketAsync(new PutBucketRequest { BucketName = bucketName, UseClientRegion = true });

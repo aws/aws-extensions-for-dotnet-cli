@@ -3,27 +3,27 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using ThirdParty.Json.LitJson;
+using System.Text.Json;
 
 namespace Amazon.Common.DotNetCli.Tools
 {
     public abstract class DefaultConfigFile
     {
-        JsonData _rootData;
+        JsonElement _rootData;
 
         public DefaultConfigFile()
-    : this(new JsonData(), string.Empty)
+            : this(new JsonElement(), string.Empty)
         {
         }
 
         public DefaultConfigFile(string sourceFile)
-            : this(new JsonData(), sourceFile)
+            : this(new JsonElement(), sourceFile)
         {
         }
 
-        public DefaultConfigFile(JsonData data, string sourceFile)
+        public DefaultConfigFile(JsonElement data, string sourceFile)
         {
-            this._rootData = data ?? new JsonData();
+            this._rootData = data;
             this.SourceFile = sourceFile;
         }
 
@@ -47,17 +47,18 @@ namespace Amazon.Common.DotNetCli.Tools
             if (!File.Exists(path))
                 return;
 
-            using (var reader = new StreamReader(File.OpenRead(path)))
+            try
             {
-                try
+                string json = File.ReadAllText(path);
+                using (JsonDocument doc = JsonDocument.Parse(json))
                 {
-                    this._rootData = JsonMapper.ToObject(reader) as JsonData;
-                    this.SourceFile = path;
+                    this._rootData = doc.RootElement.Clone();
                 }
-                catch (Exception e)
-                {
-                    throw new ToolsException($"Error parsing default config {path}: {e.Message}", ToolsException.CommonErrorCode.DefaultsParseFail, e);
-                }
+                this.SourceFile = path;
+            }
+            catch (Exception e)
+            {
+                throw new ToolsException($"Error parsing default config {path}: {e.Message}", ToolsException.CommonErrorCode.DefaultsParseFail, e);
             }
         }
 
@@ -73,42 +74,45 @@ namespace Amazon.Common.DotNetCli.Tools
                 if (fullSwitchName.StartsWith("--"))
                     fullSwitchName = fullSwitchName.Substring(2);
 
-                if (this._rootData[fullSwitchName] == null)
+                if (_rootData.ValueKind == JsonValueKind.Undefined || !_rootData.TryGetProperty(fullSwitchName, out JsonElement element))
                     return null;
 
-                if (this._rootData[fullSwitchName].IsString)
-                    return this._rootData[fullSwitchName].ToString();
-                if (this._rootData[fullSwitchName].IsInt)
-                    return (int)this._rootData[fullSwitchName];
-                if (this._rootData[fullSwitchName].IsBoolean)
-                    return (bool)this._rootData[fullSwitchName];
-                if (this._rootData[fullSwitchName].IsArray)
+                switch (element.ValueKind)
                 {
-                    var items = new string[this._rootData[fullSwitchName].Count];
-                    for (int i = 0; i < items.Length; i++)
-                    {
-                        items[i] = this._rootData[fullSwitchName][i].ToString();
-                    }
-                    return items;
+                    case JsonValueKind.String:
+                        return element.GetString();
+                    case JsonValueKind.Number:
+                        return element.GetInt32();
+                    case JsonValueKind.True:
+                    case JsonValueKind.False:
+                        return element.GetBoolean();
+                    case JsonValueKind.Array:
+                        var items = new string[element.GetArrayLength()];
+                        int index = 0;
+                        foreach (JsonElement item in element.EnumerateArray())
+                        {
+                            items[index++] = item.ToString();
+                        }
+                        return items;
+                    case JsonValueKind.Object:
+                        var obj = new Dictionary<string, string>();
+                        foreach (JsonProperty prop in element.EnumerateObject())
+                        {
+                            obj[prop.Name] = prop.Value.ToString();
+                        }
+                        return obj;
+                    default:
+                        return null;
                 }
-                if (this._rootData[fullSwitchName].IsObject)
-                {
-                    var obj = new Dictionary<string, string>();
-                    foreach (var key in this._rootData[fullSwitchName].PropertyNames)
-                    {
-                        obj[key] = this._rootData[key]?.ToString();
-                    }
-                    return obj;
-                }
-
-                return null;
             }
         }
 
-        protected JsonData GetValue(CommandOption option)
+        protected JsonElement GetValue(CommandOption option)
         {
             var key = option.Switch.Substring(2);
-            return this._rootData[key];
+            if (_rootData.ValueKind == JsonValueKind.Undefined || !_rootData.TryGetProperty(key, out JsonElement element))
+                return new JsonElement();
+            return element;
         }
 
         /// <summary>
@@ -119,18 +123,21 @@ namespace Amazon.Common.DotNetCli.Tools
         public string GetValueAsString(CommandOption option)
         {
             var key = option.Switch.Substring(2);
-            var data = this._rootData[key];
-            if (data == null)
+            if (_rootData.ValueKind == JsonValueKind.Undefined || !_rootData.TryGetProperty(key, out JsonElement element))
                 return null;
 
-            if (data.IsString)
-                return data.ToString();
-            else if (data.IsBoolean)
-                return ((bool)data).ToString();
-            else if (data.IsInt)
-                return ((int)data).ToString();
-
-            return null;
+            switch (element.ValueKind)
+            {
+                case JsonValueKind.String:
+                    return element.GetString();
+                case JsonValueKind.True:
+                case JsonValueKind.False:
+                    return element.GetBoolean().ToString();
+                case JsonValueKind.Number:
+                    return element.GetInt32().ToString();
+                default:
+                    return null;
+            }
         }
 
 
@@ -159,11 +166,10 @@ namespace Amazon.Common.DotNetCli.Tools
 
         public string GetRawString(string key)
         {
-            var data = this._rootData[key];
-            if (data == null || !data.IsString)
+            if (_rootData.ValueKind == JsonValueKind.Undefined || !_rootData.TryGetProperty(key, out JsonElement element) || element.ValueKind != JsonValueKind.String)
                 return null;
 
-            return data.ToString();
+            return element.GetString();
         }
     }
 }

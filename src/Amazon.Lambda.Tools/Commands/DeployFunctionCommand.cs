@@ -4,11 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-
 using Amazon.Lambda.Model;
 
-
-using ThirdParty.Json.LitJson;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Commands;
 using Amazon.Common.DotNetCli.Tools.Options;
@@ -625,7 +622,7 @@ namespace Amazon.Lambda.Tools.Commands
             return result;
         }
 
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
 
             data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_AWS_REGION.ConfigFileKey, this.GetStringValueOrDefault(this.Region, CommonDefinedCommandOptions.ARGUMENT_AWS_REGION, false));

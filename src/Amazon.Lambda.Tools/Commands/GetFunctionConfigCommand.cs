@@ -7,8 +7,6 @@ using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
 using Amazon.Lambda.Model;
 
-using ThirdParty.Json.LitJson;
-
 namespace Amazon.Lambda.Tools.Commands
 {
     /// <summary>
@@ -140,8 +138,8 @@ namespace Amazon.Lambda.Tools.Commands
             {
                 this.Logger.WriteLine("VPC Config");
                 this.Logger.WriteLine("   VPC: ".PadRight(22) + response.VpcConfig.VpcId);
-                this.Logger.WriteLine("   Security Groups: ".PadRight(22) + string.Join(",", response.VpcConfig?.SecurityGroupIds));
-                this.Logger.WriteLine("   Subnets: ".PadRight(22) + string.Join(",", response.VpcConfig?.SubnetIds));
+                this.Logger.WriteLine("   Security Groups: ".PadRight(22) + string.Join(",", response.VpcConfig?.SecurityGroupIds ?? new List<string>()));
+                this.Logger.WriteLine("   Subnets: ".PadRight(22) + string.Join(",", response.VpcConfig?.SubnetIds ?? new List<string>()));
             }
 
             var urlConfig = await GetFunctionUrlConfigAsync(functionName);
@@ -205,7 +203,7 @@ namespace Amazon.Lambda.Tools.Commands
             return sb.ToString();
         }
 
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME.ConfigFileKey, this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, false));    
         }

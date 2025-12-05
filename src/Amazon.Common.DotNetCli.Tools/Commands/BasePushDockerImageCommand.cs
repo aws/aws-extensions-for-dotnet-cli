@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 
 using Amazon.ECR.Model;
 using Amazon.ECR;
-using ThirdParty.Json.LitJson;
 using System.IO;
 using Amazon.Common.DotNetCli.Tools.Options;
 using Amazon.Common.DotNetCli.Tools;
@@ -338,7 +337,7 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
                 }
 
                 Repository repository;
-                if (describeResponse != null && describeResponse.Repositories.Count == 1)
+                if (describeResponse != null && describeResponse.Repositories != null && describeResponse.Repositories.Count == 1)
                 {
                     this.Logger?.WriteLine($"Found existing ECR Repository {ecrRepositoryName}");
                     repository = describeResponse.Repositories[0];
@@ -367,6 +366,11 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
                 this.Logger?.WriteLine("Fetching ECR authorization token to use to login with the docker CLI");
                 var response = await this.ECRClient.GetAuthorizationTokenAsync(new GetAuthorizationTokenRequest());
 
+                if (response.AuthorizationData == null || response.AuthorizationData.Count == 0)
+                {
+                    throw new ToolsException("No authorization data returned from ECR", ToolsException.CommonErrorCode.GetECRAuthTokens);
+                }
+
                 var authTokenBytes = Convert.FromBase64String(response.AuthorizationData[0].AuthorizationToken);
                 var authToken = Encoding.UTF8.GetString(authTokenBytes);
                 var decodedTokens = authToken.Split(':');
@@ -387,7 +391,7 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             }
         }
 
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
             this.PushDockerImageProperties.PersistSettings(this, data);
         }
@@ -493,7 +497,7 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
             }
 
 
-            public void PersistSettings(BaseCommand<TDefaultConfig> command, JsonData data)
+            public void PersistSettings(BaseCommand<TDefaultConfig> command, Dictionary<string, object> data)
             {
                 data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION.ConfigFileKey, command.GetStringValueOrDefault(this.Configuration, CommonDefinedCommandOptions.ARGUMENT_CONFIGURATION, false));
                 data.SetIfNotNull(CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK.ConfigFileKey, command.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false));

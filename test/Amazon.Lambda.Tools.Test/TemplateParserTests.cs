@@ -1,17 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
 
 using Xunit;
 
 using Amazon.Lambda.Tools.TemplateProcessor;
-using ThirdParty.Json.LitJson;
 using YamlDotNet.RepresentationModel;
 using System.Linq;
 using static Amazon.Lambda.Tools.TemplateProcessor.JsonTemplateParser;
 using static Amazon.Lambda.Tools.TemplateProcessor.YamlTemplateParser;
+using Amazon.Common.DotNetCli.Tools;
 
 namespace Amazon.Lambda.Tools.Test
 {
@@ -46,8 +45,7 @@ namespace Amazon.Lambda.Tools.Test
         {
             var list = new List<object[]>();
             {
-                var rootData = new JsonData();
-                rootData["CodeUri"] = "/home/code";
+                var rootData = new Dictionary<string, object> { ["CodeUri"] = "/home/code" };
                 var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, null, rootData);
                 list.Add(new object[] { source });
             }
@@ -77,13 +75,8 @@ namespace Amazon.Lambda.Tools.Test
         {
             var list = new List<object[]>();
             {
-                var codeData = new JsonData();
-                codeData["S3Bucket"] = "";
-                codeData["S3Key"] = "/currentProject";
-
-                var rootData = new JsonData();
-                rootData["Code"] = codeData;
-
+                var codeData = new Dictionary<string, object> { ["S3Bucket"] = "", ["S3Key"] = "/currentProject" };
+                var rootData = new Dictionary<string, object> { ["Code"] = codeData };
                 var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, null, rootData);
                 list.Add(new object[] { source });
             }
@@ -116,7 +109,7 @@ namespace Amazon.Lambda.Tools.Test
         {
             var list = new List<object[]>();
             {
-                var rootData = new JsonData();
+                var rootData = new Dictionary<string, object>();
 
                 var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, null, rootData);
                 list.Add(new object[] { source });
@@ -145,7 +138,7 @@ namespace Amazon.Lambda.Tools.Test
         {
             var list = new List<object[]>();
             {
-                var rootData = new JsonData();
+                var rootData = new Dictionary<string, object>();
 
                 var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, null, rootData);
                 list.Add(new object[] { source });
@@ -465,11 +458,8 @@ namespace Amazon.Lambda.Tools.Test
 ]]}";
             var list = new List<object[]>();
             {
-                var codeData = new JsonData();
-                codeData["ZipFile"] = InlineCode;
-
-                var rootData = new JsonData();
-                rootData["Code"] = codeData;
+                var codeData = new Dictionary<string, object> { ["ZipFile"] = InlineCode };
+                var rootData = new Dictionary<string, object> { ["Code"] = codeData };
 
                 var source = new JsonTemplateParser.JsonUpdatableResourceDataSource(null, null, rootData);
                 list.Add(new object[] { source });
@@ -512,8 +502,13 @@ namespace Amazon.Lambda.Tools.Test
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/ImageBasedProjects/ServerlessTemplateExamples");
             var cloudFormationTemplate = "serverless-resource-dockerbuildargs-json.template";
             string templateBody = File.ReadAllText(Path.Combine(fullPath, cloudFormationTemplate));
-            var root = JsonMapper.ToObject(templateBody);
-            var firstResource = root["Resources"][0];
+            Dictionary<string, object> root;
+            using (JsonDocument doc = JsonDocument.Parse(templateBody))
+            {
+                root = doc.RootElement.GetJsonValue() as Dictionary<string, object>;
+            }
+            var resources = (Dictionary<string, object>)root["Resources"];
+            var firstResource = (Dictionary<string, object>)resources.Values.First();
             var jsonDataSource = new JsonUpdatableResourceDataSource(null, firstResource, null);
             var valueDictionaryFromResource = jsonDataSource.GetValueDictionaryFromResource("Metadata", "DockerBuildArgs");
 

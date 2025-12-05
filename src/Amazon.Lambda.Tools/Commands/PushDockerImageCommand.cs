@@ -3,9 +3,6 @@ using Amazon.Common.DotNetCli.Tools.Commands;
 using Amazon.Common.DotNetCli.Tools.Options;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using ThirdParty.Json.LitJson;
 
 namespace Amazon.Lambda.Tools.Commands
 {
@@ -81,7 +78,7 @@ namespace Amazon.Lambda.Tools.Commands
             return dockerCli.Build(dockerBuildWorkingDirectory, fullDockerfilePath, dockerImageTag, dockerBuildOptions, arm64Build);
         }
 
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
             base.SaveConfigFile(data);
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE.ConfigFileKey, this.GetStringValueOrDefault(this.Architecture, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ARCHITECTURE, false));

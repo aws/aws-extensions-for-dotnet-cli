@@ -61,7 +61,7 @@ namespace Amazon.Lambda.Tools.Test
                 Directory.Delete(fullPath + "/obj/", true);
             }
 
-            var command = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
+            var command = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, Array.Empty<string>());
             command.FunctionName = "test-function-" + DateTime.Now.Ticks;
             command.Handler = "TestFunction::TestFunction.Function::ToUpper";
             command.Timeout = 10;
@@ -136,7 +136,7 @@ namespace Amazon.Lambda.Tools.Test
                 Directory.Delete(fullPath + "/obj/", true);
             }
 
-            var command = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
+            var command = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, Array.Empty<string>());
             command.FunctionName = "test-function-" + DateTime.Now.Ticks;
             command.Handler = "ThisDoesntApply";
             command.Timeout = 10;
@@ -203,7 +203,7 @@ namespace Amazon.Lambda.Tools.Test
             var assembly = GetType().GetTypeInfo().Assembly;
 
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestNativeAotNet8WebApp");
-            var command = new DeployServerlessCommand(logger, fullPath, new string[0]);
+            var command = new DeployServerlessCommand(logger, fullPath, Array.Empty<string>());
             command.Region = "us-east-1";
             command.Configuration = "Release";
             command.CloudFormationTemplate = "serverless.template";
@@ -222,7 +222,7 @@ namespace Amazon.Lambda.Tools.Test
             {
                 if (created)
                 {
-                    var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
+                    var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, Array.Empty<string>());
                     deleteCommand.StackName = command.StackName;
                     deleteCommand.Region = command.Region;
                     deleteCommand.DisableInteractive = true;
@@ -242,7 +242,7 @@ namespace Amazon.Lambda.Tools.Test
             var assembly = this.GetType().GetTypeInfo().Assembly;
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + $"../../../../../../testapps/TestNativeAotSingleProject");
             var testLogger = new TestToolLogger(_testOutputHelper);
-            var command = new DeployFunctionCommand(testLogger, fullPath, new string[0]);
+            var command = new DeployFunctionCommand(testLogger, fullPath, Array.Empty<string>());
             command.FunctionName = "test-function-" + DateTime.Now.Ticks;
             command.Handler = "ThisDoesntApply";
             command.Timeout = 10;
@@ -275,7 +275,7 @@ namespace Amazon.Lambda.Tools.Test
             var assembly = this.GetType().GetTypeInfo().Assembly;
 
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestFunction");
-            var command = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
+            var command = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, Array.Empty<string>());
             command.FunctionName = "test-function-" + DateTime.Now.Ticks;
             command.Handler = "TestFunction::TestFunction.Function::ToUpper";
             command.Timeout = 10;
@@ -318,7 +318,7 @@ namespace Amazon.Lambda.Tools.Test
             var toolLogger = new TestToolLogger(_testOutputHelper);
 
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestIntegerFunction");
-            var command = new DeployFunctionCommand(toolLogger, fullPath, new string[0]);
+            var command = new DeployFunctionCommand(toolLogger, fullPath, Array.Empty<string>());
             command.FunctionName = "test-function-intpayload-" + DateTime.Now.Ticks;
             command.Handler = "TestIntegerFunction::TestIntegerFunction.Function::FunctionHandler";
             command.Timeout = 10;
@@ -337,7 +337,7 @@ namespace Amazon.Lambda.Tools.Test
 
                 toolLogger.ClearBuffer();
 
-                var invokeCommand = new InvokeFunctionCommand(toolLogger, fullPath, new string[0]);
+                var invokeCommand = new InvokeFunctionCommand(toolLogger, fullPath, Array.Empty<string>());
                 invokeCommand.FunctionName = command.FunctionName;
                 invokeCommand.Payload = "42";
 
@@ -360,7 +360,7 @@ namespace Amazon.Lambda.Tools.Test
             var assembly = this.GetType().GetTypeInfo().Assembly;
 
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestPowerShellParallelTest");
-            var command = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
+            var command = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, Array.Empty<string>());
             command.FunctionName = "test-function-" + DateTime.Now.Ticks;
             command.Timeout = 10;
             command.MemorySize = 512;
@@ -453,13 +453,13 @@ namespace Amazon.Lambda.Tools.Test
             string packageZip = Path.GetTempFileName() + ".zip";
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestFunction");
 
-            var packageCommand = new PackageCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
+            var packageCommand = new PackageCommand(new TestToolLogger(_testOutputHelper), fullPath, Array.Empty<string>());
             packageCommand.OutputPackageFileName = packageZip;
             packageCommand.Configuration = "Release";
 
             await packageCommand.ExecuteAsync();
 
-            var deployCommand = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), Path.GetTempPath(), new string[0]);
+            var deployCommand = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), Path.GetTempPath(), Array.Empty<string>());
             deployCommand.FunctionName = "test-function-" + DateTime.Now.Ticks;
             deployCommand.Handler = "TestFunction::TestFunction.Function::ToUpper";
             deployCommand.Timeout = 10;
@@ -537,7 +537,7 @@ namespace Amazon.Lambda.Tools.Test
             {
                 if (created)
                 {
-                    var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
+                    var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, Array.Empty<string>());
                     deleteCommand.StackName = command.StackName;
                     deleteCommand.Region = "us-east-1";
                     await deleteCommand.ExecuteAsync();
@@ -558,7 +558,7 @@ namespace Amazon.Lambda.Tools.Test
                 var assembly = this.GetType().GetTypeInfo().Assembly;
 
                 var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestFunction");
-                var initialDeployCommand = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
+                var initialDeployCommand = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, Array.Empty<string>());
                 initialDeployCommand.FunctionName = "test-function-" + DateTime.Now.Ticks;
                 initialDeployCommand.Handler = "TestFunction::TestFunction.Function::ToUpper";
                 initialDeployCommand.Timeout = 10;
@@ -578,7 +578,7 @@ namespace Amazon.Lambda.Tools.Test
                     var funcConfig = await initialDeployCommand.LambdaClient.GetFunctionConfigurationAsync(initialDeployCommand.FunctionName);
                     Assert.Equal(queueArn, funcConfig.DeadLetterConfig?.TargetArn);
 
-                    var redeployCommand = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
+                    var redeployCommand = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, Array.Empty<string>());
                     redeployCommand.FunctionName = initialDeployCommand.FunctionName;
                     redeployCommand.Configuration = "Release";
                     redeployCommand.Runtime = "dotnet6";
@@ -590,7 +590,7 @@ namespace Amazon.Lambda.Tools.Test
                     funcConfig = await initialDeployCommand.LambdaClient.GetFunctionConfigurationAsync(initialDeployCommand.FunctionName);
                     Assert.Equal(queueArn, funcConfig.DeadLetterConfig?.TargetArn);
 
-                    redeployCommand = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
+                    redeployCommand = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, Array.Empty<string>());
                     redeployCommand.FunctionName = initialDeployCommand.FunctionName;
                     redeployCommand.Configuration = "Release";
                     redeployCommand.Runtime = "dotnet6";
@@ -632,7 +632,7 @@ namespace Amazon.Lambda.Tools.Test
                 var assembly = this.GetType().GetTypeInfo().Assembly;
 
                 var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TemplateSubstitutionTestProjects/StateMachineDefinitionStringTest");
-                var command = new DeployServerlessCommand(logger, fullPath, new string[0]);
+                var command = new DeployServerlessCommand(logger, fullPath, Array.Empty<string>());
                 command.DisableInteractive = true;
                 command.Configuration = "Release";
                 command.StackName = "DeployStepFunctionWithTemplateSubstitution-" + DateTime.Now.Ticks;
@@ -662,7 +662,7 @@ namespace Amazon.Lambda.Tools.Test
                     {
                         try
                         {
-                            var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
+                            var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, Array.Empty<string>());
                             deleteCommand.StackName = command.StackName;
                             deleteCommand.Region = "us-east-2";
                             await deleteCommand.ExecuteAsync();
@@ -688,9 +688,9 @@ namespace Amazon.Lambda.Tools.Test
             LambdaUtilities.ValidateTargetFrameworkAndLambdaRuntime("dotnetcore1.1", "netcoreapp1.0");
             LambdaUtilities.ValidateTargetFrameworkAndLambdaRuntime("dotnetcore1.1", "netcoreapp1.1");
             LambdaUtilities.ValidateTargetFrameworkAndLambdaRuntime("dotnetcore2.0", "netcoreapp1.0");
-            Assert.Throws(typeof(LambdaToolsException), (() => LambdaUtilities.ValidateTargetFrameworkAndLambdaRuntime("dotnetcore1.0", "netcoreapp1.1")));
-            Assert.Throws(typeof(LambdaToolsException), (() => LambdaUtilities.ValidateTargetFrameworkAndLambdaRuntime("dotnetcore1.0", "netcoreapp2.0")));
-            Assert.Throws(typeof(LambdaToolsException), (() => LambdaUtilities.ValidateTargetFrameworkAndLambdaRuntime("dotnetcore1.1", "netcoreapp2.0")));
+            Assert.Throws<LambdaToolsException>(() => LambdaUtilities.ValidateTargetFrameworkAndLambdaRuntime("dotnetcore1.0", "netcoreapp1.1"));
+            Assert.Throws<LambdaToolsException>(() => LambdaUtilities.ValidateTargetFrameworkAndLambdaRuntime("dotnetcore1.0", "netcoreapp2.0"));
+            Assert.Throws<LambdaToolsException>(() => LambdaUtilities.ValidateTargetFrameworkAndLambdaRuntime("dotnetcore1.1", "netcoreapp2.0"));
         }
 
 
@@ -730,7 +730,7 @@ namespace Amazon.Lambda.Tools.Test
             {
                 if (created)
                 {
-                    var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
+                    var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, Array.Empty<string>());
                     deleteCommand.StackName = command.StackName;
                     deleteCommand.Region = "us-east-1";
                     await deleteCommand.ExecuteAsync();
@@ -746,7 +746,7 @@ namespace Amazon.Lambda.Tools.Test
             var assembly = this.GetType().GetTypeInfo().Assembly;
 
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestServerlessWebApp");
-            var command = new PackageCICommand(logger, fullPath, new string[0]);
+            var command = new PackageCICommand(logger, fullPath, Array.Empty<string>());
             command.Region = "us-west-2";
             command.Configuration = "Release";
             command.CloudFormationTemplate = "serverless.template";
@@ -778,7 +778,7 @@ namespace Amazon.Lambda.Tools.Test
             var assembly = this.GetType().GetTypeInfo().Assembly;
 
             var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestServerlessWebApp");
-            var command = new DeployServerlessCommand(logger, fullPath, new string[0]);
+            var command = new DeployServerlessCommand(logger, fullPath, Array.Empty<string>());
             command.Region = "us-east-1";
             command.Configuration = "Release";
             command.CloudFormationTemplate = "large-serverless.template";
@@ -800,7 +800,7 @@ namespace Amazon.Lambda.Tools.Test
             {
                 if (created)
                 {
-                    var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[0]);
+                    var deleteCommand = new DeleteServerlessCommand(new TestToolLogger(_testOutputHelper), fullPath, Array.Empty<string>());
                     deleteCommand.StackName = command.StackName;
                     deleteCommand.Region = command.Region;
                     deleteCommand.DisableInteractive = true;

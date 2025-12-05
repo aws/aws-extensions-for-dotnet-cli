@@ -56,7 +56,7 @@ namespace Amazon.Lambda.Tools.Test
                 Assert.Equal(1, x.Count);
 
                 var option = x.FindCommandOption("-fp");
-                Assert.Equal(true, option.Item2.BoolValue);
+                Assert.True(option.Item2.BoolValue);
             };
 
             var values = CommandLineParser.ParseArguments(DeployFunctionCommand.DeployCommandOptions, new string[] { "-fp", "true" });
