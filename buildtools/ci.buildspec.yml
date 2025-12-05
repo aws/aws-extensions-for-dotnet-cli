@@ -7,7 +7,9 @@ phases:
   install:
     runtime-versions:
       dotnet: 8.x
-  build:
+    commands:
+      - curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0
+      - dotnet --version
     commands:
       - dotnet test --verbosity normal test/Amazon.Common.DotNetCli.Tools.Test/Amazon.Common.DotNetCli.Tools.Test.csproj --configuration Release --logger trx --results-directory ./testresults
       - dotnet test --verbosity normal test/Amazon.ECS.Tools.Test/Amazon.ECS.Tools.Test.csproj --configuration Release --logger trx --results-directory ./testresults
