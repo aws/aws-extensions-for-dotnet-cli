@@ -233,7 +233,7 @@ namespace Amazon.Lambda.Tools.Commands
                 {
                     if (Utilities.IsSingleFileCSharpFile(projectLocation))
                     {
-                        targetFramework = LambdaUtilities.DetermineTargetFrameworkForSingleFile(null);
+                        targetFramework = LambdaUtilities.DetermineTargetFrameworkForSingleFile(projectLocation, null);
                     }
                     else
                     {

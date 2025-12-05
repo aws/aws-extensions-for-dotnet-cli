@@ -1,22 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text.Json;
-using YamlDotNet.RepresentationModel;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Xml.Linq;
-using Amazon.Common.DotNetCli.Tools;
-
+﻿using Amazon.Common.DotNetCli.Tools;
 using Amazon.Lambda.Model;
 using Amazon.S3;
 using Amazon.S3.Model;
-using System.Threading.Tasks;
-using System.Xml.XPath;
-using Environment = System.Environment;
 using Amazon.SecurityToken;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Xml.Linq;
+using System.Xml.XPath;
+using YamlDotNet.RepresentationModel;
+using Environment = System.Environment;
 
 namespace Amazon.Lambda.Tools
 {
@@ -83,16 +83,45 @@ namespace Amazon.Lambda.Tools
             return kvp.Key;
         }
 
-        public static string DetermineTargetFrameworkForSingleFile(string lambdaRuntime)
+        public static string DetermineTargetFrameworkForSingleFile(string filePath, string lambdaRuntime)
         {
-            string targetFramework;
+            return DetermineTargetFrameworkForSingleFile(File.ReadAllLines(filePath), lambdaRuntime);
+        }
+
+        public static string DetermineTargetFrameworkForSingleFile(string[] lines, string lambdaRuntime)
+        {
+            string targetFramework = null;
             if (lambdaRuntime != null && _lambdaRuntimeToDotnetFramework.TryGetValue(lambdaRuntime, out targetFramework))
             {
                 return targetFramework;
             }
 
-            // TODO: Figure out what to do when we don't have a lambdaRuntime to base it on.
-            targetFramework = "net10.0";
+            // Look for an in-file directive that starts with "#:property" and contains "TargetFramework=<value>"
+            // Allow extra spaces but the directive must begin with "#:property". Extract the value after '='.
+            if (lines != null && lines.Length > 0)
+            {
+                // Pattern explanation:
+                // ^\s*           -> optional leading whitespace
+                // #\s*:\s*property -> literal "#", optional spaces, ":", optional spaces, "property"
+                // \s+            -> at least one space (separates property from key)
+                // TargetFramework -> literal key
+                // \s*=\s*        -> equals with optional surrounding spaces
+                // (\S+)          -> capture the value (non-whitespace sequence)
+                var directiveRegex = new Regex(@"^\s*#\s*:\s*property\s+TargetFramework\s*=\s*(\S+)", RegexOptions.IgnoreCase);
+
+                foreach (var rawLine in lines)
+                {
+                    if (string.IsNullOrWhiteSpace(rawLine))
+                        continue;
+
+                    var m = directiveRegex.Match(rawLine);
+                    if (m.Success && m.Groups.Count > 1)
+                    {
+                        targetFramework = m.Groups[1].Value.Trim();
+                        break;
+                    }
+                }
+            }
 
             return targetFramework;
         }

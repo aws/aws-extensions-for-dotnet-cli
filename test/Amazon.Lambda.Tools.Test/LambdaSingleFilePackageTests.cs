@@ -298,5 +298,53 @@ namespace Amazon.Lambda.Tools.Test
             var solutionDirectory = Utilities.GetSolutionDirectoryFullPath(Environment.CurrentDirectory, projectLocation, givenSolutionDirectory);
             Assert.Equal(givenSolutionDirectory, solutionDirectory);
         }
+
+        [Fact]
+        public void DetermineTargetFrameworkForSingleFile_FindsExactDirective()
+        {
+            var lines = new[] { "#:property TargetFramework=net10.0" };
+            var result = LambdaUtilities.DetermineTargetFrameworkForSingleFile(lines, null);
+            Assert.Equal("net10.0", result);
+        }
+
+        [Fact]
+        public void DetermineTargetFrameworkForSingleFile_FindsDirectiveWithExtraSpaces()
+        {
+            var lines = new[] { "#:property   TargetFramework=net11.0" };
+            var result = LambdaUtilities.DetermineTargetFrameworkForSingleFile(lines, null);
+            Assert.Equal("net11.0", result);
+        }
+
+        [Fact]
+        public void DetermineTargetFrameworkForSingleFile_FindsDirectiveWithSpacesAroundEquals()
+        {
+            var lines = new[] { "#:property TargetFramework =   net12.0" };
+            var result = LambdaUtilities.DetermineTargetFrameworkForSingleFile(lines, null);
+            Assert.Equal("net12.0", result);
+        }
+
+        [Fact]
+        public void DetermineTargetFrameworkForSingleFile_CommentedOut()
+        {
+            var lines = new[] { "//#:property TargetFramework=NET13.0" };
+            var result = LambdaUtilities.DetermineTargetFrameworkForSingleFile(lines, null);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void DetermineTargetFrameworkForSingleFile_WithLambdaRuntime()
+        {
+            var lines = new[] { "// Nothing to see here" };
+            var result = LambdaUtilities.DetermineTargetFrameworkForSingleFile(lines, "dotnet10");
+            Assert.Equal("net10.0", result);
+        }
+
+        [Fact]
+        public void DetermineTargetFrameworkForSingleFile_NoDirectiveReturnsNull()
+        {
+            var lines = new[] { "// just a comment", "using System;" };
+            var result = LambdaUtilities.DetermineTargetFrameworkForSingleFile(lines, null);
+            Assert.Null(result);
+        }
     }
 }
