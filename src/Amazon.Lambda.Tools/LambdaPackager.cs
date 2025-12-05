@@ -237,22 +237,30 @@ namespace Amazon.Lambda.Tools
                 // If there is no target node then this means the tool is being used on a future version of .NET Core
                 // then was available when the this tool was written. Go ahead and continue the deployment with warnings so the
                 // user can see if the future version will work.
-            if (depsJsonTargetNode.HasValue && string.Equals(targetFramework, "netcoreapp1.0", StringComparison.OrdinalIgnoreCase))
+                if (depsJsonTargetNode.HasValue && string.Equals(targetFramework, "netcoreapp1.0", StringComparison.OrdinalIgnoreCase))
                 {
                     // Make sure the project is not pulling in dependencies requiring a later version of .NET Core then the declared target framework
-                if (!ValidateDependencies(logger, targetFramework, depsJsonTargetNode.Value, disableVersionCheck))
+                    if (!ValidateDependencies(logger, targetFramework, depsJsonTargetNode.Value, disableVersionCheck))
                         return false;
 
                     // Flatten the runtime folder which reduces the package size by not including native dependencies
                     // for other platforms.
-                flattenRuntime = FlattenRuntimeFolder(logger, publishLocation, depsJsonTargetNode.Value);
+                    flattenRuntime = FlattenRuntimeFolder(logger, publishLocation, depsJsonTargetNode.Value);
                 }
             }
 
             FlattenPowerShellRuntimeModules(logger, publishLocation, targetFramework);
 
             if (zipArchivePath == null)
-                zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, new DirectoryInfo(projectLocation).Name + ".zip");
+            {
+                string baseName;
+                if (Utilities.IsSingleFileCSharpFile(projectLocation))
+                    baseName = Path.GetFileNameWithoutExtension(projectLocation);
+                else
+                    baseName = new DirectoryInfo(projectLocation).Name;
+
+                zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, baseName + ".zip");
+            }
 
             zipArchivePath = Path.GetFullPath(zipArchivePath);
             logger?.WriteLine($"Zipping publish folder {publishLocation} to {zipArchivePath}");
