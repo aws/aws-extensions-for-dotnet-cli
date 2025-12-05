@@ -26,7 +26,7 @@ using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 using Amazon.Common.DotNetCli.Tools;
 
-using ThirdParty.Json.LitJson;
+using System.Text.Json;
 using System.Runtime.InteropServices;
 using Xunit.Abstractions;
 
@@ -72,7 +72,7 @@ namespace Amazon.Lambda.Tools.Test
                 Assert.NotNull(getResponse.Description);
 
                 
-                var data = JsonMapper.ToObject<LayerDescriptionManifest>(getResponse.Description);
+                var data = JsonSerializer.Deserialize<LayerDescriptionManifest>(getResponse.Description);
                 Assert.Equal(LayerDescriptionManifest.ManifestType.RuntimePackageStore, data.Nlt);
                 Assert.NotNull(data.Dir);
                 Assert.Equal(this._testFixture.Bucket, data.Buc);
@@ -138,7 +138,7 @@ namespace Amazon.Lambda.Tools.Test
                     Assert.NotNull(getResponse.Description);
 
 
-                    var data = JsonMapper.ToObject<LayerDescriptionManifest>(getResponse.Description);
+                    var data = JsonSerializer.Deserialize<LayerDescriptionManifest>(getResponse.Description);
                     Assert.Equal(LayerDescriptionManifest.ManifestType.RuntimePackageStore, data.Nlt);
                     Assert.NotNull(data.Dir);
                     Assert.Equal(this._testFixture.Bucket, data.Buc);
@@ -354,13 +354,13 @@ namespace Amazon.Lambda.Tools.Test
                 Assert.NotNull(getLayerResponse.Description);
 
                 // Make sure layer does not contain any core ASP.NET Core dependencies.
-                var layerManifest = JsonMapper.ToObject<LayerDescriptionManifest>(getLayerResponse.Description);
+                var layerManifest = JsonSerializer.Deserialize<LayerDescriptionManifest>(getLayerResponse.Description);
                 using (var getManifestResponse = await this._testFixture.S3Client.GetObjectAsync(layerManifest.Buc, layerManifest.Key))
                 using(var reader = new StreamReader(getManifestResponse.ResponseStream))
                 {
                     var xml = await reader.ReadToEndAsync();
-                    Assert.False(xml.Contains("Microsoft.AspNetCore"));
-                    Assert.False(xml.Contains("runtime"));
+                    Assert.DoesNotContain("Microsoft.AspNetCore", xml);
+                    Assert.DoesNotContain("runtime", xml);
                 }        
                 
                 var templateContent = File.ReadAllText(Path.Combine(_aspnercoreLayerFunctionPath, "fake.template"));

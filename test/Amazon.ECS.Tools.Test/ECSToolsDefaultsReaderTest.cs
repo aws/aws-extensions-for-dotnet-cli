@@ -23,9 +23,9 @@ namespace Amazon.ECS.Tools.Test
             var defaults = new ECSToolsDefaults();
             defaults.LoadDefaults(TestUtilities.GetTestProjectPath("HelloWorldWebApp"), ECSToolsDefaults.DEFAULT_FILE_NAME);
 
-            Assert.Equal(defaults["region"], "us-west-2");
+            Assert.Equal("us-west-2", defaults["region"]);
 
-            Assert.Equal(defaults["container-memory-hard-limit"], 512);
+            Assert.Equal(512, defaults["container-memory-hard-limit"]);
         }
 
         [Fact]

@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
+    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
     <PackageId>Amazon.ECS.Tools</PackageId>
     <PackageTags>AWS;Amazon;Docker;ECS</PackageTags>
     <PackAsTool>true</PackAsTool>
@@ -17,16 +17,21 @@
     <Copyright>Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
     <Product>Amazon ECS Tools for .NET CLI</Product>
     <Description>Amazon.ECS.Tools adds commands to the dotnet cli to deploy .NET Core applications to Amazon Elastic Container Service. For example to deploy an ASP.NET Core application from the command execute "dotnet ecs deploy-service" on the command line.</Description>
+    <!-- 
+        This is explicitly set to 7.3 to match what the AWS VS Toolkit uses. This is required because
+        the source code here is also copied into the AWS VS Toolkit.
+    -->
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.CloudWatchEvents" Version="3.7.300.80" />
-    <PackageReference Include="AWSSDK.CloudWatchLogs" Version="3.7.305.21" />
-    <PackageReference Include="AWSSDK.Core" Version="3.7.303.20" />
-    <PackageReference Include="AWSSDK.EC2" Version="3.7.324" />
-    <PackageReference Include="AWSSDK.ECS" Version="3.7.305.42" />
-    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.301.6" />
-    <PackageReference Include="AWSSDK.S3" Version="3.7.307.21" />
+    <PackageReference Include="AWSSDK.CloudWatchEvents" Version="4.0.0.21" />
+    <PackageReference Include="AWSSDK.CloudWatchLogs" Version="4.0.7.7" />
+    <PackageReference Include="AWSSDK.Core" Version="4.0.0.26" />
+    <PackageReference Include="AWSSDK.EC2" Version="4.0.37" />
+    <PackageReference Include="AWSSDK.ECS" Version="4.0.4.8" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="4.0.3.2" />
+    <PackageReference Include="AWSSDK.S3" Version="4.0.6.13" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,7 +41,8 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <NoWarn>1701;1702;1705;1591</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>1701;1702;1705;1591;NETSDK1138</NoWarn>
   </PropertyGroup>
 
 </Project>

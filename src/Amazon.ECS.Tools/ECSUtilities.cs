@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Amazon.EC2.Model;
 using Amazon.ECS.Model;
@@ -12,7 +13,6 @@ using Amazon.IdentityManagement.Model;
 using Amazon.ECS.Tools.Commands;
 using Amazon.CloudWatchLogs.Model;
 using Amazon.CloudWatchLogs;
-using ThirdParty.Json.LitJson;
 using System.Linq;
 using Task = System.Threading.Tasks.Task;
 
@@ -96,7 +96,7 @@ namespace Amazon.ECS.Tools
                 }
 
                 // Not found in ECR, assume pulling Docker Hub
-                if (describeResponse == null)
+                if (describeResponse == null || describeResponse.Repositories == null || describeResponse.Repositories.Count == 0)
                 {
                     return dockerImageTag;
                 }
@@ -121,7 +121,7 @@ namespace Amazon.ECS.Tools
             {
                 logger.WriteLine($"Checking to see if cluster {clusterName} exists");
                 var response = await ecsClient.DescribeClustersAsync(new DescribeClustersRequest { Clusters = new List<string> { clusterName } });
-                if (response.Clusters.Count == 0 || string.Equals(response.Clusters[0].Status, "INACTIVE", StringComparison.OrdinalIgnoreCase))
+                if (response.Clusters == null || response.Clusters.Count == 0 || string.Equals(response.Clusters[0].Status, "INACTIVE", StringComparison.OrdinalIgnoreCase))
                 {
                     logger.WriteLine($"... Cluster does not exist, creating cluster {clusterName}");
                     await ecsClient.CreateClusterAsync(new CreateClusterRequest { ClusterName = clusterName });
@@ -192,47 +192,52 @@ namespace Amazon.ECS.Tools
                 }
 
                 {
-                    JsonData volumes = command.GetJsonValueOrDefault(properties.TaskDefinitionVolumes, ECSDefinedCommandOptions.ARGUMENT_TD_VOLUMES);
-                    if (volumes != null)
+                    var volumes = command.GetJsonValueOrDefault(properties.TaskDefinitionVolumes, ECSDefinedCommandOptions.ARGUMENT_TD_VOLUMES);
+                    if (volumes.HasValue)
                     {
                         registerRequest.Volumes = new List<Model.Volume>();
-                        foreach (JsonData item in volumes)
+                        foreach (JsonElement item in volumes.Value.EnumerateArray())
                         {
                             var volume = new Amazon.ECS.Model.Volume();
 
-                            if (item["host"] != null)
+                            if (item.TryGetProperty("host", out JsonElement host))
                             {
                                 volume.Host = new HostVolumeProperties();
-                                volume.Host.SourcePath = item["host"]["sourcePath"] != null ? item["host"]["sourcePath"].ToString() : null;
+                                if (host.TryGetProperty("sourcePath", out JsonElement sourcePath))
+                                    volume.Host.SourcePath = sourcePath.GetString();
                             }
-                            if (item["efsVolumeConfiguration"] != null)
+                            if (item.TryGetProperty("efsVolumeConfiguration", out JsonElement efsConfig))
                             {
                                 volume.EfsVolumeConfiguration = new EFSVolumeConfiguration();
-                                volume.EfsVolumeConfiguration.FileSystemId = item["efsVolumeConfiguration"]["fileSystemId"]?.ToString();
-                                volume.EfsVolumeConfiguration.RootDirectory = item["efsVolumeConfiguration"]["rootDirectory"]?.ToString();
-                                var transitEncryption = item["efsVolumeConfiguration"]["transitEncryption"]?.ToString();
-                                if (transitEncryption != null)
+                                if (efsConfig.TryGetProperty("fileSystemId", out JsonElement fileSystemId))
+                                    volume.EfsVolumeConfiguration.FileSystemId = fileSystemId.GetString();
+                                if (efsConfig.TryGetProperty("rootDirectory", out JsonElement rootDirectory))
+                                    volume.EfsVolumeConfiguration.RootDirectory = rootDirectory.GetString();
+                                if (efsConfig.TryGetProperty("transitEncryption", out JsonElement transitEncryption))
                                 {
-                                    volume.EfsVolumeConfiguration.TransitEncryption = EFSTransitEncryption.FindValue(transitEncryption);
+                                    var transitEncryptionValue = transitEncryption.GetString();
+                                    if (transitEncryptionValue != null)
+                                        volume.EfsVolumeConfiguration.TransitEncryption = EFSTransitEncryption.FindValue(transitEncryptionValue);
                                 }
-                                var transitEncryptionPort = item["efsVolumeConfiguration"]["transitEncryptionPort"];
-                                if (transitEncryptionPort != null && transitEncryptionPort.IsInt)
+                                if (efsConfig.TryGetProperty("transitEncryptionPort", out JsonElement transitEncryptionPort) && transitEncryptionPort.ValueKind == JsonValueKind.Number)
                                 {
-                                    volume.EfsVolumeConfiguration.TransitEncryptionPort = (int)transitEncryptionPort;
+                                    volume.EfsVolumeConfiguration.TransitEncryptionPort = transitEncryptionPort.GetInt32();
                                 }
-                                var authorizationConfig = item["efsVolumeConfiguration"]["authorizationConfig"];
-                                if (authorizationConfig != null)
+                                if (efsConfig.TryGetProperty("authorizationConfig", out JsonElement authConfig))
                                 {
                                     volume.EfsVolumeConfiguration.AuthorizationConfig = new EFSAuthorizationConfig();
-                                    volume.EfsVolumeConfiguration.AuthorizationConfig.AccessPointId = authorizationConfig["accessPointId"]?.ToString();
-                                    var iam = authorizationConfig["iam"]?.ToString();
-                                    if (iam != null)
+                                    if (authConfig.TryGetProperty("accessPointId", out JsonElement accessPointId))
+                                        volume.EfsVolumeConfiguration.AuthorizationConfig.AccessPointId = accessPointId.GetString();
+                                    if (authConfig.TryGetProperty("iam", out JsonElement iam))
                                     {
-                                        volume.EfsVolumeConfiguration.AuthorizationConfig.Iam = EFSAuthorizationConfigIAM.FindValue(iam);
+                                        var iamValue = iam.GetString();
+                                        if (iamValue != null)
+                                            volume.EfsVolumeConfiguration.AuthorizationConfig.Iam = EFSAuthorizationConfigIAM.FindValue(iamValue);
                                     }
                                 }
                             }
-                            volume.Name = item["name"] != null ? item["name"].ToString() : null;
+                            if (item.TryGetProperty("name", out JsonElement name))
+                                volume.Name = name.GetString();
                             
                             registerRequest.Volumes.Add(volume);
                         }
@@ -243,6 +248,11 @@ namespace Amazon.ECS.Tools
                 if (!string.IsNullOrWhiteSpace(taskIAMRole))
                 {
                     registerRequest.TaskRoleArn = taskIAMRole;
+                }
+
+                if (registerRequest.ContainerDefinitions == null)
+                {
+                    registerRequest.ContainerDefinitions = new List<ContainerDefinition>();
                 }
 
                 var containerDefinition = registerRequest.ContainerDefinitions.FirstOrDefault(x => string.Equals(x.Name, ecsContainer, StringComparison.Ordinal));
@@ -329,16 +339,20 @@ namespace Amazon.ECS.Tools
                     }
                 }
                 {
-                    JsonData data = command.GetJsonValueOrDefault(properties.ContainerExtraHosts, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_EXTRA_HOSTS);
-                    if (data != null)
+                    var data = command.GetJsonValueOrDefault(properties.ContainerExtraHosts, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_EXTRA_HOSTS);
+                    if (data.HasValue)
                     {
+                        if (containerDefinition.ExtraHosts == null)
+                            containerDefinition.ExtraHosts = new List<Amazon.ECS.Model.HostEntry>();
                         containerDefinition.ExtraHosts.Clear();
-                        foreach (JsonData item in data)
+                        foreach (JsonElement item in data.Value.EnumerateArray())
                         {
                             var obj = new Amazon.ECS.Model.HostEntry();
 
-                            obj.Hostname = item["hostname"] != null ? item["hostname"].ToString() : null;
-                            obj.IpAddress = item["ipAddress"] != null ? item["ipAddress"].ToString() : null;
+                            if (item.TryGetProperty("hostname", out JsonElement hostname))
+                                obj.Hostname = hostname.GetString();
+                            if (item.TryGetProperty("ipAddress", out JsonElement ipAddress))
+                                obj.IpAddress = ipAddress.GetString();
                             containerDefinition.ExtraHosts.Add(obj);
                         }
                     }
@@ -358,74 +372,89 @@ namespace Amazon.ECS.Tools
                     }
                 }
                 {
-                    JsonData data = command.GetJsonValueOrDefault(properties.ContainerExtraHosts, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_EXTRA_HOSTS);
-                    if (data != null)
+                    var data = command.GetJsonValueOrDefault(properties.ContainerLinuxParameters, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_LINUX_PARAMETERS);
+                    if (data.HasValue)
                     {
                         var linuxParameter = new LinuxParameters();
 
-                        if (data["capabilities"] != null)
+                        if (data.Value.TryGetProperty("capabilities", out JsonElement capabilities))
                         {
                             linuxParameter.Capabilities = new KernelCapabilities();
-                            if (data["capabilities"]["drop"] != null)
+                            if (capabilities.TryGetProperty("drop", out JsonElement drop))
                             {
-                                foreach (var item in data["capabilities"]["drop"])
+                                if (linuxParameter.Capabilities.Drop == null)
+                                    linuxParameter.Capabilities.Drop = new List<string>();
+                                foreach (JsonElement item in drop.EnumerateArray())
                                 {
-                                    linuxParameter.Capabilities.Drop.Add(item.ToString());
+                                    linuxParameter.Capabilities.Drop.Add(item.GetString());
                                 }
                             }
-                            if (data["capabilities"]["add"] != null)
+                            if (capabilities.TryGetProperty("add", out JsonElement add))
                             {
-                                foreach (var item in data["capabilities"]["add"])
+                                if (linuxParameter.Capabilities.Add == null)
+                                    linuxParameter.Capabilities.Add = new List<string>();
+                                foreach (JsonElement item in add.EnumerateArray())
                                 {
-                                    linuxParameter.Capabilities.Add.Add(item.ToString());
+                                    linuxParameter.Capabilities.Add.Add(item.GetString());
                                 }
                             }
                         }
-                        if (data["devices"] != null)
+                        if (data.Value.TryGetProperty("devices", out JsonElement devices))
                         {
+                            if (linuxParameter.Devices == null)
+                                linuxParameter.Devices = new List<Device>();
                             linuxParameter.Devices.Clear();
-                            foreach (JsonData item in data["devices"])
+                            foreach (JsonElement item in devices.EnumerateArray())
                             {
                                 var device = new Device();
-                                device.ContainerPath = item["containerPath"] != null ? item["containerPath"].ToString() : null;
-                                device.HostPath = item["hostPath"] != null ? item["hostPath"].ToString() : null;
-                                foreach (string permission in item["permissions"])
+                                if (item.TryGetProperty("containerPath", out JsonElement containerPath))
+                                    device.ContainerPath = containerPath.GetString();
+                                if (item.TryGetProperty("hostPath", out JsonElement hostPath))
+                                    device.HostPath = hostPath.GetString();
+                                if (item.TryGetProperty("permissions", out JsonElement permissions))
                                 {
-                                    device.Permissions.Add(permission);
+                                    if (device.Permissions == null)
+                                        device.Permissions = new List<string>();
+                                    foreach (JsonElement permission in permissions.EnumerateArray())
+                                    {
+                                        device.Permissions.Add(permission.GetString());
+                                    }
                                 }
 
                                 linuxParameter.Devices.Add(device);
                             }
                         }
 
-                        if (data["initProcessEnabled"] != null && data["initProcessEnabled"].IsBoolean)
-                            linuxParameter.InitProcessEnabled = (bool)data["initProcessEnabled"];
+                        if (data.Value.TryGetProperty("initProcessEnabled", out JsonElement initProcessEnabled) && initProcessEnabled.ValueKind == JsonValueKind.True)
+                            linuxParameter.InitProcessEnabled = initProcessEnabled.GetBoolean();
 
                         containerDefinition.LinuxParameters = linuxParameter;
                     }
                 }
                 {
-                    JsonData data = command.GetJsonValueOrDefault(properties.ContainerLogConfiguration, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_LOG_CONFIGURATION);
-                    if (data != null)
+                    var data = command.GetJsonValueOrDefault(properties.ContainerLogConfiguration, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_LOG_CONFIGURATION);
+                    if (data.HasValue)
                     {
                         containerDefinition.LogConfiguration = new LogConfiguration();
                         containerDefinition.LogConfiguration.LogDriver = null;
 
                         // Added support for logDriver JSON key as fix for legacy bug where JSON key containerPath was used. 
-                        if (data["logDriver"] != null)
+                        if (data.Value.TryGetProperty("logDriver", out JsonElement logDriver))
                         {
-                            containerDefinition.LogConfiguration.LogDriver = data["logDriver"].ToString();
+                            containerDefinition.LogConfiguration.LogDriver = logDriver.GetString();
                         }
-                        else if (data["containerPath"] != null) // Retained legacy containerPath JSON key support. Removing this would break existing customers.
+                        else if (data.Value.TryGetProperty("containerPath", out JsonElement containerPath)) // Retained legacy containerPath JSON key support. Removing this would break existing customers.
                         {
-                            containerDefinition.LogConfiguration.LogDriver = data["containerPath"].ToString();
+                            containerDefinition.LogConfiguration.LogDriver = containerPath.GetString();
                         }
                         
-                        if (data["options"] != null)
+                        if (data.Value.TryGetProperty("options", out JsonElement options))
                         {
-                            foreach (var key in data["options"].PropertyNames)
+                            if (containerDefinition.LogConfiguration.Options == null)
+                                containerDefinition.LogConfiguration.Options = new Dictionary<string, string>();
+                            foreach (JsonProperty prop in options.EnumerateObject())
                             {
-                                containerDefinition.LogConfiguration.Options[key] = data["options"][key].ToString();
+                                containerDefinition.LogConfiguration.Options[prop.Name] = prop.Value.GetString();
                             }
                         }
                     }
@@ -447,18 +476,22 @@ namespace Amazon.ECS.Tools
                     }
                 }
                 {
-                    JsonData data = command.GetJsonValueOrDefault(properties.ContainerMountPoints, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_MOUNT_POINTS);
-                    if (data != null)
+                    var data = command.GetJsonValueOrDefault(properties.ContainerMountPoints, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_MOUNT_POINTS);
+                    if (data.HasValue)
                     {
+                        if (containerDefinition.MountPoints == null)
+                            containerDefinition.MountPoints = new List<MountPoint>();
                         containerDefinition.MountPoints.Clear();
-                        foreach (JsonData item in data)
+                        foreach (JsonElement item in data.Value.EnumerateArray())
                         {
                             var mountPoint = new MountPoint();
-                            mountPoint.ContainerPath = item["containerPath"] != null ? item["containerPath"].ToString() : null;
-                            mountPoint.SourceVolume = item["sourceVolume"] != null ? item["sourceVolume"].ToString() : null;
-                            if (item["readOnly"] != null && item["readOnly"].IsBoolean)
+                            if (item.TryGetProperty("containerPath", out JsonElement containerPath))
+                                mountPoint.ContainerPath = containerPath.GetString();
+                            if (item.TryGetProperty("sourceVolume", out JsonElement sourceVolume))
+                                mountPoint.SourceVolume = sourceVolume.GetString();
+                            if (item.TryGetProperty("readOnly", out JsonElement readOnly) && (readOnly.ValueKind == JsonValueKind.True || readOnly.ValueKind == JsonValueKind.False))
                             {
-                                mountPoint.ReadOnly = (bool)item["readOnly"];
+                                mountPoint.ReadOnly = readOnly.GetBoolean();
                             }
 
                             containerDefinition.MountPoints.Add(mountPoint);
@@ -503,22 +536,25 @@ namespace Amazon.ECS.Tools
                     }
                 }
                 {
-                    JsonData data = command.GetJsonValueOrDefault(properties.ContainerUlimits, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_ULIMITS);
-                    if (data != null)
+                    var data = command.GetJsonValueOrDefault(properties.ContainerUlimits, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_ULIMITS);
+                    if (data.HasValue)
                     {
+                        if (containerDefinition.Ulimits == null)
+                            containerDefinition.Ulimits = new List<Ulimit>();
                         containerDefinition.Ulimits.Clear();
-                        foreach (JsonData item in data)
+                        foreach (JsonElement item in data.Value.EnumerateArray())
                         {
                             var ulimit = new Ulimit();
 
-                            ulimit.Name = item["name"] != null ? item["name"].ToString() : null;
-                            if (item["hardLimit"] != null && item["hardLimit"].IsInt)
+                            if (item.TryGetProperty("name", out JsonElement name))
+                                ulimit.Name = name.GetString();
+                            if (item.TryGetProperty("hardLimit", out JsonElement hardLimit) && hardLimit.ValueKind == JsonValueKind.Number)
                             {
-                                ulimit.HardLimit = (int)item["hardLimit"];
+                                ulimit.HardLimit = hardLimit.GetInt32();
                             }
-                            if (item["softLimit"] != null && item["softLimit"].IsInt)
+                            if (item.TryGetProperty("softLimit", out JsonElement softLimit) && softLimit.ValueKind == JsonValueKind.Number)
                             {
-                                ulimit.HardLimit = (int)item["softLimit"];
+                                ulimit.SoftLimit = softLimit.GetInt32();
                             }
 
                             containerDefinition.Ulimits.Add(ulimit);
@@ -533,17 +569,20 @@ namespace Amazon.ECS.Tools
                     }
                 }
                 {
-                    JsonData data = command.GetJsonValueOrDefault(properties.ContainerVolumesFrom, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_VOLUMES_FROM);
-                    if (data != null)
+                    var data = command.GetJsonValueOrDefault(properties.ContainerVolumesFrom, ECSDefinedCommandOptions.ARGUMENT_CONTAINER_VOLUMES_FROM);
+                    if (data.HasValue)
                     {
+                        if (containerDefinition.VolumesFrom == null)
+                            containerDefinition.VolumesFrom = new List<VolumeFrom>();
                         containerDefinition.VolumesFrom.Clear();
-                        foreach (JsonData item in data)
+                        foreach (JsonElement item in data.Value.EnumerateArray())
                         {
                             var volume = new VolumeFrom();
-                            volume.SourceContainer = item["sourceContainer"] != null ? item["sourceContainer"].ToString() : null;
-                            if (item["readOnly"] != null && item["readOnly"].IsBoolean)
+                            if (item.TryGetProperty("sourceContainer", out JsonElement sourceContainer))
+                                volume.SourceContainer = sourceContainer.GetString();
+                            if (item.TryGetProperty("readOnly", out JsonElement readOnly) && (readOnly.ValueKind == JsonValueKind.True || readOnly.ValueKind == JsonValueKind.False))
                             {
-                                volume.ReadOnly = (bool)item["readOnly"];
+                                volume.ReadOnly = readOnly.GetBoolean();
                             }
 
                             containerDefinition.VolumesFrom.Add(volume);
@@ -597,7 +636,8 @@ namespace Amazon.ECS.Tools
 
                 if (registerRequest.NetworkMode != NetworkMode.Awsvpc)
                 {
-                    registerRequest.RequiresCompatibilities.Clear();
+                    if (registerRequest.RequiresCompatibilities != null)
+                        registerRequest.RequiresCompatibilities.Clear();
                 }
 
                 if (containerDefinition.LogConfiguration == null || containerDefinition.LogConfiguration.LogDriver == LogDriver.Awslogs)
@@ -643,7 +683,7 @@ namespace Amazon.ECS.Tools
                     LogGroupNamePrefix = logGroup
                 });
 
-                if (response.LogGroups.FirstOrDefault(x => string.Equals(logGroup, x.LogGroupName, StringComparison.Ordinal)) != null)
+                if (response.LogGroups != null && response.LogGroups.FirstOrDefault(x => string.Equals(logGroup, x.LogGroupName, StringComparison.Ordinal)) != null)
                 {
                     logger?.WriteLine("Found existing log group " + logGroup + " for container");
                     return;
@@ -704,7 +744,7 @@ namespace Amazon.ECS.Tools
 
             string defaultVpcId = null;
 
-            bool noExistingSubnets = networkConfiguration.AwsvpcConfiguration.Subnets.Count == 0;
+            bool noExistingSubnets = networkConfiguration.AwsvpcConfiguration.Subnets == null || networkConfiguration.AwsvpcConfiguration.Subnets.Count == 0;
 
             var vpcSubnetWrapper = await SetupAwsVpcNetworkConfigurationSubnets(command, defaultVpcId, noExistingSubnets);
             var subnets = vpcSubnetWrapper.Subnets;
@@ -715,7 +755,7 @@ namespace Amazon.ECS.Tools
                 networkConfiguration.AwsvpcConfiguration.Subnets = new List<string>(subnets);
             }
 
-            bool noExistingSecurityGroups = networkConfiguration.AwsvpcConfiguration.SecurityGroups.Count == 0;
+            bool noExistingSecurityGroups = networkConfiguration.AwsvpcConfiguration.SecurityGroups == null || networkConfiguration.AwsvpcConfiguration.SecurityGroups.Count == 0;
             var securityGroups = await SetupAwsVpcNetworkConfigurationSecurityGroups(command, defaultVpcId, noExistingSecurityGroups);
 
             if (securityGroups != null)
@@ -745,7 +785,7 @@ namespace Amazon.ECS.Tools
 
             string defaultVpcId = null;
 
-            bool noExistingSubnets = networkConfiguration.AwsvpcConfiguration.Subnets.Count == 0;
+            bool noExistingSubnets = networkConfiguration.AwsvpcConfiguration.Subnets == null || networkConfiguration.AwsvpcConfiguration.Subnets.Count == 0;
             var vpcSubnetWrapper = await SetupAwsVpcNetworkConfigurationSubnets(command, defaultVpcId, noExistingSubnets);
             var subnets = vpcSubnetWrapper.Subnets;
             defaultVpcId = vpcSubnetWrapper.VpcId;
@@ -755,7 +795,7 @@ namespace Amazon.ECS.Tools
                 networkConfiguration.AwsvpcConfiguration.Subnets = new List<string>(subnets);
             }
             
-            bool noExistingSecurityGroups = networkConfiguration.AwsvpcConfiguration.SecurityGroups.Count == 0;
+            bool noExistingSecurityGroups = networkConfiguration.AwsvpcConfiguration.SecurityGroups == null || networkConfiguration.AwsvpcConfiguration.SecurityGroups.Count == 0;
             var securityGroups = await SetupAwsVpcNetworkConfigurationSecurityGroups(command, defaultVpcId, noExistingSecurityGroups);
 
             if (securityGroups != null)
@@ -788,18 +828,21 @@ namespace Amazon.ECS.Tools
                 try
                 {
                     var describeSubnetResponse = await command.EC2Client.DescribeSubnetsAsync();
-                    foreach (var subnet in describeSubnetResponse.Subnets)
+                    if (describeSubnetResponse.Subnets != null)
                     {
-                        if (subnet.DefaultForAz)
+                        foreach (var subnet in describeSubnetResponse.Subnets)
                         {
-                            if (defaultVpcId == null)
+                            if (subnet.DefaultForAz.GetValueOrDefault())
                             {
-                                command.Logger?.WriteLine("Default VPC: " + subnet.VpcId);
-                                defaultVpcId = subnet.VpcId;
-                            }
+                                if (defaultVpcId == null)
+                                {
+                                    command.Logger?.WriteLine("Default VPC: " + subnet.VpcId);
+                                    defaultVpcId = subnet.VpcId;
+                                }
 
-                            command.Logger?.WriteLine($"... Using subnet {subnet.SubnetId} ({subnet.AvailabilityZone})");
-                            defaultSubnets.Add(subnet.SubnetId);
+                                command.Logger?.WriteLine($"... Using subnet {subnet.SubnetId} ({subnet.AvailabilityZone})");
+                                defaultSubnets.Add(subnet.SubnetId);
+                            }
                         }
                     }
                 }
@@ -834,7 +877,7 @@ namespace Amazon.ECS.Tools
                     try
                     {
                         var describeVpcResponse = await command.EC2Client.DescribeVpcsAsync();
-                        var defaultVpc = describeVpcResponse.Vpcs.FirstOrDefault(x => x.IsDefault);
+                        var defaultVpc = describeVpcResponse.Vpcs?.FirstOrDefault(x => x.IsDefault.GetValueOrDefault());
                         if (defaultVpc != null)
                         {
                             command.Logger?.WriteLine("Default VPC: " + defaultVpc.VpcId);
@@ -861,7 +904,7 @@ namespace Amazon.ECS.Tools
                                 Filters = new List<Filter> { new Filter { Name = "vpc-id", Values = new List<string> { defaultVpcId } } }
                             });
 
-                        var defaultSecurityGroup = describeSecurityGroupResponse.SecurityGroups.FirstOrDefault(x => string.Equals(x.GroupName, "default", StringComparison.OrdinalIgnoreCase));
+                        var defaultSecurityGroup = describeSecurityGroupResponse.SecurityGroups?.FirstOrDefault(x => string.Equals(x.GroupName, "default", StringComparison.OrdinalIgnoreCase));
 
                         if (defaultSecurityGroup != null)
                         {

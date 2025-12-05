@@ -153,7 +153,7 @@ namespace Amazon.Lambda.Tools.Test
                 projectLocation = projectLocation?.Replace(@"c:\", "/").Replace(@"\", "/");
                 expected = expected.Replace(@"c:\", "/").Replace(@"\", "/");
             }
-            var rootData = new ThirdParty.Json.LitJson.JsonData();
+            var rootData = new Dictionary<string, object>();
             rootData.SetFilePathIfNotNull("Dockerfile", dockerfilePath, projectLocation);
 
             Assert.Equal(expected, rootData["Dockerfile"]);
@@ -253,7 +253,7 @@ namespace Amazon.Lambda.Tools.Test
                         .Returns(() =>
                         {
                             listBucketsAsyncCallCount = true;
-                            var response = new ListBucketsResponse { Buckets = { new S3Bucket { BucketName = expectedBucket } } };
+                            var response = new ListBucketsResponse { Buckets = new List<S3Bucket> { new S3Bucket { BucketName = expectedBucket } } };
 
                             return Task.FromResult(response);
                         });

@@ -6,8 +6,6 @@ using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
 using Amazon.Lambda.Model;
 
-using ThirdParty.Json.LitJson;
-
 namespace Amazon.Lambda.Tools.Commands
 {
     /// <summary>
@@ -134,7 +132,7 @@ namespace Amazon.Lambda.Tools.Commands
             }
         }
         
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME.ConfigFileKey, this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, false));    
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_PAYLOAD.ConfigFileKey, this.GetStringValueOrDefault(this.Payload, LambdaDefinedCommandOptions.ARGUMENT_PAYLOAD, false));              

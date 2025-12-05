@@ -228,7 +228,7 @@ namespace Amazon.Common.DotNetCli.Tools
                 "msbuild",
                 projectFile,
                 "-nologo",
-                $"--getProperty:{string.Join(',', propertyNames)}"
+                $"--getProperty:{string.Join(",", propertyNames)}"
             };
 
             if (!string.IsNullOrEmpty(msBuildParameters))
@@ -265,15 +265,17 @@ namespace Amazon.Common.DotNetCli.Tools
                     else
                     {
                         // Multiple properties were requested, so we expect JSON output
-                        using JsonDocument doc = JsonDocument.Parse(output);
-                        JsonElement root = doc.RootElement;
-                        JsonElement propertiesElement = root.GetProperty("Properties");
-
-                        foreach (var property in propertyNames)
+                        using (JsonDocument doc = JsonDocument.Parse(output))
                         {
-                            if (propertiesElement.TryGetProperty(property, out JsonElement propertyValue))
+                            JsonElement root = doc.RootElement;
+                            JsonElement propertiesElement = root.GetProperty("Properties");
+
+                            foreach (var property in propertyNames)
                             {
-                                properties[property] = propertyValue.GetString();
+                                if (propertiesElement.TryGetProperty(property, out JsonElement propertyValue))
+                                {
+                                    properties[property] = propertyValue.GetString();
+                                }
                             }
                         }
                     }
@@ -744,10 +746,12 @@ namespace Amazon.Common.DotNetCli.Tools
             var request = new GetBucketLocationRequest { BucketName = bucket };
             var response = await s3Client.GetBucketLocationAsync(request);
 
-            // Handle the legacy naming conventions
-            if (response.Location == S3Region.US)
+            // These 2 regions are special case because S3 has legacy behavior where the value of the enum
+            // doesn't match the region name. USEast1 returns back an empty string for a value and EUWest1
+            // returns back "EU".
+            if (response.Location == S3Region.USEast1)
                 return "us-east-1";
-            if (response.Location == S3Region.EU)
+            if (response.Location == S3Region.EUWest1)
                 return "eu-west-1";
 
             return response.Location.Value;

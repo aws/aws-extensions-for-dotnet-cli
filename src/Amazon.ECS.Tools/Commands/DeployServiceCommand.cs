@@ -8,7 +8,6 @@ using Task = System.Threading.Tasks.Task;
 
 using Amazon.ECR.Model;
 using Amazon.ECS.Model;
-using ThirdParty.Json.LitJson;
 using System.IO;
 using Amazon.Common.DotNetCli.Tools.Options;
 using Amazon.Common.DotNetCli.Tools;
@@ -176,7 +175,7 @@ namespace Amazon.ECS.Tools.Commands
                 NetworkConfiguration networkConfiguration = null;
                 if (IsFargateLaunch(this.ClusterProperties.LaunchType))
                 {
-                    if (describeServiceResponse.Services.Count != 0)
+                    if (describeServiceResponse.Services != null && describeServiceResponse.Services.Count != 0)
                         networkConfiguration = describeServiceResponse.Services[0].NetworkConfiguration;
                     else
                     {
@@ -196,7 +195,7 @@ namespace Amazon.ECS.Tools.Commands
                         deploymentConfiguration.MinimumHealthyPercent = deploymentMinimumHealthyPercent.Value;
                 }
 
-                if (describeServiceResponse.Services.Count == 0 || describeServiceResponse.Services[0].Status == "INACTIVE")
+                if (describeServiceResponse.Services == null || describeServiceResponse.Services.Count == 0 || describeServiceResponse.Services[0].Status == "INACTIVE")
                 {
                     this.Logger?.WriteLine($"Creating new service: {ecsService}");
                     var request = new CreateServiceRequest
@@ -232,6 +231,8 @@ namespace Amazon.ECS.Tools.Commands
                         var port = this.GetIntValueOrDefault(this.DeployServiceProperties.ELBContainerPort, ECSDefinedCommandOptions.ARGUMENT_ELB_CONTAINER_PORT, false);
                         if (!port.HasValue)
                             port = 80;
+                        if (request.LoadBalancers == null)
+                            request.LoadBalancers = new List<LoadBalancer>();
                         request.LoadBalancers.Add(new LoadBalancer
                         {
                             TargetGroupArn = elbTargetGroup,
@@ -248,7 +249,8 @@ namespace Amazon.ECS.Tools.Commands
                     {
                         if (e.Message.StartsWith("The target group") && !string.IsNullOrEmpty(elbTargetGroup) && string.IsNullOrEmpty(this.DeployServiceProperties.ELBTargetGroup))
                         {
-                            request.LoadBalancers.Clear();
+                            if (request.LoadBalancers != null)
+                                request.LoadBalancers.Clear();
                             request.Role = null;
 
                             var defaultFile = string.IsNullOrEmpty(this.ConfigFile) ? ECSToolsDefaults.DEFAULT_FILE_NAME : this.ConfigFile;
@@ -291,7 +293,7 @@ namespace Amazon.ECS.Tools.Commands
             }
         }
 
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
             PushDockerImageProperties.PersistSettings(this, data);
             ClusterProperties.PersistSettings(this, data);

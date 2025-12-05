@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 using Amazon.ECS.Tools.Commands;
 
-using ThirdParty.Json.LitJson;
 using Amazon.Common.DotNetCli.Tools;
+using System.Text.Json;
 
 namespace Amazon.ECS.Tools
 {
@@ -25,11 +25,11 @@ namespace Amazon.ECS.Tools
         }
 
         public ECSToolsDefaults(string sourceFile)
-            : this(new JsonData(), sourceFile)
+            : this(new JsonElement(), sourceFile)
         {
         }
 
-        public ECSToolsDefaults(JsonData data, string sourceFile)
+        public ECSToolsDefaults(JsonElement data, string sourceFile)
             : base(data, sourceFile)
         {
         }

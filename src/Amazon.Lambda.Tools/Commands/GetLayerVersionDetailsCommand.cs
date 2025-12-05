@@ -1,14 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
 using Amazon.Lambda.Model;
-
-using ThirdParty.Json.LitJson;
 
 namespace Amazon.Lambda.Tools.Commands
 {
@@ -129,7 +125,7 @@ namespace Amazon.Lambda.Tools.Commands
             }
         }
         
-        protected override void SaveConfigFile(JsonData data)
+        protected override void SaveConfigFile(Dictionary<string, object> data)
         {
         }           
     }
