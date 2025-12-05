@@ -286,7 +286,7 @@ Outputs: {{}}
         {
             var assembly = this.GetType().GetTypeInfo().Assembly;
             var toolLogger = new TestToolLogger(_testOutputHelper);
-            var templatePath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/SingeFileLambdaFunctions/serverless.template");
+            var templatePath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/SingleFileLambdaFunctions/serverless.template");
 
             var stackName = "TestDeployServerlessReferencingSingleFile-" + DateTime.Now.Ticks;
             var deployServerlessCommand = new DeployServerlessCommand(toolLogger, Environment.CurrentDirectory, new string[] { "--template", templatePath });

@@ -340,7 +340,7 @@ namespace Amazon.Lambda.Tools.Integ.Tests
         {
             var assembly = this.GetType().GetTypeInfo().Assembly;
             var toolLogger = new TestToolLogger(_testOutputHelper);
-            var csharpFile = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/SingeFileLambdaFunctions/ToUpperFunctionNoAOT.cs");
+            var csharpFile = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/SingleFileLambdaFunctions/ToUpperFunctionNoAOT.cs");
 
             var functionName = "TestDeploySingleCSharpFile-" + DateTime.Now.Ticks;
             var deployFunctionCommand = new DeployFunctionCommand(toolLogger, System.Environment.CurrentDirectory, new string[] { csharpFile });

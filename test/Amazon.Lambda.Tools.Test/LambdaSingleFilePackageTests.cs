@@ -27,7 +27,7 @@ namespace Amazon.Lambda.Tools.Test
             try
             {
                 var assembly = this.GetType().GetTypeInfo().Assembly;
-                var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/SingeFileLambdaFunctions/ToUpperFunctionNoAOT.cs");
+                var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/SingleFileLambdaFunctions/ToUpperFunctionNoAOT.cs");
                 var command = new PackageCommand(new TestToolLogger(_testOutputHelper), Environment.CurrentDirectory, new string[] {fullPath, tempFile });
 
                 var created = await command.ExecuteAsync();
@@ -52,7 +52,7 @@ namespace Amazon.Lambda.Tools.Test
             try
             {
                 var assembly = this.GetType().GetTypeInfo().Assembly;
-                var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/SingeFileLambdaFunctions/ToUpperFunctionNoAOT.cs");
+                var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/SingleFileLambdaFunctions/ToUpperFunctionNoAOT.cs");
                 var command = new PackageCommand(new TestToolLogger(_testOutputHelper), Environment.CurrentDirectory, new string[] { tempFile, "--project-location", fullPath });
 
                 var created = await command.ExecuteAsync();
@@ -78,7 +78,7 @@ namespace Amazon.Lambda.Tools.Test
         public void ConfirmUsingNativeAOT(string filename, bool isAot, string msBuildParameters)
         {
             var assembly = this.GetType().GetTypeInfo().Assembly;
-            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + $"../../../../../../testapps/SingeFileLambdaFunctions/{filename}");
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + $"../../../../../../testapps/SingleFileLambdaFunctions/{filename}");
             var actualAot = Utilities.LookPublishAotFlag(fullPath, msBuildParameters);
 
             Assert.Equal(isAot, actualAot);
@@ -172,7 +172,7 @@ namespace Amazon.Lambda.Tools.Test
             var assembly = this.GetType().GetTypeInfo().Assembly;
             
             // Test with single file - should use artifacts folder
-            var singleFilePath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/SingeFileLambdaFunctions/ToUpperFunctionNoAOT.cs");
+            var singleFilePath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/SingleFileLambdaFunctions/ToUpperFunctionNoAOT.cs");
             var singleFilePublishLocation = Utilities.DeterminePublishLocation(Environment.CurrentDirectory, singleFilePath, "Release", "net10.0");
             
             // Single file should have "artifacts" in the path
@@ -266,7 +266,7 @@ namespace Amazon.Lambda.Tools.Test
             var assembly = this.GetType().GetTypeInfo().Assembly;
             
             // Test with single file - should return parent directory
-            var singleFilePath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/SingeFileLambdaFunctions/ToUpperFunctionNoAOT.cs");
+            var singleFilePath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/SingleFileLambdaFunctions/ToUpperFunctionNoAOT.cs");
             var singleFileSolutionDir = Utilities.GetSolutionDirectoryFullPath(Environment.CurrentDirectory, singleFilePath, null);
             var expectedSingleFileDir = Path.GetDirectoryName(singleFilePath);
             Assert.Equal(expectedSingleFileDir, singleFileSolutionDir);

@@ -378,33 +378,33 @@ namespace Amazon.Lambda.Tools
                 {
                     if (!doc.RootElement.TryGetProperty("runtimeTarget", out JsonElement runtimeTargetNode))
                     {
-                logger?.WriteLine($"Missing runtimeTarget node. Skipping flattening runtime folder because {depsJsonFilepath} is an unrecognized format");
-                return null;
-            }
+                        logger?.WriteLine($"Missing runtimeTarget node. Skipping flattening runtime folder because {depsJsonFilepath} is an unrecognized format");
+                        return null;
+                    }
 
-            string runtimeTarget;
+                    string runtimeTarget;
                     if (runtimeTargetNode.ValueKind == JsonValueKind.String)
-            {
+                    {
                         runtimeTarget = runtimeTargetNode.GetString();
-            }
+                    }
                     else if (runtimeTargetNode.TryGetProperty("name", out JsonElement nameElement))
-            {
+                    {
                         runtimeTarget = nameElement.GetString();
-            }
+                    }
                     else
-            {
-                logger?.WriteLine($"Missing runtimeTarget name. Skipping flattening runtime folder because {depsJsonFilepath} is an unrecognized format");
-                return null;
-            }
+                    {
+                        logger?.WriteLine($"Missing runtimeTarget name. Skipping flattening runtime folder because {depsJsonFilepath} is an unrecognized format");
+                        return null;
+                    }
 
                     if (!doc.RootElement.TryGetProperty("targets", out JsonElement targets) || !targets.TryGetProperty(runtimeTarget, out JsonElement target))
-            {
-                logger?.WriteLine($"Missing targets node. Skipping flattening runtime folder because {depsJsonFilepath} is an unrecognized format");
-                return null;
-            }
+                    {
+                        logger?.WriteLine($"Missing targets node. Skipping flattening runtime folder because {depsJsonFilepath} is an unrecognized format");
+                        return null;
+                    }
 
                     return target.Clone();
-        }
+                }
             }
             catch (Exception e)
             {
@@ -571,13 +571,13 @@ namespace Amazon.Lambda.Tools
                         if (depRuntimeTarget.Value.TryGetProperty("rid", out JsonElement ridElement))
                         {
                             var rid = ridElement.GetString();
-                        if(string.Equals(rid, runtime, StringComparison.Ordinal))
-                        {
+                            if(string.Equals(rid, runtime, StringComparison.Ordinal))
+                            {
                                 copyFileIfNotExist(depRuntimeTarget.Name);
+                            }
                         }
                     }
                 }
-            }
             }
 
             return true;
@@ -604,28 +604,28 @@ namespace Amazon.Lambda.Tools
                     if (!doc.RootElement.TryGetProperty("runtimes", out JsonElement runtimes))
                         return runtimeHierarchy;
 
-                // Use a queue to do a breadth first search through the list of runtimes.
-                var queue = new Queue<string>();
-                queue.Enqueue(LambdaConstants.LEGACY_RUNTIME_HIERARCHY_STARTING_POINT);
+                    // Use a queue to do a breadth first search through the list of runtimes.
+                    var queue = new Queue<string>();
+                    queue.Enqueue(LambdaConstants.LEGACY_RUNTIME_HIERARCHY_STARTING_POINT);
 
-                while(queue.Count > 0)
-                {
-                    var runtime = queue.Dequeue();
-                    if (runtimeHierarchy.Contains(runtime))
-                        continue;
+                    while(queue.Count > 0)
+                    {
+                        var runtime = queue.Dequeue();
+                        if (runtimeHierarchy.Contains(runtime))
+                            continue;
 
-                    runtimeHierarchy.Add(runtime);
+                        runtimeHierarchy.Add(runtime);
 
                         if (runtimes.TryGetProperty(runtime, out JsonElement runtimeElement) && 
                             runtimeElement.TryGetProperty("#import", out JsonElement imports))
-                    {
-                            foreach (JsonElement importedRuntime in imports.EnumerateArray())
                         {
-                                queue.Enqueue(importedRuntime.GetString());
+                            foreach (JsonElement importedRuntime in imports.EnumerateArray())
+                            {
+                                    queue.Enqueue(importedRuntime.GetString());
+                            }
                         }
                     }
                 }
-            }
             }
 
             return runtimeHierarchy;

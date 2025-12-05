@@ -209,12 +209,12 @@ namespace Amazon.Common.DotNetCli.Tools
         public static string DeterminePublishLocation(string workingDirectory, string projectLocation, string configuration, string targetFramework)
         {
             string path;
-            if (IsSingleFileCSharpFile(projectLocation))
+            if (IsSingleFileCSharpFile(projectLocation)) // For example projectLocation = /path/to/file.cs
             {
                 // Do not rely on Directory.GetParent() because if this value will eventually run inside a container but
                 // the host is Windows the slashes and root will get messed up.
-                int forwardSlashPosition = projectLocation.LastIndexOf('\\');
-                int backSlashPosition = projectLocation.LastIndexOf('/');
+                int forwardSlashPosition = projectLocation.LastIndexOf('/');
+                int backSlashPosition = projectLocation.LastIndexOf('\\');
                 int position = Math.Max(forwardSlashPosition, backSlashPosition);
                 var parentFolder = projectLocation.Substring(0, position);
 

@@ -14,7 +14,7 @@
         "Description": "Default function",
         "MemorySize": 256,
         "Timeout": 30,
-        "Policies": [ "AWSLambda_FullAccess" ]
+        "Policies": [ "AWSLambdaBasicExecutionRole " ]
       }
     }
   },

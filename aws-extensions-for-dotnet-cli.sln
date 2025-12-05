@@ -69,11 +69,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestIntegerFunction", "test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestFunctionBuildProps", "testapps\TestFunctionBuildProps\TestFunctionBuildProps\TestFunctionBuildProps.csproj", "{AFA71B8E-F0AA-4704-8C4E-C11130F82B13}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SingeFileLambdaFunctions", "SingeFileLambdaFunctions", "{5711F48F-5491-4C8A-92B2-4D6D849483B5}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SingleFileLambdaFunctions", "SingleFileLambdaFunctions", "{5711F48F-5491-4C8A-92B2-4D6D849483B5}"
 	ProjectSection(SolutionItems) = preProject
-		testapps\SingeFileLambdaFunctions\serverless.template = testapps\SingeFileLambdaFunctions\serverless.template
-		testapps\SingeFileLambdaFunctions\ToUpperFunctionImplicitAOT.cs = testapps\SingeFileLambdaFunctions\ToUpperFunctionImplicitAOT.cs
-		testapps\SingeFileLambdaFunctions\ToUpperFunctionNoAOT.cs = testapps\SingeFileLambdaFunctions\ToUpperFunctionNoAOT.cs
+		testapps\SingleFileLambdaFunctions\serverless.template = testapps\SingleFileLambdaFunctions\serverless.template
+		testapps\SingleFileLambdaFunctions\ToUpperFunctionImplicitAOT.cs = testapps\SingleFileLambdaFunctions\ToUpperFunctionImplicitAOT.cs
+		testapps\SingleFileLambdaFunctions\ToUpperFunctionNoAOT.cs = testapps\SingleFileLambdaFunctions\ToUpperFunctionNoAOT.cs
 	EndProjectSection
 EndProject
 Global
