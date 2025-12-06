@@ -7,13 +7,15 @@ phases:
   install:
     commands:
       - curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0
-      - dotnet --version
+      - export PATH="$HOME/.dotnet:$PATH"
+      - export DOTNET_ROOT="$HOME/.dotnet"
+      - $HOME/.dotnet/dotnet new globaljson --sdk-version 10.0.0 --roll-forward minor
   build:
     commands:
-      - dotnet test --verbosity normal test/Amazon.Common.DotNetCli.Tools.Test/Amazon.Common.DotNetCli.Tools.Test.csproj --configuration Release --logger trx --results-directory ./testresults
-      - dotnet test --verbosity normal test/Amazon.ECS.Tools.Test/Amazon.ECS.Tools.Test.csproj --configuration Release --logger trx --results-directory ./testresults
-      - dotnet test --verbosity normal test/Amazon.Lambda.Tools.Test/Amazon.Lambda.Tools.Test.csproj --configuration Release --logger trx --results-directory ./testresults
-      - dotnet test --verbosity normal test/Amazon.ElasticBeanstalk.Tools.Test/Amazon.ElasticBeanstalk.Tools.Test.csproj --configuration Release --logger trx --results-directory ./testresults
+      - $HOME/.dotnet/dotnet test --verbosity normal test/Amazon.Common.DotNetCli.Tools.Test/Amazon.Common.DotNetCli.Tools.Test.csproj --configuration Release --logger trx --results-directory ./testresults
+      - $HOME/.dotnet/dotnet test --verbosity normal test/Amazon.ECS.Tools.Test/Amazon.ECS.Tools.Test.csproj --configuration Release --logger trx --results-directory ./testresults
+      - $HOME/.dotnet/dotnet test --verbosity normal test/Amazon.Lambda.Tools.Test/Amazon.Lambda.Tools.Test.csproj --configuration Release --logger trx --results-directory ./testresults
+      - $HOME/.dotnet/dotnet test --verbosity normal test/Amazon.ElasticBeanstalk.Tools.Test/Amazon.ElasticBeanstalk.Tools.Test.csproj --configuration Release --logger trx --results-directory ./testresults
 reports:
     aws-dotnet-messaging-tests:
         file-format: VisualStudioTrx
