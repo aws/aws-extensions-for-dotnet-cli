@@ -217,38 +217,50 @@ namespace Amazon.Lambda.Tools
                 }
             }
 
-            var buildLocation = Utilities.DetermineBuildLocation(workingDirectory, projectLocation, configuration, targetFramework);
-
-            // This is here for legacy reasons. Some older versions of the dotnet CLI were not 
-            // copying the deps.json file into the publish folder.
-            foreach (var file in Directory.GetFiles(buildLocation, "*.deps.json", SearchOption.TopDirectoryOnly))
-            {
-                var destinationPath = Path.Combine(publishLocation, Path.GetFileName(file));
-                if (!File.Exists(destinationPath))
-                    File.Copy(file, destinationPath);
-            }
-
             bool flattenRuntime = false;
-            var depsJsonTargetNode = GetDepsJsonTargetNode(logger, publishLocation);
-            // If there is no target node then this means the tool is being used on a future version of .NET Core
-            // then was available when the this tool was written. Go ahead and continue the deployment with warnings so the
-            // user can see if the future version will work.
-            if (depsJsonTargetNode.HasValue && string.Equals(targetFramework, "netcoreapp1.0", StringComparison.OrdinalIgnoreCase))
+            // The code inside this block is for old dotnet CLI issues that would not be a factor
+            // in a dotnet CLI that supports file based csharp files.
+            if (!Utilities.IsSingleFileCSharpFile(projectLocation))
             {
-                // Make sure the project is not pulling in dependencies requiring a later version of .NET Core then the declared target framework
-                if (!ValidateDependencies(logger, targetFramework, depsJsonTargetNode.Value, disableVersionCheck))
-                    return false;
+                var buildLocation = Utilities.DetermineBuildLocation(workingDirectory, projectLocation, configuration, targetFramework);
 
-                // Flatten the runtime folder which reduces the package size by not including native dependencies
-                // for other platforms.
-                flattenRuntime = FlattenRuntimeFolder(logger, publishLocation, depsJsonTargetNode.Value);
+                // This is here for legacy reasons. Some older versions of the dotnet CLI were not 
+                // copying the deps.json file into the publish folder.
+                foreach (var file in Directory.GetFiles(buildLocation, "*.deps.json", SearchOption.TopDirectoryOnly))
+                {
+                    var destinationPath = Path.Combine(publishLocation, Path.GetFileName(file));
+                    if (!File.Exists(destinationPath))
+                        File.Copy(file, destinationPath);
+                }
+
+                var depsJsonTargetNode = GetDepsJsonTargetNode(logger, publishLocation);
+                // If there is no target node then this means the tool is being used on a future version of .NET Core
+                // then was available when the this tool was written. Go ahead and continue the deployment with warnings so the
+                // user can see if the future version will work.
+                if (depsJsonTargetNode.HasValue && string.Equals(targetFramework, "netcoreapp1.0", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Make sure the project is not pulling in dependencies requiring a later version of .NET Core then the declared target framework
+                    if (!ValidateDependencies(logger, targetFramework, depsJsonTargetNode.Value, disableVersionCheck))
+                        return false;
+
+                    // Flatten the runtime folder which reduces the package size by not including native dependencies
+                    // for other platforms.
+                    flattenRuntime = FlattenRuntimeFolder(logger, publishLocation, depsJsonTargetNode.Value);
+                }
             }
 
             FlattenPowerShellRuntimeModules(logger, publishLocation, targetFramework);
 
-
             if (zipArchivePath == null)
-                zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, new DirectoryInfo(projectLocation).Name + ".zip");
+            {
+                string baseName;
+                if (Utilities.IsSingleFileCSharpFile(projectLocation))
+                    baseName = Path.GetFileNameWithoutExtension(projectLocation);
+                else
+                    baseName = new DirectoryInfo(projectLocation).Name;
+
+                zipArchivePath = Path.Combine(Directory.GetParent(publishLocation).FullName, baseName + ".zip");
+            }
 
             zipArchivePath = Path.GetFullPath(zipArchivePath);
             logger?.WriteLine($"Zipping publish folder {publishLocation} to {zipArchivePath}");
@@ -609,7 +621,7 @@ namespace Amazon.Lambda.Tools
                         {
                             foreach (JsonElement importedRuntime in imports.EnumerateArray())
                             {
-                                queue.Enqueue(importedRuntime.GetString());
+                                    queue.Enqueue(importedRuntime.GetString());
                             }
                         }
                     }

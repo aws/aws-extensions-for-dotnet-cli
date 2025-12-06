@@ -14,7 +14,7 @@ namespace Amazon.Lambda.Tools
                 new List<ICommandInfo>()
                 {
                     new GroupHeaderInfo("Commands to deploy and manage AWS Lambda functions:"),
-                    new CommandInfo<DeployFunctionCommand>(DeployFunctionCommand.COMMAND_DEPLOY_NAME, DeployFunctionCommand.COMMAND_DEPLOY_DESCRIPTION, DeployFunctionCommand.DeployCommandOptions, DeployFunctionCommand.COMMAND_ARGUMENTS),
+                    new CommandInfo<DeployFunctionCommand>(DeployFunctionCommand.COMMAND_DEPLOY_NAME, DeployFunctionCommand.COMMAND_DEPLOY_DESCRIPTION, DeployFunctionCommand.DeployCommandOptions, DeployFunctionCommand.COMMAND_DEPLOY_ARGUMENTS),
                     new CommandInfo<InvokeFunctionCommand>(InvokeFunctionCommand.COMMAND_NAME, InvokeFunctionCommand.COMMAND_DESCRIPTION, InvokeFunctionCommand.InvokeCommandOptions, InvokeFunctionCommand.COMMAND_ARGUMENTS),
                     new CommandInfo<ListFunctionCommand>(ListFunctionCommand.COMMAND_NAME, ListFunctionCommand.COMMAND_DESCRIPTION, ListFunctionCommand.ListCommandOptions),
                     new CommandInfo<DeleteFunctionCommand>(DeleteFunctionCommand.COMMAND_NAME, DeleteFunctionCommand.COMMAND_DESCRIPTION, DeleteFunctionCommand.DeleteCommandOptions, DeleteFunctionCommand.COMMAND_ARGUMENTS),

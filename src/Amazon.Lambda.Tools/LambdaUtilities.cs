@@ -1,27 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text.Json;
-using YamlDotNet.RepresentationModel;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Xml.Linq;
-using Amazon.Common.DotNetCli.Tools;
-
+﻿using Amazon.Common.DotNetCli.Tools;
 using Amazon.Lambda.Model;
 using Amazon.S3;
 using Amazon.S3.Model;
-using System.Threading.Tasks;
-using System.Xml.XPath;
-using Environment = System.Environment;
 using Amazon.SecurityToken;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Xml.Linq;
+using System.Xml.XPath;
+using YamlDotNet.RepresentationModel;
+using Environment = System.Environment;
 
 namespace Amazon.Lambda.Tools
 {
     public static class TargetFrameworkMonikers
     {
+        public const string net10_0 = "net10.0";
         public const string net90 = "net9.0";
         public const string net80 = "net8.0";
         public const string net70 = "net7.0";
@@ -54,6 +55,7 @@ namespace Amazon.Lambda.Tools
 
         public static readonly IReadOnlyDictionary<string, string> _lambdaRuntimeToDotnetFramework = new Dictionary<string, string>()
         {
+            {"dotnet10", TargetFrameworkMonikers.net10_0},
             {Amazon.Lambda.Runtime.Dotnet8.Value, TargetFrameworkMonikers.net80},
             {Amazon.Lambda.Runtime.Dotnet6.Value, TargetFrameworkMonikers.net60},
             {Amazon.Lambda.Runtime.Dotnetcore31.Value, TargetFrameworkMonikers.netcoreapp31},
@@ -81,12 +83,55 @@ namespace Amazon.Lambda.Tools
             return kvp.Key;
         }
 
+        public static string DetermineTargetFrameworkForSingleFile(string filePath, string lambdaRuntime)
+        {
+            return DetermineTargetFrameworkForSingleFile(File.ReadAllLines(filePath), lambdaRuntime);
+        }
+
+        public static string DetermineTargetFrameworkForSingleFile(string[] lines, string lambdaRuntime)
+        {
+            string targetFramework = null;
+            if (lambdaRuntime != null && _lambdaRuntimeToDotnetFramework.TryGetValue(lambdaRuntime, out targetFramework))
+            {
+                return targetFramework;
+            }
+
+            // Look for an in-file directive that starts with "#:property" and contains "TargetFramework=<value>"
+            // Allow extra spaces but the directive must begin with "#:property". Extract the value after '='.
+            if (lines != null && lines.Length > 0)
+            {
+                // Pattern explanation:
+                // ^\s*           -> optional leading whitespace
+                // #\s*:\s*property -> literal "#", optional spaces, ":", optional spaces, "property"
+                // \s+            -> at least one space (separates property from key)
+                // TargetFramework -> literal key
+                // \s*=\s*        -> equals with optional surrounding spaces
+                // (\S+)          -> capture the value (non-whitespace sequence)
+                var directiveRegex = new Regex(@"^\s*#\s*:\s*property\s+TargetFramework\s*=\s*(\S+)", RegexOptions.IgnoreCase);
+
+                foreach (var rawLine in lines)
+                {
+                    if (string.IsNullOrWhiteSpace(rawLine))
+                        continue;
+
+                    var m = directiveRegex.Match(rawLine);
+                    if (m.Success && m.Groups.Count > 1)
+                    {
+                        targetFramework = m.Groups[1].Value.Trim();
+                        break;
+                    }
+                }
+            }
+
+            return targetFramework;
+        }
+
         public static void ValidateTargetFramework(string projectLocation, string msbuildParameters, string targetFramework, bool isNativeAot)
         {
             var outputType = Utilities.LookupOutputTypeFromProjectFile(projectLocation, msbuildParameters);
             var ouputTypeIsExe = outputType != null && outputType.ToLower().Equals("exe");
 
-            if (isNativeAot && !ouputTypeIsExe)
+            if (isNativeAot && !ouputTypeIsExe && !Utilities.IsSingleFileCSharpFile(projectLocation))
             {
                 throw new LambdaToolsException($"Native AOT applications must have output type 'exe'.",
                     LambdaToolsException.LambdaErrorCode.NativeAotOutputTypeError);
@@ -119,6 +164,8 @@ namespace Amazon.Lambda.Tools
 
             switch (targetFramework?.ToLower())
             {
+                case TargetFrameworkMonikers.net10_0:
+                    return $"mcr.microsoft.com/dotnet/sdk:10.0-aot";
                 case TargetFrameworkMonikers.net90:
                     return $"public.ecr.aws/sam/build-dotnet9:latest-{architecture}";
                 case TargetFrameworkMonikers.net80:

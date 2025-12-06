@@ -1,0 +1,11 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.Lambda.Tools",
+      "Type": "Minor",
+      "ChangelogMessages": [
+        "Add support for packaging and deploying C# file-based Lambda functions"
+      ]
+    }
+  ]
+}

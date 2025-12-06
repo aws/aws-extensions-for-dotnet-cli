@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Commands;
@@ -12,7 +13,7 @@ namespace Amazon.Lambda.Tools.Commands
         public const string COMMAND_NAME = "package";
         public const string COMMAND_DESCRIPTION = "Command to package a Lambda project either into a zip file or docker image if --package-type is set to \"image\". The output can later be deployed to Lambda " +
                                                   "with either deploy-function command or with another tool.";
-        public const string COMMAND_ARGUMENTS = "<ZIP-FILE> The name of the zip file to package the project into";
+        public const string COMMAND_ARGUMENTS = "<ZIP-FILE> <file-based C# Lambda (Optional)>";
 
         public static readonly IList<CommandOption> PackageCommandOptions = BuildLineOptions(new List<CommandOption>
         {
@@ -43,7 +44,8 @@ namespace Amazon.Lambda.Tools.Commands
         public string Configuration { get; set; }
         public string TargetFramework { get; set; }
         public string OutputPackageFileName { get; set; }
-        
+        public string InputSingleCSharpFile { get; set; }
+
         public string MSBuildParameters { get; set; }
         public string[] LayerVersionArns { get; set; }
 
@@ -96,7 +98,17 @@ namespace Amazon.Lambda.Tools.Commands
 
             if (values.Arguments.Count > 0)
             {
-                this.OutputPackageFileName = values.Arguments[0];
+                foreach (var arg in values.Arguments)
+                {
+                    if (Utilities.IsSingleFileCSharpFile(arg))
+                    {
+                        this.InputSingleCSharpFile = arg;
+                    }
+                    else
+                    {
+                        this.OutputPackageFileName = arg;
+                    }
+                }
             }
 
             Tuple<CommandOption, CommandOptionValue> tuple;
@@ -146,13 +158,23 @@ namespace Amazon.Lambda.Tools.Commands
 
         protected override async Task<bool> PerformActionAsync()
         {
-            EnsureInProjectDirectory();
-
             // Disable interactive since this command is intended to be run as part of a pipeline.
             this.DisableInteractive = true;
 
             string projectLocation = Utilities.DetermineProjectLocation(this.WorkingDirectory, this.GetStringValueOrDefault(this.ProjectLocation, CommonDefinedCommandOptions.ARGUMENT_PROJECT_LOCATION, false));
 
+            if (!string.IsNullOrEmpty(this.InputSingleCSharpFile))
+            {
+                if (Path.IsPathFullyQualified(this.InputSingleCSharpFile))
+                    projectLocation = this.InputSingleCSharpFile;
+                else
+                    projectLocation = Path.Combine(projectLocation, this.InputSingleCSharpFile);
+            }
+            else if (!Utilities.IsSingleFileCSharpFile(projectLocation))
+            {
+                EnsureInProjectDirectory();
+            }
+    
             Lambda.PackageType packageType = LambdaUtilities.DeterminePackageType(this.GetStringValueOrDefault(this.PackageType, LambdaDefinedCommandOptions.ARGUMENT_PACKAGE_TYPE, false));
             if(packageType == Lambda.PackageType.Image)
             {
@@ -209,7 +231,14 @@ namespace Amazon.Lambda.Tools.Commands
                 var targetFramework = this.GetStringValueOrDefault(this.TargetFramework, CommonDefinedCommandOptions.ARGUMENT_FRAMEWORK, false);
                 if (string.IsNullOrEmpty(targetFramework))
                 {
-                    targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation, msbuildParameters);
+                    if (Utilities.IsSingleFileCSharpFile(projectLocation))
+                    {
+                        targetFramework = LambdaUtilities.DetermineTargetFrameworkForSingleFile(projectLocation, null);
+                    }
+                    else
+                    {
+                        targetFramework = Utilities.LookupTargetFrameworkFromProjectFile(projectLocation, msbuildParameters);
+                    }
 
                     // If we still don't know what the target framework is ask the user what targetframework to use.
                     // This is common when a project is using multi targeting.

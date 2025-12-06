@@ -1,0 +1,23 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Transform" : "AWS::Serverless-2016-10-31",
+  "Description" : "Starting template for an AWS Serverless Application.",
+  "Parameters" : {
+  },
+  "Resources" : {
+    "ToUpperFunctionNoAOT" : {
+      "Type" : "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "ToUpperFunctionNoAOT",
+        "Runtime": "dotnet10",
+        "CodeUri": "./ToUpperFunctionNoAOT.cs",
+        "Description": "Default function",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Policies": [ "AWSLambdaBasicExecutionRole" ]
+      }
+    }
+  },
+  "Outputs" : {
+  }
+}
