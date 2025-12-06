@@ -5,8 +5,6 @@ env:
     DOTNET_RUNNING_IN_CONTAINER: "true"
 phases:
   install:
-    runtime-versions:
-      dotnet: 8.x
     commands:
       - curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0
       - dotnet --version
