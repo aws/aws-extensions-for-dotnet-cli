@@ -1,3 +1,17 @@
+## Release 2025-12-12 #2
+
+### Amazon.ECS.Tools (4.0.0)
+* Updated to V4 of the AWS SDK for .NET
+* Updated the minimum requirement from .NET Core 3.1 to .NET 6
+### Amazon.ElasticBeanstalk.Tools (5.0.0)
+* Updated to V4 of the AWS SDK for .NET
+* Updated the minimum requirement from .NET Core 3.1 to .NET 6
+### Amazon.Lambda.Tools (6.0.0)
+* Updated to V4 of the AWS SDK for .NET
+* Updated the minimum requirement from .NET Core 3.1 to .NET 6
+* Fixed 'The image manifest or layer media type for the source image is not supported.' issue when container image was built for a Lambda function by adding the '--provenance=false' switch for the docker buildx command
+* Add support for packaging and deploying C# file-based Lambda functions
+
 ## Release 2025-11-18
 
 ### Amazon.Lambda.Tools (5.13.2)
