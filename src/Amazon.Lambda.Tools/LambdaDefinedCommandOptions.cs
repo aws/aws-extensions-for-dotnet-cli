@@ -61,7 +61,7 @@ namespace Amazon.Lambda.Tools
                 ShortSwitch = "-fh",
                 Switch = "--function-handler",
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
-                Description = "Handler for the function <assembly>::<type>::<method>"
+                Description = "Handler for the function. .NET Class libraries use the format <assembly>::<type>::<method> and executables use the format <assembly>"
             };
         public static readonly CommandOption ARGUMENT_PACKAGE_TYPE =
             new CommandOption

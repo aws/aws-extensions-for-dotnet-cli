@@ -2,7 +2,9 @@
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
+using Amazon.Util;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -11,14 +13,11 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.XPath;
-using Amazon.Util;
-using System.Text.RegularExpressions;
-using System.Collections;
-using System.Xml;
-using System.Text.Json;
 
 namespace Amazon.Common.DotNetCli.Tools
 {
@@ -143,7 +142,7 @@ namespace Amazon.Common.DotNetCli.Tools
             for (index = lastCommonRoot + 1; index < relativeToDirs.Length; index++)
             {
                 relativePath.Append(relativeToDirs[index]);
-                if(index + 1 < relativeToDirs.Length)
+                if (index + 1 < relativeToDirs.Length)
                 {
                     relativePath.Append("/");
                 }
@@ -161,8 +160,14 @@ namespace Amazon.Common.DotNetCli.Tools
                 {
                     return Path.Combine(workingDirectory, givenSolutionDirectory).TrimEnd('\\', '/');
                 }
-                
+
                 return givenSolutionDirectory.TrimEnd('\\', '/');
+            }
+
+            // If we are using .NET 10 or later file based C# files then treat the parent directory as the solution folder.
+            if (IsSingleFileCSharpFile(projectLocation))
+            {
+                return Directory.GetParent(projectLocation).FullName.TrimEnd('\\', '/');
             }
 
             // If we weren't given a solution path, try to find one looking up from the project file.
@@ -179,9 +184,9 @@ namespace Amazon.Common.DotNetCli.Tools
                 {
                     return currentDirectory.TrimEnd('\\', '/');
                 }
-                
+
                 DirectoryInfo dirInfo = Directory.GetParent(currentDirectory);
-                if ((dirInfo == null) || !dirInfo.Exists) 
+                if ((dirInfo == null) || !dirInfo.Exists)
                 {
                     break;
                 }
@@ -203,11 +208,26 @@ namespace Amazon.Common.DotNetCli.Tools
         /// <returns></returns>
         public static string DeterminePublishLocation(string workingDirectory, string projectLocation, string configuration, string targetFramework)
         {
-            var path = Path.Combine(DetermineProjectLocation(workingDirectory, projectLocation),
-                "bin",
-                configuration,
-                targetFramework,
-                "publish");
+            string path;
+            if (IsSingleFileCSharpFile(projectLocation)) // For example projectLocation = /path/to/file.cs
+            {
+                // Do not rely on Directory.GetParent() because if this value will eventually run inside a container but
+                // the host is Windows the slashes and root will get messed up.
+                int forwardSlashPosition = projectLocation.LastIndexOf('/');
+                int backSlashPosition = projectLocation.LastIndexOf('\\');
+                int position = Math.Max(forwardSlashPosition, backSlashPosition);
+                var parentFolder = projectLocation.Substring(0, position);
+
+                path = Path.Combine(parentFolder, "artifacts", Path.GetFileNameWithoutExtension(projectLocation));
+            }
+            else
+            {
+                path = Path.Combine(DetermineProjectLocation(workingDirectory, projectLocation),
+                    "bin",
+                    configuration,
+                    targetFramework,
+                    "publish");
+            }
             return path;
         }
 
@@ -333,7 +353,8 @@ namespace Amazon.Common.DotNetCli.Tools
             if (properties.TryGetValue("TargetFrameworks", out var targetFrameworks) && !string.IsNullOrEmpty(targetFrameworks))
             {
                 var frameworks = targetFrameworks.Split(';');
-                if (frameworks.Length > 1 ){
+                if (frameworks.Length > 1)
+                {
                     return null;
                 }
                 return frameworks[0];
@@ -380,6 +401,25 @@ namespace Amazon.Common.DotNetCli.Tools
                 }
             }
 
+            // By default file base C# files are published with Native AOT. Users can override this by adding a line that says "#:property PublishAot=false".
+            if (Utilities.IsSingleFileCSharpFile(projectLocation))
+            {
+                var directiveRegex = new Regex(@"^\s*#\s*:\s*property\s+PublishAot\s*=\s*false\s*$", RegexOptions.IgnoreCase);
+                foreach (var rawLine in File.ReadLines(projectLocation))
+                {
+                    if (string.IsNullOrWhiteSpace(rawLine))
+                        continue;
+
+                    var m = directiveRegex.Match(rawLine);
+                    if (m.Success)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
             var properties = LookupProjectProperties(projectLocation, msBuildParameters, "PublishAot");
             if (properties.TryGetValue("PublishAot", out var publishAot))
             {
@@ -409,8 +449,8 @@ namespace Amazon.Common.DotNetCli.Tools
         {
             if (File.Exists(directory))
                 return directory;
-            
-            foreach (var ext in new [] { "*.csproj", "*.fsproj", "*.vbproj" })
+
+            foreach (var ext in new[] { "*.csproj", "*.fsproj", "*.vbproj" })
             {
                 var files = Directory.GetFiles(directory, ext, SearchOption.TopDirectoryOnly);
                 if (files.Length == 1)
@@ -449,7 +489,7 @@ namespace Amazon.Common.DotNetCli.Tools
 
             return location.TrimEnd('\\', '/');
         }
-        
+
         /// <summary>
         /// Determine where the dotnet build directory is.
         /// </summary>
@@ -624,7 +664,7 @@ namespace Amazon.Common.DotNetCli.Tools
             {
                 var relativePath = file.Substring(publishLocation.Length)
                     .Replace(Path.DirectorySeparatorChar.ToString(), uniformDirectorySeparator.ToString());
-                
+
                 if (relativePath[0] == uniformDirectorySeparator)
                     relativePath = relativePath.Substring(1);
 
@@ -709,7 +749,7 @@ namespace Amazon.Common.DotNetCli.Tools
                 }
             }
         }
-        
+
         public static async Task ValidateBucketRegionAsync(IAmazonS3 s3Client, string s3Bucket)
         {
             string bucketRegion;
@@ -717,14 +757,14 @@ namespace Amazon.Common.DotNetCli.Tools
             {
                 bucketRegion = await Utilities.GetBucketRegionAsync(s3Client, s3Bucket);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.Error.WriteLine($"Warning: Unable to determine region for bucket {s3Bucket}, assuming bucket is in correct region: {e.Message}", ToolsException.CommonErrorCode.S3GetBucketLocation, e);
                 return;
             }
 
             var configuredRegion = s3Client.Config.RegionEndpoint?.SystemName;
-            if(configuredRegion == null && !string.IsNullOrEmpty(s3Client.Config.ServiceURL))
+            if (configuredRegion == null && !string.IsNullOrEmpty(s3Client.Config.ServiceURL))
             {
                 configuredRegion = AWSSDKUtils.DetermineRegion(s3Client.Config.ServiceURL);
             }
@@ -733,7 +773,7 @@ namespace Amazon.Common.DotNetCli.Tools
             // knows what they are doing.
             if (configuredRegion == null)
                 return;
-            
+
             if (!string.Equals(bucketRegion, configuredRegion))
             {
                 throw new ToolsException($"Error: S3 bucket must be in the same region as the configured region {configuredRegion}. {s3Bucket} is in the region {bucketRegion}.", ToolsException.CommonErrorCode.BucketInDifferentRegionThenClient);
@@ -838,7 +878,7 @@ namespace Amazon.Common.DotNetCli.Tools
             EventHandler<StreamTransferProgressArgs> handler = ((s, e) =>
             {
                 if (e.PercentDone != percentToUpdateOn && e.PercentDone <= percentToUpdateOn) return;
-                
+
                 var increment = e.PercentDone % UPLOAD_PROGRESS_INCREMENT;
                 if (increment == 0)
                     increment = UPLOAD_PROGRESS_INCREMENT;
@@ -848,14 +888,14 @@ namespace Amazon.Common.DotNetCli.Tools
 
             return handler;
         }
-        
+
         private static EventHandler<UploadProgressArgs> CreateTransferUtilityProgressHandler(IToolLogger logger)
         {
             var percentToUpdateOn = UPLOAD_PROGRESS_INCREMENT;
             EventHandler<UploadProgressArgs> handler = ((s, e) =>
             {
                 if (e.PercentDone != percentToUpdateOn && e.PercentDone <= percentToUpdateOn) return;
-                
+
                 var increment = e.PercentDone % UPLOAD_PROGRESS_INCREMENT;
                 if (increment == 0)
                     increment = UPLOAD_PROGRESS_INCREMENT;
@@ -865,7 +905,7 @@ namespace Amazon.Common.DotNetCli.Tools
 
             return handler;
         }
-        
+
         internal static int WaitForPromptResponseByIndex(int min, int max)
         {
             int chosenIndex = -1;
@@ -885,8 +925,8 @@ namespace Amazon.Common.DotNetCli.Tools
 
             return chosenIndex;
         }
-        
-        
+
+
         static readonly string GENERIC_ASSUME_ROLE_POLICY =
             @"
 {
@@ -940,8 +980,8 @@ namespace Amazon.Common.DotNetCli.Tools
                 if (string.IsNullOrEmpty(e.Data))
                     return;
                 capturedOutput.AppendLine(e.Data);
-            });            
-            
+            });
+
             using (var proc = new Process())
             {
                 proc.StartInfo = startInfo;
@@ -959,7 +999,7 @@ namespace Amazon.Common.DotNetCli.Tools
 
                 proc.WaitForExit();
                 return new ExecuteShellCommandResult(proc.ExitCode, capturedOutput.ToString());
-            }            
+            }
         }
 
         public static string ReadSecretFromConsole()
@@ -982,7 +1022,7 @@ namespace Amazon.Common.DotNetCli.Tools
                 }
                 // i.Key > 31: Skip the initial ascii control characters like ESC and tab. The space character is 32.
                 // KeyChar == '\u0000' if the key pressed does not correspond to a printable character, e.g. F1, Pause-Break, etc
-                else if ((int)i.Key > 31 && i.KeyChar != '\u0000') 
+                else if ((int)i.Key > 31 && i.KeyChar != '\u0000')
                 {
                     code.Append(i.KeyChar);
                     Console.Write("*");
@@ -990,8 +1030,8 @@ namespace Amazon.Common.DotNetCli.Tools
             }
             return code.ToString().Trim();
         }
-        
-        
+
+
         public static void CopyDirectory(string sourceDirectory, string destinationDirectory, bool copySubDirectories)
         {
             // Get the subdirectories for the specified directory.
@@ -1003,7 +1043,7 @@ namespace Amazon.Common.DotNetCli.Tools
                     "Source directory does not exist or could not be found: "
                     + sourceDirectory);
             }
-            
+
             // If the destination directory doesn't exist, create it.
             if (!Directory.Exists(destinationDirectory))
             {
@@ -1037,7 +1077,7 @@ namespace Amazon.Common.DotNetCli.Tools
             {
                 projectName = new DirectoryInfo(projectName).Name;
             }
-            else if(File.Exists(projectName))
+            else if (File.Exists(projectName))
             {
                 projectName = Path.GetFileNameWithoutExtension(projectName);
             }
@@ -1045,20 +1085,20 @@ namespace Amazon.Common.DotNetCli.Tools
             projectName = projectName.ToLower();
             var sb = new StringBuilder();
 
-            foreach(var c in projectName)
+            foreach (var c in projectName)
             {
-                if(char.IsLetterOrDigit(c))
+                if (char.IsLetterOrDigit(c))
                 {
                     sb.Append(c);
                 }
-                else if(sb.Length > 0 && (c == '.' || c == '_' || c == '-'))
+                else if (sb.Length > 0 && (c == '.' || c == '_' || c == '-'))
                 {
                     sb.Append(c);
                 }
             }
 
             // Repository name must be at least 2 characters
-            if(sb.Length > 1)
+            if (sb.Length > 1)
             {
                 repositoryName = sb.ToString();
 
@@ -1070,6 +1110,16 @@ namespace Amazon.Common.DotNetCli.Tools
             }
 
             return !string.IsNullOrEmpty(repositoryName);
+        }
+
+        /// <summary>
+        /// Returns true if the project location is using the .NET feature of being a single file based C# file.
+        /// </summary>
+        /// <param name="projectLocation"></param>
+        /// <returns></returns>
+        public static bool IsSingleFileCSharpFile(string projectLocation)
+        {
+            return projectLocation.EndsWith(".cs", StringComparison.Ordinal);
         }
     }
 }

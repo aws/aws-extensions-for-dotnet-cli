@@ -282,6 +282,69 @@ Outputs: {{}}
         }
 
         [Fact]
+        public async Task TestDeployServerlessReferencingSingleFile()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+            var toolLogger = new TestToolLogger(_testOutputHelper);
+            var templatePath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/SingleFileLambdaFunctions/serverless.template");
+
+            var stackName = "TestDeployServerlessReferencingSingleFile-" + DateTime.Now.Ticks;
+            var deployServerlessCommand = new DeployServerlessCommand(toolLogger, Environment.CurrentDirectory, new string[] { "--template", templatePath });
+            deployServerlessCommand.DisableInteractive = true;
+            deployServerlessCommand.Region = TEST_REGION;
+            deployServerlessCommand.Configuration = "Release";
+            deployServerlessCommand.StackName = stackName;
+            deployServerlessCommand.S3Bucket = this._testFixture.Bucket;
+            deployServerlessCommand.WaitForStackToComplete = true;
+
+            var created = false;
+            try
+            {
+                string functionName = null;
+                created = await deployServerlessCommand.ExecuteAsync();
+                Assert.True(created);
+                using (var cfClient = new AmazonCloudFormationClient(RegionEndpoint.GetBySystemName(TEST_REGION)))
+                {
+                    var describeResponse = await cfClient.DescribeStacksAsync(new DescribeStacksRequest
+                    {
+                        StackName = deployServerlessCommand.StackName
+                    });
+
+                    Assert.Equal(StackStatus.CREATE_COMPLETE, describeResponse.Stacks[0].StackStatus);
+
+                    var describeResourceResponse = await cfClient.DescribeStackResourceAsync(new DescribeStackResourceRequest { StackName = stackName, LogicalResourceId = "ToUpperFunctionNoAOT" });
+                    functionName = describeResourceResponse.StackResourceDetail.PhysicalResourceId;
+                }
+
+                toolLogger.ClearBuffer();
+                var invokeCommand = new InvokeFunctionCommand(toolLogger, Environment.CurrentDirectory, new string[0]);
+                invokeCommand.FunctionName = functionName;
+                invokeCommand.Payload = "hello world";
+                invokeCommand.Region = TEST_REGION;
+
+                await invokeCommand.ExecuteAsync();
+                Assert.Contains("HELLO WORLD", toolLogger.Buffer);
+            }
+            finally
+            {
+                if (created)
+                {
+                    try
+                    {
+                        var deleteCommand = new DeleteServerlessCommand(toolLogger, Environment.CurrentDirectory, new string[0]);
+                        deleteCommand.StackName = deployServerlessCommand.StackName;
+                        deleteCommand.Region = TEST_REGION;
+                        await deleteCommand.ExecuteAsync();
+                    }
+                    catch
+                    {
+                        // Bury exception because we don't want to lose any exceptions during the deploy stage.
+                    }
+                }
+            }
+        }
+
+        [Fact]
         public async Task TestDeployServerlessECRImageUriNoMetadataJsonTemplate()
         {
             var assembly = this.GetType().GetTypeInfo().Assembly;

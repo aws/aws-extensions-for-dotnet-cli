@@ -20,7 +20,7 @@
         the source code here is also copied into the AWS VS Toolkit.
     -->
     <LangVersion>7.3</LangVersion>   
-    <Version>5.13.2</Version>
+    <Version>5.13.888</Version>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Resources\build-lambda-zip.exe">

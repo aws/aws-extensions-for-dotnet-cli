@@ -31,7 +31,17 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
         public BaseCommand(IToolLogger logger, string workingDirectory)
         {
             this.Logger = logger;
-            this.WorkingDirectory = workingDirectory;
+
+            // In case working directory was set to a file then use the parent directory as the working directory.
+            // This can happen in the C# single file scenario.
+            if (File.Exists(workingDirectory))
+            {
+                this.WorkingDirectory = Directory.GetParent(workingDirectory).FullName;
+            }
+            else
+            {
+                this.WorkingDirectory = workingDirectory;
+            }
         }
 
         public BaseCommand(IToolLogger logger, string workingDirectory, IList<CommandOption> possibleOptions, string[] args)
@@ -756,7 +766,11 @@ namespace Amazon.Common.DotNetCli.Tools.Commands
 
 
         public IToolLogger Logger { get; protected set; }
-        public string WorkingDirectory { get; set; }
+        public string WorkingDirectory 
+        { 
+            get; 
+            set; 
+        }
 
         protected string GetUserAgentString()
         {

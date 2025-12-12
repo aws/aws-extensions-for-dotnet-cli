@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.1.32228.430
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11222.16 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A5EA2C7D-846F-4266-8423-EFC4BA0FE4B6}"
 EndProject
@@ -68,6 +68,13 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestIntegerFunction", "testapps\TestIntegerFunction\TestIntegerFunction.csproj", "{D7F1DFA4-066B-469C-B04C-DF032CF152C1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestFunctionBuildProps", "testapps\TestFunctionBuildProps\TestFunctionBuildProps\TestFunctionBuildProps.csproj", "{AFA71B8E-F0AA-4704-8C4E-C11130F82B13}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SingleFileLambdaFunctions", "SingleFileLambdaFunctions", "{5711F48F-5491-4C8A-92B2-4D6D849483B5}"
+	ProjectSection(SolutionItems) = preProject
+		testapps\SingleFileLambdaFunctions\serverless.template = testapps\SingleFileLambdaFunctions\serverless.template
+		testapps\SingleFileLambdaFunctions\ToUpperFunctionImplicitAOT.cs = testapps\SingleFileLambdaFunctions\ToUpperFunctionImplicitAOT.cs
+		testapps\SingleFileLambdaFunctions\ToUpperFunctionNoAOT.cs = testapps\SingleFileLambdaFunctions\ToUpperFunctionNoAOT.cs
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -207,6 +214,7 @@ Global
 		{69FFA03C-D29F-40E0-9E7F-572D5E10AF77} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 		{D7F1DFA4-066B-469C-B04C-DF032CF152C1} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 		{AFA71B8E-F0AA-4704-8C4E-C11130F82B13} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
+		{5711F48F-5491-4C8A-92B2-4D6D849483B5} = {BB3CF729-8213-4DDD-85AE-A5E7754F3944}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DBFC70D6-49A2-40A1-AB08-5D9504AB7112}

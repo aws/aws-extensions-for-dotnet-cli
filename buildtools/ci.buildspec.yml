@@ -5,8 +5,9 @@ env:
     DOTNET_RUNNING_IN_CONTAINER: "true"
 phases:
   install:
-    runtime-versions:
-      dotnet: 8.x
+    commands:
+      - curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0
+      - dotnet new globaljson --sdk-version 10.0.0 --roll-forward minor
   build:
     commands:
       - dotnet test --verbosity normal test/Amazon.Common.DotNetCli.Tools.Test/Amazon.Common.DotNetCli.Tools.Test.csproj --configuration Release --logger trx --results-directory ./testresults
