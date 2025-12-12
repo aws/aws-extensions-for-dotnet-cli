@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\buildtools\common.props" />
   <PropertyGroup>
     <Description>Amazon.Lambda.Tools adds commands to the dotnet cli to deploy AWS Lambda functions.</Description>
@@ -20,7 +20,7 @@
         the source code here is also copied into the AWS VS Toolkit.
     -->
     <LangVersion>7.3</LangVersion>   
-    <Version>5.13.888</Version>
+    <Version>6.0.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Resources\build-lambda-zip.exe">
