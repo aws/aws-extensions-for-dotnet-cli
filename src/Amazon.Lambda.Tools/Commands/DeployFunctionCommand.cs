@@ -134,7 +134,7 @@ namespace Amazon.Lambda.Tools.Commands
                     {
                         this.InputSingleCSharpFile = arg;
                     }
-                    else
+                    else if (!string.IsNullOrEmpty(arg))
                     {
                         this.FunctionName = arg;
                     }

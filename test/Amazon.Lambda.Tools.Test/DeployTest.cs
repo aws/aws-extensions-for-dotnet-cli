@@ -499,7 +499,28 @@ namespace Amazon.Lambda.Tools.Test
                     await deployCommand.LambdaClient.DeleteFunctionAsync(deployCommand.FunctionName);
                 }
             }
+        }
 
+        // This test is reproduce the following issue https://github.com/aws/aws-lambda-dotnet/issues/2228 where in correct
+        // switch like --msbuild-params "" instead of --msbuild-parameters "" causes the empty string value be treated as
+        // an argument and then incorrectly makes it think the empty string should be used as the package path.
+        [Fact]
+        public async Task PackageWithIncorrectSwitches()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestFunction");
+
+            foreach(var value in new string[] { string.Empty, "foobar" })
+            {
+                _testOutputHelper.WriteLine("Testing package with msbuild-params value: '{0}'", value);
+                string packageZip = Path.GetTempFileName() + ".zip";
+                var packageCommand = new PackageCommand(new TestToolLogger(_testOutputHelper), fullPath, new string[] { packageZip, "--msbuild-params", value });
+                packageCommand.Configuration = "Release";
+
+                var success = await packageCommand.ExecuteAsync();
+                Assert.True(success);
+                Assert.True(File.Exists(packageZip));
+            }
         }
 
 

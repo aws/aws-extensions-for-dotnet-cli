@@ -104,7 +104,7 @@ namespace Amazon.Lambda.Tools.Commands
                     {
                         this.InputSingleCSharpFile = arg;
                     }
-                    else
+                    else if (!string.IsNullOrEmpty(arg) && arg.EndsWith(".zip"))
                     {
                         this.OutputPackageFileName = arg;
                     }
