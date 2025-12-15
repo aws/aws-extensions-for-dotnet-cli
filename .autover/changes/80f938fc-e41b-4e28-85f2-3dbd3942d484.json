@@ -1,0 +1,11 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.Lambda.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Fix null pointer issue when deploying or package with a CloudFormation template and specifying a config file"
+      ]
+    }
+  ]
+}

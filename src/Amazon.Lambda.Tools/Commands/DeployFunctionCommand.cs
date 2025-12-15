@@ -238,7 +238,7 @@ namespace Amazon.Lambda.Tools.Commands
 
                     if (!string.IsNullOrEmpty(this.InputSingleCSharpFile))
                     {
-                        if (Path.IsPathFullyQualified(this.InputSingleCSharpFile))
+                        if (Path.IsPathRooted(this.InputSingleCSharpFile))
                             projectLocation = this.InputSingleCSharpFile;
                         else
                             projectLocation = Path.Combine(projectLocation, this.InputSingleCSharpFile);

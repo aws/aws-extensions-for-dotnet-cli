@@ -62,6 +62,27 @@ namespace Amazon.Lambda.Tools.Integ.Tests
             }
         }
 
+        // Test confirming fix for issue https://github.com/aws/aws-extensions-for-dotnet-cli/issues/414
+        [Fact]
+        public async Task TestSettingConfigFile()
+        {
+            var assembly = this.GetType().GetTypeInfo().Assembly;
+
+            var toolLogger = new TestToolLogger(_testOutputHelper);
+
+            var fullPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestServerlessWebApp");
+
+            var command = new PackageCICommand(toolLogger, fullPath, new string[] {"--config-file", "dummy-config.json" });
+            command.Region = TEST_REGION;
+            command.DisableInteractive = true;
+            command.S3Bucket = this._testFixture.Bucket;
+            command.CloudFormationTemplate = "serverless.template";
+            command.CloudFormationOutputTemplate = Path.GetTempFileName();
+
+            var created = await command.ExecuteAsync();
+            Assert.True(created);
+        }
+
         [Fact]
         public async Task TestMissingImageTagServerlessMetadata()
         {
