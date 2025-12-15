@@ -1,3 +1,9 @@
+## Release 2025-12-15
+
+### Amazon.Lambda.Tools (6.0.1)
+* Fix null pointer issue when deploying or package with a CloudFormation template and specifying a config file
+* Fix issue with package command where the value of an incorrectly named switch would get mistaken for the output package name
+
 ## Release 2025-12-12 #2
 
 ### Amazon.ECS.Tools (4.0.0)
