@@ -104,7 +104,7 @@ namespace Amazon.Lambda.Tools.Commands
                     {
                         this.InputSingleCSharpFile = arg;
                     }
-                    else
+                    else if (!string.IsNullOrEmpty(arg) && arg.EndsWith(".zip"))
                     {
                         this.OutputPackageFileName = arg;
                     }
@@ -165,7 +165,7 @@ namespace Amazon.Lambda.Tools.Commands
 
             if (!string.IsNullOrEmpty(this.InputSingleCSharpFile))
             {
-                if (Path.IsPathFullyQualified(this.InputSingleCSharpFile))
+                if (Path.IsPathRooted(this.InputSingleCSharpFile))
                     projectLocation = this.InputSingleCSharpFile;
                 else
                     projectLocation = Path.Combine(projectLocation, this.InputSingleCSharpFile);

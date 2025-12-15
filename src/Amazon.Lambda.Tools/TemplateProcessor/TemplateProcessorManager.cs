@@ -240,9 +240,16 @@ namespace Amazon.Lambda.Tools.TemplateProcessor
         {
             if (field.Resource.UploadType == CodeUploadType.Zip)
             {
-                var command = new Commands.PackageCommand(this.Logger, null, args);
+                string projectLocation = null;
+                var workingDirectory = location;
+                if (File.Exists(workingDirectory))
+                {
+                    projectLocation = Path.GetFileName(workingDirectory);
+                    workingDirectory = Path.GetDirectoryName(workingDirectory);
+                } 
+                var command = new Commands.PackageCommand(this.Logger, workingDirectory, args);
 
-                command.ProjectLocation = location;
+                command.ProjectLocation = projectLocation;
                 command.LambdaClient = this.OriginatingCommand?.LambdaClient;
                 command.S3Client = this.OriginatingCommand?.S3Client;
                 command.IAMClient = this.OriginatingCommand?.IAMClient;
