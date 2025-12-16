@@ -1,3 +1,12 @@
+## Release 2025-12-16
+
+### Amazon.ECS.Tools (4.0.1)
+* Re-enable JSON comment support in the config file after support was removed in version 4.0.0
+### Amazon.ElasticBeanstalk.Tools (5.0.1)
+* Re-enable JSON comment support in the config file after support was removed in version 5.0.0
+### Amazon.Lambda.Tools (6.0.2)
+* Re-enable JSON comment support in the config file after support was removed in version 6.0.0
+
 ## Release 2025-12-15
 
 ### Amazon.Lambda.Tools (6.0.1)
