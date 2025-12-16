@@ -63,6 +63,7 @@ namespace Amazon.Lambda.Tools.Integ.Tests
         }
 
         // Test confirming fix for issue https://github.com/aws/aws-extensions-for-dotnet-cli/issues/414
+        // Test confirming fix for https://github.com/aws/aws-lambda-dotnet/issues/2230 allowing comments in the config file
         [Fact]
         public async Task TestSettingConfigFile()
         {

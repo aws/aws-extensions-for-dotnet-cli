@@ -1,0 +1,25 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.ECS.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Re-enable JSON comment support in the config file after support was removed in version 4.0.0"
+      ]
+    },
+    {
+      "Name": "Amazon.ElasticBeanstalk.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Re-enable JSON comment support in the config file after support was removed in version 5.0.0"
+      ]
+    },
+    {
+      "Name": "Amazon.Lambda.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Re-enable JSON comment support in the config file after support was removed in version 6.0.0"
+      ]
+    }	
+  ]
+}
