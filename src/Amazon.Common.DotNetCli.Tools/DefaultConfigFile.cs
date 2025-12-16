@@ -49,8 +49,13 @@ namespace Amazon.Common.DotNetCli.Tools
 
             try
             {
+                var options = new JsonDocumentOptions
+                {
+                    CommentHandling = JsonCommentHandling.Skip
+                };
+
                 string json = File.ReadAllText(path);
-                using (JsonDocument doc = JsonDocument.Parse(json))
+                using (JsonDocument doc = JsonDocument.Parse(json, options))
                 {
                     this._rootData = doc.RootElement.Clone();
                 }
