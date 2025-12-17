@@ -1,3 +1,8 @@
+## Release 2025-12-17
+
+### Amazon.Lambda.Tools (6.0.3)
+* When building container images fallback to docker build if the buildx plugin is not available
+
 ## Release 2025-12-16
 
 ### Amazon.ECS.Tools (4.0.1)
