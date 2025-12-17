@@ -30,17 +30,24 @@ namespace Amazon.Common.DotNetCli.Tools
 
             var arguments = new StringBuilder();
 
-            // The --provenance=false switch is added to force docker to not build an image index which is an image with a manifest.
-            // Lambda does not support containers of this type. This can be verified by running "docker inspect" on the build
-            // image. The mediaType should be application/vnd.docker.distribution.manifest.v2+json but without
-            // the --provenance=false the mediaType will be application/vnd.oci.image.index.v1+json.
-            if (arm64Build)
+            if (IsBuildxAvailable())
             {
-                arguments.Append($"buildx build --platform linux/arm64 --provenance=false ");
+                // The --provenance=false switch is added to force docker to not build an image index which is an image with a manifest.
+                // Lambda does not support containers of this type. This can be verified by running "docker inspect" on the build
+                // image. The mediaType should be application/vnd.docker.distribution.manifest.v2+json but without
+                // the --provenance=false the mediaType will be application/vnd.oci.image.index.v1+json.
+                if (arm64Build)
+                {
+                    arguments.Append($"buildx build --platform linux/arm64 --provenance=false ");
+                }
+                else
+                {
+                    arguments.Append($"buildx build --platform linux/amd64 --provenance=false ");
+                }
             }
             else
             {
-                arguments.Append($"buildx build --platform linux/amd64 --provenance=false ");
+                arguments.Append("build ");
             }
 
             arguments.Append($" -f \"{dockerFile}\" -t {imageTag}");
@@ -67,6 +74,24 @@ namespace Amazon.Common.DotNetCli.Tools
 
 
             return base.ExecuteCommand(psi, "docker build");
+        }
+
+        private bool IsBuildxAvailable()
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = this._dockerCLI,
+                Arguments = "buildx version",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            var process = Process.Start(psi);
+            var output = process.StandardOutput.ReadToEnd()?.Trim();
+            // To prevent a unlikely hang give 10 seconds as max for waiting for the docker CLI to execute and return back the image id.
+            process.WaitForExit(10000);
+            return process.ExitCode == 0;
         }
 
         public string GetImageId(string imageTag)

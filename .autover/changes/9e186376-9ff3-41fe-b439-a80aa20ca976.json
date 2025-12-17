@@ -1,0 +1,11 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.Lambda.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "When building container images fallback to docker build if the buildx plugin is not available"
+      ]
+    }
+  ]
+}
