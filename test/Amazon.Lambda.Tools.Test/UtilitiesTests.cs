@@ -179,8 +179,8 @@ namespace Amazon.Lambda.Tools.Test
         [InlineData("net8.0", LambdaConstants.ARCHITECTURE_X86_64, "public.ecr.aws/sam/build-dotnet8:latest-x86_64")]
         [InlineData("net9.0", LambdaConstants.ARCHITECTURE_ARM64, "public.ecr.aws/sam/build-dotnet9:latest-arm64")]
         [InlineData("net9.0", LambdaConstants.ARCHITECTURE_X86_64, "public.ecr.aws/sam/build-dotnet9:latest-x86_64")]
-        [InlineData("net10.0", LambdaConstants.ARCHITECTURE_ARM64, "mcr.microsoft.com/dotnet/sdk:10.0-aot")]
-        [InlineData("net10.0", LambdaConstants.ARCHITECTURE_X86_64, "mcr.microsoft.com/dotnet/sdk:10.0-aot")]
+        [InlineData("net10.0", LambdaConstants.ARCHITECTURE_ARM64, "public.ecr.aws/sam/build-dotnet10:latest-arm64")]
+        [InlineData("net10.0", LambdaConstants.ARCHITECTURE_X86_64, "public.ecr.aws/sam/build-dotnet10:latest-x86_64")]
         [InlineData(null, LambdaConstants.ARCHITECTURE_X86_64, "throws")]
         [InlineData(null, LambdaConstants.ARCHITECTURE_ARM64, "throws")]
         public void GetDefaultBuildImage(string targetFramework, string architecture, string expectedValue)

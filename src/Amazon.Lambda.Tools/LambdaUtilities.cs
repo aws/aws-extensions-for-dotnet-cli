@@ -165,7 +165,7 @@ namespace Amazon.Lambda.Tools
             switch (targetFramework?.ToLower())
             {
                 case TargetFrameworkMonikers.net10_0:
-                    return $"mcr.microsoft.com/dotnet/sdk:10.0-aot";
+                    return $"public.ecr.aws/sam/build-dotnet10:latest-{architecture}";
                 case TargetFrameworkMonikers.net90:
                     return $"public.ecr.aws/sam/build-dotnet9:latest-{architecture}";
                 case TargetFrameworkMonikers.net80:
