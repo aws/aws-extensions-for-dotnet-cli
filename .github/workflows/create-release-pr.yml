@@ -38,13 +38,13 @@ jobs:
           parse-json-secrets: true
       # Checkout a full clone of the repo
       - name: Checkout
-        uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 #v4.2.2
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd #v4.2.2
         with:
           fetch-depth: '0'
           token: ${{ env.AWS_SECRET_TOKEN }}
       # Install .NET8 which is needed for AutoVer
       - name: Setup .NET 8.0
-        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d #v5.0.0
+        uses: actions/setup-dotnet@baa11fbfe1d6520db94683bd5c7a3818018e4309 #v5.1.0
         with:
           dotnet-version: 8.0.x
       # Install AutoVer to automate versioning and changelog creation
