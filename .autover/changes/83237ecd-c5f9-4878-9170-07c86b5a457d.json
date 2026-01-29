@@ -1,0 +1,11 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.Lambda.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Switch default container build from mcr.microsoft.com/dotnet/sdk:10.0-aot to public.ecr.aws/sam/build-dotnet10:latest"
+      ]
+    }
+  ]
+}

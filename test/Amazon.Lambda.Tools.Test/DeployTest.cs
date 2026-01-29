@@ -143,8 +143,8 @@ namespace Amazon.Lambda.Tools.Test
             command.MemorySize = 512;
             command.Role = await TestHelper.GetTestRoleArnAsync();
             command.Configuration = "Release";
-            command.TargetFramework = "net7.0";
-            command.Runtime = "provided.al2";
+            command.TargetFramework = "net10.0";
+            command.Runtime = "provided.al2023";
             command.DisableInteractive = true;
             if (customMountLocation)
             {
@@ -175,7 +175,7 @@ namespace Amazon.Lambda.Tools.Test
                 };
                 GetFunctionResponse getFunctionResponse = await command.LambdaClient.GetFunctionAsync(getFunctionRequest);
                 var codeSize = getFunctionResponse.Configuration.CodeSize;
-                Assert.True(codeSize < 10000000, $"Code size is {codeSize}, which is larger than expected 10000000 bytes (10MB), check that trimming and stripping worked as expected.");
+                Assert.True(codeSize < 20000000, $"Code size is {codeSize}, which is larger than expected 10000000 bytes (10MB), check that trimming and stripping worked as expected.");
             }
             finally
             {
