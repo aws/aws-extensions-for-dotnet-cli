@@ -1,3 +1,9 @@
+## Release 2026-01-29
+
+### Amazon.Lambda.Tools (6.0.4)
+* Bumped AWSSDK.Core version to 4.0.3.3
+* Switch default container build from mcr.microsoft.com/dotnet/sdk:10.0-aot to public.ecr.aws/sam/build-dotnet10:latest
+
 ## Release 2025-12-17
 
 ### Amazon.Lambda.Tools (6.0.3)
