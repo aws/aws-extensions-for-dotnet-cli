@@ -39,14 +39,14 @@ jobs:
           parse-json-secrets: true
       # Checkout a full clone of the repo
       - name: Checkout code
-        uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 #v4.2.2
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd #v4.2.2
         with:
           ref: dev
           fetch-depth: 0
           token: ${{ env.AWS_SECRET_TOKEN }}
       # Install .NET9 which is needed for AutoVer
       - name: Setup .NET 9.0
-        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d #v5.0.0
+        uses: actions/setup-dotnet@baa11fbfe1d6520db94683bd5c7a3818018e4309 #v5.1.0
         with:
           dotnet-version: 9.0.x
       # Install AutoVer which is needed to retrieve information about the current release.
@@ -111,13 +111,13 @@ jobs:
     steps:
       # Checkout a full clone of the repo
       - name: Checkout code
-        uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 #v4.2.2
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd #v4.2.2
         with:
           ref: releases/next-release
           fetch-depth: 0
       # Install .NET9 which is needed for AutoVer
       - name: Setup .NET 9.0
-        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d #v5.0.0
+        uses: actions/setup-dotnet@baa11fbfe1d6520db94683bd5c7a3818018e4309 #v5.1.0
         with:
           dotnet-version: 9.0.x
       # Install AutoVer which is needed to retrieve information about the current release.

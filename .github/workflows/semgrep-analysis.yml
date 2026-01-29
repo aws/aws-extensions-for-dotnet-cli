@@ -25,7 +25,7 @@ jobs:
     if: (github.actor != 'dependabot[bot]')
     steps:
       # Fetch project source
-      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 #v4.2.2
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd #v4.2.2
 
       - run: semgrep ci --sarif > semgrep.sarif
         env:
@@ -35,7 +35,7 @@ jobs:
             p/owasp-top-ten
 
       - name: Upload SARIF file for GitHub Advanced Security Dashboard
-        uses: github/codeql-action/upload-sarif@181d5eefc20863364f96762470ba6f862bdef56b #v3.29.2
+        uses: github/codeql-action/upload-sarif@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 #v4.32.0
         with:
           sarif_file: semgrep.sarif
         if: always()
