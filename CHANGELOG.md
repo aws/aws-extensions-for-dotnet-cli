@@ -1,3 +1,8 @@
+## Release 2026-03-06
+
+### Amazon.Lambda.Tools (6.0.5)
+* Fix issue when polling for CloudFormation events showing events before deploy-serverless command was invoked
+
 ## Release 2026-01-29
 
 ### Amazon.Lambda.Tools (6.0.4)
