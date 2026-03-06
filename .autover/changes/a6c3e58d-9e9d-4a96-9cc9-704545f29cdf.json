@@ -1,0 +1,11 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.Lambda.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Fix issue when polling for CloudFormation events showing events before deploy-serverless command was invoked"
+      ]
+    }
+  ]
+}

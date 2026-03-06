@@ -348,7 +348,7 @@ namespace Amazon.Lambda.Tools.Commands
             };
 
             // Execute the change set.
-            DateTime timeChangeSetExecuted = DateTime.Now;
+            DateTime timeChangeSetExecuted = DateTime.UtcNow;
             try
             {
                 await this.CloudFormationClient.ExecuteChangeSetAsync(executeChangeSetRequest);
@@ -436,7 +436,7 @@ namespace Amazon.Lambda.Tools.Commands
                 for (int i = events.Count - 1; i >= 0; i--)
                 {
                     string line =
-                        events[i].Timestamp.GetValueOrDefault().ToString("g").PadRight(TIMESTAMP_WIDTH) + " " +
+                        events[i].Timestamp.GetValueOrDefault().ToLocalTime().ToString("g").PadRight(TIMESTAMP_WIDTH) + " " +
                         events[i].LogicalResourceId.PadRight(LOGICAL_RESOURCE_WIDTH) + " " +
                         events[i].ResourceStatus.ToString().PadRight(RESOURCE_STATUS);
 
