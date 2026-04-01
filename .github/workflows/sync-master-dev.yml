@@ -26,27 +26,27 @@ jobs:
     steps:
       # Assume an AWS Role that provides access to the Access Token
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 #v5.1.1
+        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 #v6.0.0
         with:
           role-to-assume: ${{ secrets.RELEASE_WORKFLOW_ACCESS_TOKEN_ROLE_ARN }}
           aws-region: us-west-2
       # Retrieve the Access Token from Secrets Manager
       - name: Retrieve secret from AWS Secrets Manager
-        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802 #v2.0.10
+        uses: aws-actions/aws-secretsmanager-get-secrets@3a411b6ec5cace3d626412dd917e7bfeac242cfa #v3.0.0
         with:
           secret-ids: |
             AWS_SECRET, ${{ secrets.RELEASE_WORKFLOW_ACCESS_TOKEN_NAME }}
           parse-json-secrets: true
       # Checkout a full clone of the repo
       - name: Checkout code
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd #v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v4.2.2
         with:
           ref: dev
           fetch-depth: 0
           token: ${{ env.AWS_SECRET_TOKEN }}
       # Install .NET9 which is needed for AutoVer
       - name: Setup .NET 9.0
-        uses: actions/setup-dotnet@baa11fbfe1d6520db94683bd5c7a3818018e4309 #v5.1.0
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 #v5.2.0
         with:
           dotnet-version: 9.0.x
       # Install AutoVer which is needed to retrieve information about the current release.
@@ -111,13 +111,13 @@ jobs:
     steps:
       # Checkout a full clone of the repo
       - name: Checkout code
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd #v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v4.2.2
         with:
           ref: releases/next-release
           fetch-depth: 0
       # Install .NET9 which is needed for AutoVer
       - name: Setup .NET 9.0
-        uses: actions/setup-dotnet@baa11fbfe1d6520db94683bd5c7a3818018e4309 #v5.1.0
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 #v5.2.0
         with:
           dotnet-version: 9.0.x
       # Install AutoVer which is needed to retrieve information about the current release.
