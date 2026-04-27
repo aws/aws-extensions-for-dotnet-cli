@@ -1,5 +1,7 @@
 # AWS Extensions for .NET CLI
 
+test
+
 This repository contains AWS tool extensions to the .NET CLI. These tool extensions are focused on building 
 .NET Core and ASP.NET Core applications and deploying them to AWS services. Many of these deployment 
 commands are the same commands the [AWS Toolkit for Visual Studio](https://marketplace.visualstudio.com/items?itemName=AmazonWebServices.AWSToolkitforVisualStudio2017)
