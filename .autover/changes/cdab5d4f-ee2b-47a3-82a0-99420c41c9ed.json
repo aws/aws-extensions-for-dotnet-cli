@@ -1,0 +1,25 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.Lambda.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Added AWSSDK.Signin dependency to resolve AWS credentials when authenticated using the AWS CLI v2 'aws login' SSO flow"
+      ]
+    },
+    {
+      "Name": "Amazon.ECS.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Added AWSSDK.Signin dependency to resolve AWS credentials when authenticated using the AWS CLI v2 'aws login' SSO flow"
+      ]
+    },
+    {
+      "Name": "Amazon.ElasticBeanstalk.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Added AWSSDK.Signin dependency to resolve AWS credentials when authenticated using the AWS CLI v2 'aws login' SSO flow"
+      ]
+    }
+  ]
+}
