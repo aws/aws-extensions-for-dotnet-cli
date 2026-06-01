@@ -1,3 +1,12 @@
+## Release 2026-06-01
+
+### Amazon.Lambda.Tools (6.0.6)
+* Added AWSSDK.Signin dependency to resolve AWS credentials when authenticated using the AWS CLI v2 'aws login' SSO flow
+### Amazon.ECS.Tools (4.0.2)
+* Added AWSSDK.Signin dependency to resolve AWS credentials when authenticated using the AWS CLI v2 'aws login' SSO flow
+### Amazon.ElasticBeanstalk.Tools (5.0.2)
+* Added AWSSDK.Signin dependency to resolve AWS credentials when authenticated using the AWS CLI v2 'aws login' SSO flow
+
 ## Release 2026-03-06
 
 ### Amazon.Lambda.Tools (6.0.5)
