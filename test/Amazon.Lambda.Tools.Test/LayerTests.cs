@@ -58,7 +58,7 @@ namespace Amazon.Lambda.Tools.Test
             command.Region = "us-east-1";
             command.S3Bucket = this._testFixture.Bucket;
             command.DisableInteractive = true;
-            command.TargetFramework = "net6.0";
+            command.TargetFramework = "net10.0";
             command.LayerName = "DotnetTest-CreateLayer";
             command.LayerType = LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE;
             command.PackageManifest = _singleLayerFunctionPath;
@@ -115,7 +115,7 @@ namespace Amazon.Lambda.Tools.Test
             command.Region = "us-east-1";
             command.S3Bucket = this._testFixture.Bucket;
             command.DisableInteractive = true;
-            command.TargetFramework = "net6.0";
+            command.TargetFramework = "net10.0";
             command.LayerName = "DotnetTest-AttemptToCreateAnOptmizedLayer";
             command.LayerType = LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE;
             command.PackageManifest = fullPath;
@@ -186,7 +186,7 @@ namespace Amazon.Lambda.Tools.Test
                 deployCommand.MemorySize = 512;
                 deployCommand.Role = await TestHelper.GetTestRoleArnAsync();
                 deployCommand.Configuration = "Release";
-                deployCommand.Runtime = "dotnet6";
+                deployCommand.Runtime = "dotnet10";
                 deployCommand.LayerVersionArns = new string[] { publishLayerCommand.NewLayerVersionArn };
                 deployCommand.DisableInteractive = true;
 
@@ -481,7 +481,7 @@ namespace Amazon.Lambda.Tools.Test
             publishLayerCommand.LayerName = "Dotnet-IntegTest-";
             publishLayerCommand.LayerType = LambdaConstants.LAYER_TYPE_RUNTIME_PACKAGE_STORE;
             publishLayerCommand.OptDirectory = optDirectory;
-            publishLayerCommand.TargetFramework = "net6.0";
+            publishLayerCommand.TargetFramework = "net10.0";
 //            publishLayerCommand.PackageManifest = _singleLayerFunctionPath;
 
             if(!(await publishLayerCommand.ExecuteAsync()))

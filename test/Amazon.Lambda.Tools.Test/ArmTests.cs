@@ -60,7 +60,7 @@ namespace Amazon.Lambda.Tools.Test
             command.MemorySize = 512;
             command.Role = await TestHelper.GetTestRoleArnAsync();
             command.Configuration = "Release";
-            command.Runtime = "dotnet6";
+            command.Runtime = "dotnet10";
             command.Architecture = LambdaConstants.ARCHITECTURE_ARM64;
             command.DisableInteractive = true;
             command.LambdaClient = mockClient.Object;

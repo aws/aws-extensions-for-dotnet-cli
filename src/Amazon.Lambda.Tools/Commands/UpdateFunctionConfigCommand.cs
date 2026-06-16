@@ -58,7 +58,11 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_LOG_SYSTEM_LEVEL,
             LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP,
 
-            LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON
+            LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON,
+
+            LambdaDefinedCommandOptions.ARGUMENT_FILE_SYSTEM_CONFIGS,
+            LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT,
+            LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS
         });
 
         public string FunctionName { get; set; }
@@ -97,6 +101,10 @@ namespace Amazon.Lambda.Tools.Commands
         public string LogSystemLevel { get; set; }
         public string LogGroup { get; set; }
         public string SnapStartApplyOn { get; set; }
+
+        public Dictionary<string, string> FileSystemConfigs { get; set; }
+        public int? DurableExecutionTimeout { get; set; }
+        public int? DurableRetentionPeriodInDays { get; set; }
 
 
         public UpdateFunctionConfigCommand(IToolLogger logger, string workingDirectory, string[] args)
@@ -184,6 +192,13 @@ namespace Amazon.Lambda.Tools.Commands
 
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON.Switch)) != null)
                 this.SnapStartApplyOn = tuple.Item2.StringValue;
+
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FILE_SYSTEM_CONFIGS.Switch)) != null)
+                this.FileSystemConfigs = tuple.Item2.KeyValuePairs;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT.Switch)) != null)
+                this.DurableExecutionTimeout = tuple.Item2.IntValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS.Switch)) != null)
+                this.DurableRetentionPeriodInDays = tuple.Item2.IntValue;
         }
 
 
@@ -387,6 +402,23 @@ namespace Amazon.Lambda.Tools.Commands
                 request.TracingConfig = new TracingConfig
                 {
                     Mode = existingConfiguration.TracingConfig.Mode
+                };
+            }
+
+            if (existingConfiguration.FileSystemConfigs != null)
+            {
+                request.FileSystemConfigs = existingConfiguration.FileSystemConfigs
+                    .Select(x => new FileSystemConfig { Arn = x.Arn, LocalMountPath = x.LocalMountPath })
+                    .ToList();
+                request.IsFileSystemConfigsSet = existingConfiguration.FileSystemConfigs.Any();
+            }
+
+            if (existingConfiguration.DurableConfig != null)
+            {
+                request.DurableConfig = new DurableConfig
+                {
+                    ExecutionTimeout = existingConfiguration.DurableConfig.ExecutionTimeout,
+                    RetentionPeriodInDays = existingConfiguration.DurableConfig.RetentionPeriodInDays
                 };
             }
 
@@ -717,6 +749,38 @@ namespace Amazon.Lambda.Tools.Commands
                     request.SnapStart.ApplyOn = snapStartApplyOn;
                     different = true;
                 }
+            }
+
+            var fileSystemConfigs = this.GetKeyValuePairOrDefault(this.FileSystemConfigs, LambdaDefinedCommandOptions.ARGUMENT_FILE_SYSTEM_CONFIGS, false);
+            if (fileSystemConfigs != null)
+            {
+                var existingFileSystemConfigs = existingConfiguration.FileSystemConfigs?.ToDictionary(x => x.Arn, x => x.LocalMountPath);
+                if (AreDifferent(fileSystemConfigs, existingFileSystemConfigs))
+                {
+                    request.FileSystemConfigs = fileSystemConfigs.Select(x => new FileSystemConfig { Arn = x.Key, LocalMountPath = x.Value }).ToList();
+                    request.IsFileSystemConfigsSet = true;
+                    different = true;
+                }
+            }
+
+            var durableExecutionTimeout = this.GetIntValueOrDefault(this.DurableExecutionTimeout, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT, false);
+            if (durableExecutionTimeout.HasValue && durableExecutionTimeout.Value != existingConfiguration.DurableConfig?.ExecutionTimeout)
+            {
+                if (request.DurableConfig == null)
+                    request.DurableConfig = new DurableConfig();
+
+                request.DurableConfig.ExecutionTimeout = durableExecutionTimeout.Value;
+                different = true;
+            }
+
+            var durableRetentionPeriodInDays = this.GetIntValueOrDefault(this.DurableRetentionPeriodInDays, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS, false);
+            if (durableRetentionPeriodInDays.HasValue && durableRetentionPeriodInDays.Value != existingConfiguration.DurableConfig?.RetentionPeriodInDays)
+            {
+                if (request.DurableConfig == null)
+                    request.DurableConfig = new DurableConfig();
+
+                request.DurableConfig.RetentionPeriodInDays = durableRetentionPeriodInDays.Value;
+                different = true;
             }
 
 

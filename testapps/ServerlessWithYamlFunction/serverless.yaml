@@ -11,7 +11,7 @@ Parameters:
     Default: "Secret"
 Globals:
   Function:
-    Runtime: "dotnet6"
+    Runtime: "dotnet10"
 Resources:
   Get:
     Type: AWS::Serverless::Function

@@ -9,7 +9,7 @@
       "Type" : "AWS::Serverless::Function",
       "Properties": {
         "Handler": "CurrentDirectoryTest::CurrentDirectoryTest.Functions::Get",
-        "Runtime": "dotnet6",
+        "Runtime": "dotnet10",
         "CodeUri": "",
         "MemorySize": 256,
         "Timeout": 30,
@@ -31,7 +31,7 @@
       "Type" : "AWS::Serverless::Function",
       "Properties": {
         "Handler": "CurrentDirectoryTest::CurrentDirectoryTest.Functions::Get2",
-        "Runtime": "dotnet6",
+        "Runtime": "dotnet10",
         "CodeUri": "",
         "MemorySize": 256,
         "Timeout": 30,
@@ -53,7 +53,7 @@
       "Type" : "AWS::Serverless::Function",
       "Properties": {
         "Handler": "SiblingProjectTest::SiblingProjectTest.Function::Get",
-        "Runtime": "dotnet6",
+        "Runtime": "dotnet10",
         "CodeUri": "../SiblingProjectTest",
         "MemorySize": 256,
         "Timeout": 30,
