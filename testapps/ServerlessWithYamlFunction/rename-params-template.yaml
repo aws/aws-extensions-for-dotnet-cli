@@ -14,7 +14,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: ServerlessWithYamlFunction::ServerlessWithYamlFunction.Functions::Get
-      Runtime: dotnet6
+      Runtime: dotnet10
       CodeUri: ''
       MemorySize: 512
       Timeout: 30

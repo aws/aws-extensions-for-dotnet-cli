@@ -531,5 +531,32 @@ namespace Amazon.Lambda.Tools
                 ValueType = CommandOption.CommandOptionValueType.StringValue,
                 Description = "Configure when a snapshot of the initialized execution environment should be taken. Valid values are: PublishedVersions, None. Default is None.",
             };
+        public static readonly CommandOption ARGUMENT_FILE_SYSTEM_CONFIGS =
+            new CommandOption
+            {
+                Name = "File System Configs",
+                Switch = "--file-system-configs",
+                ShortSwitch = "-fsc",
+                ValueType = CommandOption.CommandOptionValueType.KeyValuePairs,
+                Description = "Connection settings for an Amazon EFS or Amazon S3 file system. Format is <access-point-arn1>=<local-mount-path1>;<access-point-arn2>=<local-mount-path2>. Local mount paths must start with /mnt/."
+            };
+        public static readonly CommandOption ARGUMENT_DURABLE_EXECUTION_TIMEOUT =
+            new CommandOption
+            {
+                Name = "Durable Execution Timeout",
+                Switch = "--durable-execution-timeout",
+                ShortSwitch = "-det",
+                ValueType = CommandOption.CommandOptionValueType.IntValue,
+                Description = "For durable functions, the maximum time in seconds that a durable execution can run before timing out."
+            };
+        public static readonly CommandOption ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS =
+            new CommandOption
+            {
+                Name = "Durable Retention Period In Days",
+                Switch = "--durable-retention-period",
+                ShortSwitch = "-drp",
+                ValueType = CommandOption.CommandOptionValueType.IntValue,
+                Description = "For durable functions, the number of days to retain execution history after a durable execution completes."
+            };
     }
 }

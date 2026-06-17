@@ -115,5 +115,24 @@ namespace Amazon.Lambda.Tools.Test
             Assert.NotNull(param);
             Assert.Equal("us-west-2", param.Item2.StringValue);
         }
+
+        [Fact]
+        public void ParseFileSystemConfigsSwitch()
+        {
+            var logger = new TestToolLogger();
+            var command = new DeployFunctionCommand(logger, "", new[]
+            {
+                "myfunc",
+                "--file-system-configs", "arn:aws:elasticfilesystem:us-east-1:123456789012:access-point/fsap-1=/mnt/efs",
+                "--durable-execution-timeout", "3600",
+                "--durable-retention-period", "30"
+            });
+
+            Assert.NotNull(command.FileSystemConfigs);
+            Assert.Single(command.FileSystemConfigs);
+            Assert.Equal("/mnt/efs", command.FileSystemConfigs["arn:aws:elasticfilesystem:us-east-1:123456789012:access-point/fsap-1"]);
+            Assert.Equal(3600, command.DurableExecutionTimeout);
+            Assert.Equal(30, command.DurableRetentionPeriodInDays);
+        }
     }
 }

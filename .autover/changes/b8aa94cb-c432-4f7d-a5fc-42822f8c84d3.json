@@ -1,0 +1,27 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.Lambda.Tools",
+      "Type": "Major",
+      "ChangelogMessages": [
+	    "[Breaking Change] Tool's minimum .NET version updated from .NET 6 to .NET 8",
+	    "Added `--file-system-configs`, `--durable-execution-timeout` and `--durable-retention-period` switches to the `deploy-function` and `update-function-config` commands to configure the function's file system (Amazon EFS/S3) and durable execution settings",
+        "Bumped AWS SDK for .NET dependencies to latest versions"
+      ]
+    },
+    {
+      "Name": "Amazon.ECS.Tools",
+      "Type": "Major",
+      "ChangelogMessages": [
+	    "[Breaking Change] Tool's minimum .NET version updated from .NET 6 to .NET 8"
+      ]
+    },
+    {
+      "Name": "Amazon.ElasticBeanstalk.Tools",
+      "Type": "Major",
+      "ChangelogMessages": [
+	    "[Breaking Change] Tool's minimum .NET version updated from .NET 6 to .NET 8"
+      ]
+    }	
+  ]
+}

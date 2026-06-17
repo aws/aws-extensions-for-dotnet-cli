@@ -82,7 +82,11 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_LOG_SYSTEM_LEVEL,
             LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP,
 
-            LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON
+            LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON,
+
+            LambdaDefinedCommandOptions.ARGUMENT_FILE_SYSTEM_CONFIGS,
+            LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT,
+            LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS
         });
 
         public string Architecture { get; set; }
@@ -479,6 +483,25 @@ namespace Amazon.Lambda.Tools.Commands
                         createRequest.SnapStart = new SnapStart {ApplyOn = Amazon.Lambda.SnapStartApplyOn.FindValue(snapStartApplyOn)};
                     }
 
+                    var fileSystemConfigs = this.GetKeyValuePairOrDefault(this.FileSystemConfigs, LambdaDefinedCommandOptions.ARGUMENT_FILE_SYSTEM_CONFIGS, false);
+                    if (fileSystemConfigs != null && fileSystemConfigs.Count > 0)
+                    {
+                        createRequest.FileSystemConfigs = fileSystemConfigs
+                            .Select(x => new FileSystemConfig { Arn = x.Key, LocalMountPath = x.Value })
+                            .ToList();
+                    }
+
+                    var durableExecutionTimeout = this.GetIntValueOrDefault(this.DurableExecutionTimeout, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT, false);
+                    var durableRetentionPeriodInDays = this.GetIntValueOrDefault(this.DurableRetentionPeriodInDays, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS, false);
+                    if (durableExecutionTimeout.HasValue || durableRetentionPeriodInDays.HasValue)
+                    {
+                        createRequest.DurableConfig = new DurableConfig();
+                        if (durableExecutionTimeout.HasValue)
+                            createRequest.DurableConfig.ExecutionTimeout = durableExecutionTimeout.Value;
+                        if (durableRetentionPeriodInDays.HasValue)
+                            createRequest.DurableConfig.RetentionPeriodInDays = durableRetentionPeriodInDays.Value;
+                    }
+
                     try
                     {
                         await this.LambdaClient.CreateFunctionAsync(createRequest);
@@ -687,6 +710,10 @@ namespace Amazon.Lambda.Tools.Commands
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP.ConfigFileKey, this.GetStringValueOrDefault(this.LogGroup, LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP, false));
 
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON.ConfigFileKey, this.GetStringValueOrDefault(this.SnapStartApplyOn, LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON, false));
+
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FILE_SYSTEM_CONFIGS.ConfigFileKey, LambdaToolsDefaults.FormatKeyValue(this.GetKeyValuePairOrDefault(this.FileSystemConfigs, LambdaDefinedCommandOptions.ARGUMENT_FILE_SYSTEM_CONFIGS, false)));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT.ConfigFileKey, this.GetIntValueOrDefault(this.DurableExecutionTimeout, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS.ConfigFileKey, this.GetIntValueOrDefault(this.DurableRetentionPeriodInDays, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS, false));
 
         }
     }

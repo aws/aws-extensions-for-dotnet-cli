@@ -10,10 +10,10 @@ namespace Amazon.Common.DotNetCli.Tools.Test
     public class UtilitiesTests
     {
         [Theory]
-        [InlineData("../../../../../testapps/TestFunction", "net6.0")]
-        [InlineData("../../../../../testapps/ServerlessWithYamlFunction", "net6.0")]
+        [InlineData("../../../../../testapps/TestFunction", "net10.0")]
+        [InlineData("../../../../../testapps/ServerlessWithYamlFunction", "net10.0")]
         [InlineData("../../../../../testapps/TestBeanstalkWebApp", "net8.0")]
-        [InlineData("../../../../../testapps/TestFunctionBuildProps/TestFunctionBuildProps", "net6.0")]
+        [InlineData("../../../../../testapps/TestFunctionBuildProps/TestFunctionBuildProps", "net10.0")]
         public void CheckFramework(string projectPath, string expectedFramework)
         {
             var assembly = this.GetType().GetTypeInfo().Assembly;
@@ -102,8 +102,8 @@ namespace Amazon.Common.DotNetCli.Tools.Test
         }
 
         [Theory]
-        [InlineData("TargetFramework", "", "net6.0")]
-        [InlineData("TargetFramework", "/p:NonExistence=net20.0", "net6.0")]
+        [InlineData("TargetFramework", "", "net10.0")]
+        [InlineData("TargetFramework", "/p:NonExistence=net20.0", "net10.0")]
         [InlineData("TargetFramework", "/p:TargetFramework=net20.0", "net20.0")]
         [InlineData("TargetFramework", "/p:TargetFramework=net20.0 /p:OutputType=FutureDevice", "net20.0")]
         [InlineData("OutputType", "/p:TargetFramework=net20.0 /p:OutputType=FutureDevice", "FutureDevice")]

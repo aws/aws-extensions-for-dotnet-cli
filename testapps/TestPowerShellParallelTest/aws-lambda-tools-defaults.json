@@ -2,7 +2,7 @@
     "profile"     : "",
     "region"      : "",
     "configuration" : "Release",
-    "function-runtime" : "dotnet6",
+    "function-runtime" : "dotnet10",
     "function-memory-size" : 512,
     "function-timeout"     : 90,
     "function-handler"     : "TestPowerShellParallelTest::TestPowerShellParallelTest.Bootstrap::ExecuteFunction",

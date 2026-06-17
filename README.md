@@ -1057,7 +1057,7 @@ Example of within the AWS SAM Template syntax `Globals` in a `serverless.templat
 ...
   "Globals": {
     "Function": {
-      "Runtime": "dotnet6",
+      "Runtime": "dotnet10",
       "Architectures": [
         "arm64"
       ]
