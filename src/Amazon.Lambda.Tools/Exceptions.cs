@@ -56,6 +56,10 @@ namespace Amazon.Lambda.Tools
             ParseLayerVersionArnFail,
             LambdaWaitTillFunctionAvailable,
 
+            LambdaListVersions,
+            NoFunctionVersionsFound,
+            LambdaGetDurableExecution,
+
             UnknownLayerType,
             StoreCommandError,
             FailedToFindArtifactZip,

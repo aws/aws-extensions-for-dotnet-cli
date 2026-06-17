@@ -19,6 +19,11 @@ namespace Amazon.Tools.TestHelpers
             this._buffer.AppendLine(string.Format(message, args));
         }
 
+        public void Write(string message)
+        {
+            this._buffer.Append(message);
+        }
+
         public void ClearBuffer()
         {
             this._buffer.Clear();

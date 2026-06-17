@@ -317,6 +317,16 @@ namespace Amazon.Lambda.Tools
                 Description = "The input payload to send to the Lambda function"
             };
 
+        public static readonly CommandOption ARGUMENT_INVOKE_MODE =
+            new CommandOption
+            {
+                Name = "Invoke mode",
+                ShortSwitch = "-im",
+                Switch = "--invoke-mode",
+                ValueType = CommandOption.CommandOptionValueType.StringValue,
+                Description = "How the function is invoked. Valid values are: RequestResponse, Event, Stream or DurableExecution. Default is RequestResponse."
+            };
+
         public static readonly CommandOption ARGUMENT_OUTPUT_PACKAGE =
             new CommandOption
             {

@@ -238,6 +238,7 @@ namespace Amazon.Lambda.Tools.Commands
                     FunctionName = functionName
                 });
                 this.Logger.WriteLine("Published new Lambda function version: " + response.Version);
+                this.Logger.WriteLine("Function version arn: " + response.FunctionArn);
             }
             catch (Exception e)
             {
