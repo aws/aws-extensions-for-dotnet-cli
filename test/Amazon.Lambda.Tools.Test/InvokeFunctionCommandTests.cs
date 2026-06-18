@@ -35,14 +35,27 @@ namespace Amazon.Lambda.Tools.Test
             return mockLambda;
         }
 
-        private static InvokeFunctionCommand CreateCommand(TestToolLogger logger, IAmazonLambda lambdaClient, params string[] args)
+        private static TestableInvokeFunctionCommand CreateCommand(TestToolLogger logger, IAmazonLambda lambdaClient, params string[] args)
         {
-            var command = new InvokeFunctionCommand(logger, Directory.GetCurrentDirectory(), args)
+            var command = new TestableInvokeFunctionCommand(logger, Directory.GetCurrentDirectory(), args)
             {
                 LambdaClient = lambdaClient,
                 DisableInteractive = true
             };
             return command;
+        }
+
+        /// <summary>
+        /// Test subclass that makes the durable execution polling delay a no-op so polling tests run instantly.
+        /// </summary>
+        private class TestableInvokeFunctionCommand : InvokeFunctionCommand
+        {
+            public TestableInvokeFunctionCommand(IToolLogger logger, string workingDirectory, string[] args)
+                : base(logger, workingDirectory, args)
+            {
+            }
+
+            protected override Task PollDelayAsync() => Task.CompletedTask;
         }
 
         [Theory]
@@ -80,6 +93,21 @@ namespace Amazon.Lambda.Tools.Test
 
             Assert.Contains("NotAMode", ex.Message);
             Assert.Contains("RequestResponse", ex.Message);
+        }
+
+        [Theory]
+        [InlineData("0")]
+        [InlineData("1")]
+        [InlineData("-1")]
+        public void ParseNumericInvokeModeThrows(string value)
+        {
+            // Numeric values must be rejected even though they map to enum members, since the CLI only documents
+            // the named values.
+            var ex = Assert.Throws<LambdaToolsException>(() =>
+                new InvokeFunctionCommand(new TestToolLogger(), Directory.GetCurrentDirectory(),
+                    new[] { FunctionName, "--invoke-mode", value }));
+
+            Assert.Contains(value, ex.Message);
         }
 
         [Fact]
@@ -432,6 +460,34 @@ namespace Amazon.Lambda.Tools.Test
             Assert.DoesNotContain("Result:", logger.Buffer);
             Assert.DoesNotContain("Error:", logger.Buffer);
             Assert.DoesNotContain("truncated", logger.Buffer);
+        }
+
+        [Theory]
+        // Already valid JSON values are sent unchanged (including scalars such as numbers, booleans, null and strings).
+        [InlineData("{\"key\":\"value\"}", "{\"key\":\"value\"}")]
+        [InlineData("[1,2,3]", "[1,2,3]")]
+        [InlineData("123", "123")]
+        [InlineData("true", "true")]
+        [InlineData("null", "null")]
+        [InlineData("\"already a json string\"", "\"already a json string\"")]
+        // Non-JSON values are serialized as a JSON string with proper escaping.
+        [InlineData("hello world", "\"hello world\"")]
+        [InlineData("a \"quoted\" value", "\"a \\u0022quoted\\u0022 value\"")]
+        public async Task ResolvePayloadProducesValidJson(string input, string expectedPayload)
+        {
+            var mockLambda = CreateAvailableLambdaMock();
+            InvokeRequest capturedRequest = null;
+            mockLambda.Setup(client => client.InvokeAsync(It.IsAny<InvokeRequest>(), It.IsAny<CancellationToken>()))
+                .Callback<InvokeRequest, CancellationToken>((r, t) => capturedRequest = r)
+                .Returns(Task.FromResult(new InvokeResponse { StatusCode = 202 }));
+
+            var logger = new TestToolLogger();
+            var command = CreateCommand(logger, mockLambda.Object, FunctionName, "--invoke-mode", "Event", "--payload", input);
+
+            Assert.True(await command.ExecuteAsync());
+
+            Assert.NotNull(capturedRequest);
+            Assert.Equal(expectedPayload, capturedRequest.Payload);
         }
     }
 }

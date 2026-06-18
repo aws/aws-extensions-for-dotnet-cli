@@ -99,7 +99,11 @@ namespace Amazon.Lambda.Tools.Commands
         /// </summary>
         private static InvokeMode ParseInvokeMode(string value)
         {
-            if (Enum.TryParse<InvokeMode>(value, true, out var mode) && Enum.IsDefined(typeof(InvokeMode), mode))
+            // Only accept the named enum values. Numeric input like "0" or "1" is rejected even though
+            // Enum.TryParse would otherwise parse it, since the CLI help only documents the named values.
+            if (!string.IsNullOrEmpty(value) &&
+                !char.IsDigit(value[0]) && value[0] != '-' && value[0] != '+' &&
+                Enum.TryParse<InvokeMode>(value, true, out var mode) && Enum.IsDefined(typeof(InvokeMode), mode))
             {
                 return mode;
             }
@@ -139,8 +143,9 @@ namespace Amazon.Lambda.Tools.Commands
 
         /// <summary>
         /// Resolves the payload to send to the function. If <see cref="Payload"/> points to an existing file then
-        /// the contents of the file are used, otherwise the raw value is used. Scalar values that are not already
-        /// valid JSON are wrapped in quotes so they are sent as valid JSON strings.
+        /// the contents of the file are used, otherwise the raw value is used. If the value is already valid JSON
+        /// (an object, array, or scalar such as a number, boolean, string or null) it is sent as-is; otherwise it is
+        /// JSON-serialized as a string so the function receives a valid JSON value.
         /// </summary>
         private string ResolvePayload()
         {
@@ -161,22 +166,37 @@ namespace Amazon.Lambda.Tools.Commands
             }
 
             // We should still check for empty payload in case it is read from a file.
-            if (!string.IsNullOrEmpty(payload))
+            if (string.IsNullOrEmpty(payload))
             {
-                if (payload[0] != '\"' && payload[0] != '{' && payload[0] != '[')
-                {
-                    double d;
-                    long l;
-                    bool b;
-                    if (!double.TryParse(payload, out d) && !long.TryParse(payload, out l) &&
-                        !bool.TryParse(payload, out b))
-                    {
-                        payload = "\"" + payload + "\"";
-                    }
-                }
+                return payload;
             }
 
-            return payload;
+            // If the value is already valid JSON (including scalars like 123, true or null) send it unchanged.
+            // Otherwise treat it as a raw string and JSON-serialize it so quotes/backslashes are escaped correctly.
+            if (IsValidJson(payload))
+            {
+                return payload;
+            }
+
+            return System.Text.Json.JsonSerializer.Serialize(payload);
+        }
+
+        /// <summary>
+        /// Returns true if the supplied text is a complete, well-formed JSON value.
+        /// </summary>
+        private static bool IsValidJson(string value)
+        {
+            try
+            {
+                using (var doc = System.Text.Json.JsonDocument.Parse(value))
+                {
+                    return true;
+                }
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -358,13 +378,22 @@ namespace Amazon.Lambda.Tools.Commands
         }
 
         /// <summary>
+        /// The delay between polls of the durable execution status while monitoring its progress.
+        /// </summary>
+        protected virtual TimeSpan PollInterval => TimeSpan.FromSeconds(3);
+
+        /// <summary>
+        /// Waits <see cref="PollInterval"/> between durable execution status polls. Exposed as a virtual method so
+        /// tests can override it to avoid slowing down the suite.
+        /// </summary>
+        protected virtual Task PollDelayAsync() => Task.Delay(PollInterval);
+
+        /// <summary>
         /// Polls the GetDurableExecution and GetDurableExecutionHistory APIs to monitor a durable execution,
         /// writing new history events and status changes to the console until the execution reaches a terminal state.
         /// </summary>
         private async Task MonitorDurableExecutionAsync(string durableExecutionArn)
         {
-            const int POLL_INTERVAL = 3000;
-
             this.Logger.WriteLine("");
             this.Logger.WriteLine("Monitoring durable execution progress:");
 
@@ -385,7 +414,7 @@ namespace Amazon.Lambda.Tools.Commands
                 catch (ResourceNotFoundException)
                 {
                     // It is possible for the durable execution to not be immediately visible after the invocation returns, so treat a not found error as an empty execution history and keep polling until it appears.
-                    await Task.Delay(POLL_INTERVAL);
+                    await PollDelayAsync();
                     continue;
                 }
                 catch (Exception e)
@@ -398,7 +427,7 @@ namespace Amazon.Lambda.Tools.Commands
                     break;
                 }
 
-                await Task.Delay(POLL_INTERVAL);
+                await PollDelayAsync();
             }
 
             this.Logger.WriteLine("");
@@ -762,14 +791,22 @@ namespace Amazon.Lambda.Tools.Commands
             string errorDetails = null;
             try
             {
+                // Use a Decoder to preserve state across chunks so multi-byte UTF-8 characters that are split
+                // across chunk boundaries are decoded correctly instead of producing replacement characters.
+                var decoder = System.Text.UTF8Encoding.UTF8.GetDecoder();
                 using (var response = await this.LambdaClient.InvokeWithResponseStreamAsync(invokeRequest))
                 {
                     foreach (var streamEvent in response.EventStream)
                     {
                         if (streamEvent is InvokeResponseStreamUpdate update && update.Payload != null)
                         {
-                            var chunk = System.Text.UTF8Encoding.UTF8.GetString(update.Payload.ToArray());
-                            this.Logger.Write(chunk);
+                            var bytes = update.Payload.ToArray();
+                            var chars = new char[decoder.GetCharCount(bytes, 0, bytes.Length, false)];
+                            var charCount = decoder.GetChars(bytes, 0, bytes.Length, chars, 0, false);
+                            if (charCount > 0)
+                            {
+                                this.Logger.Write(new string(chars, 0, charCount));
+                            }
                         }
                         else if (streamEvent is InvokeWithResponseStreamCompleteEvent complete)
                         {
@@ -778,6 +815,14 @@ namespace Amazon.Lambda.Tools.Commands
                             errorDetails = complete.ErrorDetails;
                         }
                     }
+                }
+
+                // Flush any remaining buffered bytes from the decoder.
+                var tail = new char[decoder.GetCharCount(Array.Empty<byte>(), 0, 0, true)];
+                var tailCount = decoder.GetChars(Array.Empty<byte>(), 0, 0, tail, 0, true);
+                if (tailCount > 0)
+                {
+                    this.Logger.Write(new string(tail, 0, tailCount));
                 }
             }
             catch (Exception e)
