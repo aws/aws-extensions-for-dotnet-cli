@@ -25,6 +25,12 @@ namespace Amazon.Lambda.Tools.Integ.Tests
             this.WriteLine(string.Format(message, args));
         }
 
+        public void Write(string message)
+        {
+            this._buffer.Append(message);
+            _testOutputHelper?.WriteLine(message);
+        }
+
         public void ClearBuffer()
         {
             this._buffer.Clear();

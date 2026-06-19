@@ -19,5 +19,10 @@ public class MockToolLogger : IToolLogger
         _sbLog.Append('\n');
     }
 
+    public void Write(string text)
+    {
+        _sbLog.Append(text);
+    }
+
     public string Log => _sbLog.ToString();
 }
