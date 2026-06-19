@@ -1,4 +1,7 @@
-﻿using System.Globalization;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+using System.Globalization;
 using System.Text;
 
 namespace Amazon.ElasticBeanstalk.Tools

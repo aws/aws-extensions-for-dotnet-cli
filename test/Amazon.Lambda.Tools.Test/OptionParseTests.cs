@@ -1,4 +1,7 @@
-﻿using Xunit;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+using Xunit;
 using Amazon.Common.DotNetCli.Tools;
 using Amazon.Common.DotNetCli.Tools.Options;
 using Amazon.Lambda.Tools.Commands;

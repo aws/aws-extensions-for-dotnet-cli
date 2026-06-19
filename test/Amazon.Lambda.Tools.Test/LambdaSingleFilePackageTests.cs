@@ -1,4 +1,7 @@
-﻿using Amazon.Common.DotNetCli.Tools;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+using Amazon.Common.DotNetCli.Tools;
 using Amazon.Lambda.Tools.Commands;
 using System;
 using System.IO;
