@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
 var builder = WebApplication.CreateBuilder(args);

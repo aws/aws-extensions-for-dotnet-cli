@@ -1,3 +1,6 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 #:package Amazon.Lambda.Core@2.8.0
 #:package Amazon.Lambda.RuntimeSupport@1.14.1
 #:package Amazon.Lambda.Serialization.SystemTextJson@2.4.4
