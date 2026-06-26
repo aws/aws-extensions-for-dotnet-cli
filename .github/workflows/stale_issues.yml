@@ -5,14 +5,19 @@ on:
   schedule:
   - cron: "0 0 * * *"
 
-permissions:
-  issues: write
-  pull-requests: write
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 jobs:
   cleanup:
     runs-on: ubuntu-latest
     name: Stale issue job
+    permissions:
+      issues: write # to label and close stale issues
+      pull-requests: write # to label and close stale pull requests
     steps:
     - uses: aws-actions/stale-issue-cleanup@5650b49bcd757a078f6ca06c373d7807b773f9bc #v7.1.0
       with:

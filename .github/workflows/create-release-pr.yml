@@ -11,13 +11,18 @@ on:
         type: string
         required: false
 
-permissions:
-  id-token: write
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 jobs:
   release-pr:
     name: Release PR
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write # to assume the AWS access-token role via OIDC
 
     env:
       INPUT_OVERRIDE_VERSION: ${{ github.event.inputs.OVERRIDE_VERSION }}
@@ -25,26 +30,26 @@ jobs:
     steps:
       # Assume an AWS Role that provides access to the Access Token
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 #v4.1.0
+        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
         with:
           role-to-assume: ${{ secrets.RELEASE_WORKFLOW_ACCESS_TOKEN_ROLE_ARN }}
           aws-region: us-west-2
-      # Retrieve the Access Token from Secrets Manager
-      - name: Retrieve secret from AWS Secrets Manager
-        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802 #v2.0.10
+      # Retrieve the per-repo deploy key + FG PAT from Secrets Manager
+      - name: Retrieve secrets from AWS Secrets Manager
+        uses: aws-actions/aws-secretsmanager-get-secrets@3a411b6ec5cace3d626412dd917e7bfeac242cfa # v3.0.0
         with:
           secret-ids: |
             AWS_SECRET, ${{ secrets.RELEASE_WORKFLOW_ACCESS_TOKEN_NAME }}
           parse-json-secrets: true
       # Checkout a full clone of the repo
       - name: Checkout
-        uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 #v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: '0'
           token: ${{ env.AWS_SECRET_TOKEN }}
       # Install .NET8 which is needed for AutoVer
       - name: Setup .NET 8.0
-        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d #v5.0.0
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
         with:
           dotnet-version: 8.0.x
       # Install AutoVer to automate versioning and changelog creation
@@ -75,10 +80,11 @@ jobs:
         run: autover changelog
       # Push the release branch up as well as the created tag
       - name: Push Changes
+        env:
+          BRANCH: ${{ steps.create-release-branch.outputs.BRANCH }}
         run: |
-          branch=${{ steps.create-release-branch.outputs.BRANCH }}
-          git push origin $branch
-          git push origin $branch --tags
+          git push origin "$BRANCH"
+          git push origin "$BRANCH" --tags
       # Get the release name that will be used to create a PR
       - name: Read Release Name
         id: read-release-name
@@ -94,8 +100,11 @@ jobs:
       # Create the Release PR and label it
       - name: Create Pull Request
         env:
-          GITHUB_TOKEN: ${{ env.AWS_SECRET_TOKEN }}
+          GITHUB_TOKEN: ${{ env.FG_PAT }}
+          VERSION: ${{ steps.read-release-name.outputs.VERSION }}
+          CHANGELOG: ${{ steps.read-changelog.outputs.CHANGELOG }}
+          BRANCH: ${{ steps.create-release-branch.outputs.BRANCH }}
         run: |
           pr_url="$(gh pr create --title "${{ steps.read-release-name.outputs.VERSION }}" --body "${{ steps.read-changelog.outputs.CHANGELOG }}" --base dev --head ${{ steps.create-release-branch.outputs.BRANCH }})"
           gh label create "Release PR" --description "A Release PR that includes versioning and changelog changes" -c "#FF0000" -f
-          gh pr edit $pr_url --add-label "Release PR"
+          pr_url="$(gh pr create --title "$VERSION" --label "Release PR" --body "$CHANGELOG" --base dev --head "$BRANCH")"
