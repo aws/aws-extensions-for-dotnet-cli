@@ -8,15 +8,21 @@ on:
       - dev
       - 'feature/**'
 
-permissions:
-  id-token: write
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   run-ci:
+    name: Run CI
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write # to assume the AWS testing roles via OIDC
     steps:
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 #v4
+        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
         with:
           role-to-assume: ${{ secrets.CI_MAIN_TESTING_ACCOUNT_ROLE_ARN }}
           role-duration-seconds: 7200
@@ -24,23 +30,30 @@ jobs:
       - name: Invoke Load Balancer Lambda
         id: lambda
         shell: pwsh
+        env:
+          LOAD_BALANCER_LAMBDA_NAME: ${{ secrets.CI_TESTING_LOAD_BALANCER_LAMBDA_NAME }}
+          TEST_RUNNER_ACCOUNT_ROLES: ${{ secrets.CI_TEST_RUNNER_ACCOUNT_ROLES }}
+          CODE_BUILD_PROJECT_NAME: ${{ secrets.CI_TESTING_CODE_BUILD_PROJECT_NAME }}
+          COMMIT_SHA: ${{ github.sha }}
         run: |
-          aws lambda invoke response.json --function-name "${{ secrets.CI_TESTING_LOAD_BALANCER_LAMBDA_NAME }}" --cli-binary-format raw-in-base64-out --payload '{"Roles": "${{ secrets.CI_TEST_RUNNER_ACCOUNT_ROLES }}", "ProjectName": "${{ secrets.CI_TESTING_CODE_BUILD_PROJECT_NAME }}", "Branch": "${{ github.sha }}"}'
+          aws lambda invoke response.json --function-name "$env:LOAD_BALANCER_LAMBDA_NAME" --cli-binary-format raw-in-base64-out --payload "{`"Roles`": `"$env:TEST_RUNNER_ACCOUNT_ROLES`", `"ProjectName`": `"$env:CODE_BUILD_PROJECT_NAME`", `"Branch`": `"$env:COMMIT_SHA`"}"
           $roleArn=$(cat ./response.json)
           "roleArn=$($roleArn -replace '"', '')" >> $env:GITHUB_OUTPUT
       - name: Configure Test Runner Credentials
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 #v4
+        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
         with:
           role-to-assume: ${{ steps.lambda.outputs.roleArn }}
           role-duration-seconds: 7200
           aws-region: us-west-2
       - name: Run Tests on AWS
         id: codebuild
-        uses: aws-actions/aws-codebuild-run-build@4d15a47425739ac2296ba5e7eee3bdd4bfbdd767 #v1.0.18
+        uses: aws-actions/aws-codebuild-run-build@4d15a47425739ac2296ba5e7eee3bdd4bfbdd767 # v1.0.18
         with:
           project-name: ${{ secrets.CI_TESTING_CODE_BUILD_PROJECT_NAME }}
       - name: CodeBuild Link
         shell: pwsh
+        env:
+          BUILD_ID: ${{ steps.codebuild.outputs.aws-build-id }}
         run: |
-          $buildId = "${{ steps.codebuild.outputs.aws-build-id }}"
+          $buildId = "$env:BUILD_ID"
           echo $buildId
