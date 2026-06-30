@@ -348,15 +348,23 @@ namespace Amazon.Lambda.Tools.Commands
                 if (currentConfiguration == null)
                 {
                     this.Logger.WriteLine($"Creating new Lambda function {this.FunctionName}");
+
+                    // Track whether the role is one the tool resolves/creates interactively versus one the user
+                    // explicitly supplied. Only a tool-created role is safe to mutate (attach the durable policy);
+                    // for a user-supplied role we warn instead. The role is "user-supplied" when a value comes from
+                    // the --function-role switch or the defaults file rather than the interactive create-role prompt.
+                    var roleWasSupplied = !string.IsNullOrEmpty(this.Role)
+                        || !string.IsNullOrEmpty(this.DefaultConfig[LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE.Switch] as string);
+
                     var createRequest = new CreateFunctionRequest
                     {
                         PackageType = packageType,
                         FunctionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true),
                         Description = this.GetStringValueOrDefault(this.Description, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_DESCRIPTION, false),
-                        Role = this.GetRoleValueOrDefault(this.Role, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE, 
-                            Constants.LAMBDA_PRINCIPAL, LambdaConstants.AWS_LAMBDA_MANAGED_POLICY_PREFIX, 
+                        Role = this.GetRoleValueOrDefault(this.Role, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE,
+                            Constants.LAMBDA_PRINCIPAL, LambdaConstants.AWS_LAMBDA_MANAGED_POLICY_PREFIX,
                             LambdaConstants.KNOWN_MANAGED_POLICY_DESCRIPTIONS, true),
-                        
+
                         Publish = this.GetBoolValueOrDefault(this.Publish, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_PUBLISH, false).GetValueOrDefault(),
                         MemorySize = this.GetIntValueOrDefault(this.MemorySize, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_MEMORY_SIZE, true).GetValueOrDefault(),
                         Timeout = this.GetIntValueOrDefault(this.Timeout, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT, true).GetValueOrDefault(),
@@ -494,15 +502,10 @@ namespace Amazon.Lambda.Tools.Commands
                             .ToList();
                     }
 
-                    var durableExecutionTimeout = this.GetIntValueOrDefault(this.DurableExecutionTimeout, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT, false);
-                    var durableRetentionPeriodInDays = this.GetIntValueOrDefault(this.DurableRetentionPeriodInDays, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS, false);
-                    if (durableExecutionTimeout.HasValue || durableRetentionPeriodInDays.HasValue)
+                    var isDurable = this.TryResolveDurableConfig(out var durableConfig);
+                    if (isDurable)
                     {
-                        createRequest.DurableConfig = new DurableConfig();
-                        if (durableExecutionTimeout.HasValue)
-                            createRequest.DurableConfig.ExecutionTimeout = durableExecutionTimeout.Value;
-                        if (durableRetentionPeriodInDays.HasValue)
-                            createRequest.DurableConfig.RetentionPeriodInDays = durableRetentionPeriodInDays.Value;
+                        createRequest.DurableConfig = durableConfig;
                     }
 
                     try
@@ -513,6 +516,13 @@ namespace Amazon.Lambda.Tools.Commands
                     catch (Exception e)
                     {
                         throw new LambdaToolsException($"Error creating Lambda function: {e.Message}", LambdaToolsException.LambdaErrorCode.LambdaCreateFunction, e);
+                    }
+
+                    // A durable function's execution role needs the durable-execution checkpoint permissions. Attach
+                    // the managed policy when the tool created the role; warn (but don't mutate) for a user-supplied role.
+                    if (isDurable)
+                    {
+                        await this.EnsureDurableExecutionPolicyAsync(createRequest.Role, toolCreatedRole: !roleWasSupplied);
                     }
 
                     if(this.GetBoolValueOrDefault(this.FunctionUrlEnable, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE, false).GetValueOrDefault())

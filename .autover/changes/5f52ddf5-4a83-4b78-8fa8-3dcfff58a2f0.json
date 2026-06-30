@@ -1,0 +1,11 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.Lambda.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "When deploying a durable function with `deploy-function` or `update-function-config`, automatically attach the `AWSLambdaBasicDurableExecutionRolePolicy` managed policy to a tool-created execution role, and warn when a user-supplied role is missing it."
+      ]
+    }
+  ]
+}
