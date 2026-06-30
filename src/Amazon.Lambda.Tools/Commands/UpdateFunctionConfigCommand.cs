@@ -310,6 +310,16 @@ namespace Amazon.Lambda.Tools.Commands
                 }
             }
 
+            // When updating a function with durable configuration, the function's execution role must carry the
+            // durable-execution managed policy. On update the role always pre-exists (the tool never creates a role
+            // here), so warn rather than mutate a role the tool does not own. Use the updated role if it changed,
+            // otherwise the existing one.
+            if (this.TryResolveDurableConfig(out _))
+            {
+                var roleArn = request?.Role ?? existingConfiguration.Role;
+                await this.EnsureDurableExecutionPolicyAsync(roleArn, toolCreatedRole: false);
+            }
+
             // only attempt to modify function url if the user has explicitly opted-in to use FunctionUrl
             if (GetBoolValueOrDefault(FunctionUrlEnable, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE, false).HasValue)
             {
@@ -456,6 +466,69 @@ namespace Amazon.Lambda.Tools.Commands
             }
 
             return request;
+        }
+
+        /// <summary>
+        /// Resolves the durable execution configuration from the command options/defaults. A function is treated
+        /// as "durable" if either the durable execution timeout or retention period is set. Returns true and the
+        /// resolved <see cref="DurableConfig"/> when durable, otherwise false.
+        /// </summary>
+        protected bool TryResolveDurableConfig(out DurableConfig durableConfig)
+        {
+            var durableExecutionTimeout = this.GetIntValueOrDefault(this.DurableExecutionTimeout, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT, false);
+            var durableRetentionPeriodInDays = this.GetIntValueOrDefault(this.DurableRetentionPeriodInDays, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS, false);
+
+            if (!durableExecutionTimeout.HasValue && !durableRetentionPeriodInDays.HasValue)
+            {
+                durableConfig = null;
+                return false;
+            }
+
+            durableConfig = new DurableConfig();
+            if (durableExecutionTimeout.HasValue)
+                durableConfig.ExecutionTimeout = durableExecutionTimeout.Value;
+            if (durableRetentionPeriodInDays.HasValue)
+                durableConfig.RetentionPeriodInDays = durableRetentionPeriodInDays.Value;
+            return true;
+        }
+
+        /// <summary>
+        /// A durable function's execution role must carry the AWSLambdaBasicDurableExecutionRolePolicy managed policy
+        /// so the function can call the durable-execution checkpoint APIs. When the tool created the role it attaches
+        /// the policy automatically. For a role the user supplied (or an existing function's role on update) the tool
+        /// does not mutate IAM it does not own; it only emits an informational note when the policy is not attached.
+        /// </summary>
+        /// <param name="roleArn">The resolved role ARN (or name) the function uses.</param>
+        /// <param name="toolCreatedRole">True when this deployment created the role, in which case the policy is attached.</param>
+        protected async Task EnsureDurableExecutionPolicyAsync(string roleArn, bool toolCreatedRole)
+        {
+            if (string.IsNullOrEmpty(roleArn))
+                return;
+
+            var policyArn = LambdaConstants.AWS_LAMBDA_BASIC_DURABLE_EXECUTION_MANAGED_POLICY;
+
+            try
+            {
+                if (toolCreatedRole)
+                {
+                    var attached = await RoleHelper.EnsureManagedPolicyAttachedAsync(this.IAMClient, roleArn, policyArn);
+                    if (attached)
+                        this.Logger.WriteLine($"Attached durable execution managed policy {policyArn} to role {roleArn}");
+                }
+                else if (!await RoleHelper.IsManagedPolicyAttachedAsync(this.IAMClient, roleArn, policyArn))
+                {
+                    this.Logger.WriteLine($"Using existing IAM role {roleArn} for Lambda function. Ensure this role has the " +
+                        $"required permissions for Durable Functions. The {policyArn} managed policy can be attached to grant permissions.");
+                }
+            }
+            catch (Exception e)
+            {
+                // The deployment role may have no IAM permissions (e.g. the caller lacks iam:AttachRolePolicy or
+                // iam:ListAttachedRolePolicies), which can be a best practice for locking down permissions. Don't fail
+                // the deployment over it; surface the same informational message so the user can act if needed.
+                this.Logger.WriteLine($"Using existing IAM role {roleArn} for Lambda function ({e.Message}). Ensure this role " +
+                    $"has the required permissions for Durable Functions. The {policyArn} managed policy can be attached to grant permissions.");
+            }
         }
 
         /// <summary>
