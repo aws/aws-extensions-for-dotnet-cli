@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -58,7 +61,11 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_LOG_SYSTEM_LEVEL,
             LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP,
 
-            LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON
+            LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON,
+
+            LambdaDefinedCommandOptions.ARGUMENT_FILE_SYSTEM_CONFIGS,
+            LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT,
+            LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS
         });
 
         public string FunctionName { get; set; }
@@ -97,6 +104,10 @@ namespace Amazon.Lambda.Tools.Commands
         public string LogSystemLevel { get; set; }
         public string LogGroup { get; set; }
         public string SnapStartApplyOn { get; set; }
+
+        public Dictionary<string, string> FileSystemConfigs { get; set; }
+        public int? DurableExecutionTimeout { get; set; }
+        public int? DurableRetentionPeriodInDays { get; set; }
 
 
         public UpdateFunctionConfigCommand(IToolLogger logger, string workingDirectory, string[] args)
@@ -184,6 +195,13 @@ namespace Amazon.Lambda.Tools.Commands
 
             if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON.Switch)) != null)
                 this.SnapStartApplyOn = tuple.Item2.StringValue;
+
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_FILE_SYSTEM_CONFIGS.Switch)) != null)
+                this.FileSystemConfigs = tuple.Item2.KeyValuePairs;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT.Switch)) != null)
+                this.DurableExecutionTimeout = tuple.Item2.IntValue;
+            if ((tuple = values.FindCommandOption(LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS.Switch)) != null)
+                this.DurableRetentionPeriodInDays = tuple.Item2.IntValue;
         }
 
 
@@ -223,6 +241,7 @@ namespace Amazon.Lambda.Tools.Commands
                     FunctionName = functionName
                 });
                 this.Logger.WriteLine("Published new Lambda function version: " + response.Version);
+                this.Logger.WriteLine("Function version ARN: " + response.FunctionArn);
             }
             catch (Exception e)
             {
@@ -289,6 +308,16 @@ namespace Amazon.Lambda.Tools.Commands
                 {
                     throw new LambdaToolsException($"Error updating configuration for Lambda function: {e.Message}", LambdaToolsException.LambdaErrorCode.LambdaUpdateFunctionConfiguration, e);
                 }
+            }
+
+            // When updating a function with durable configuration, the function's execution role must carry the
+            // durable-execution managed policy. On update the role always pre-exists (the tool never creates a role
+            // here), so warn rather than mutate a role the tool does not own. Use the updated role if it changed,
+            // otherwise the existing one.
+            if (this.TryResolveDurableConfig(out _))
+            {
+                var roleArn = request?.Role ?? existingConfiguration.Role;
+                await this.EnsureDurableExecutionPolicyAsync(roleArn, toolCreatedRole: false);
             }
 
             // only attempt to modify function url if the user has explicitly opted-in to use FunctionUrl
@@ -390,6 +419,23 @@ namespace Amazon.Lambda.Tools.Commands
                 };
             }
 
+            if (existingConfiguration.FileSystemConfigs != null)
+            {
+                request.FileSystemConfigs = existingConfiguration.FileSystemConfigs
+                    .Select(x => new FileSystemConfig { Arn = x.Arn, LocalMountPath = x.LocalMountPath })
+                    .ToList();
+                request.IsFileSystemConfigsSet = existingConfiguration.FileSystemConfigs.Any();
+            }
+
+            if (existingConfiguration.DurableConfig != null)
+            {
+                request.DurableConfig = new DurableConfig
+                {
+                    ExecutionTimeout = existingConfiguration.DurableConfig.ExecutionTimeout,
+                    RetentionPeriodInDays = existingConfiguration.DurableConfig.RetentionPeriodInDays
+                };
+            }
+
             if (existingConfiguration.Environment != null)
             {
                 request.Environment = new Model.Environment
@@ -420,6 +466,69 @@ namespace Amazon.Lambda.Tools.Commands
             }
 
             return request;
+        }
+
+        /// <summary>
+        /// Resolves the durable execution configuration from the command options/defaults. A function is treated
+        /// as "durable" if either the durable execution timeout or retention period is set. Returns true and the
+        /// resolved <see cref="DurableConfig"/> when durable, otherwise false.
+        /// </summary>
+        protected bool TryResolveDurableConfig(out DurableConfig durableConfig)
+        {
+            var durableExecutionTimeout = this.GetIntValueOrDefault(this.DurableExecutionTimeout, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT, false);
+            var durableRetentionPeriodInDays = this.GetIntValueOrDefault(this.DurableRetentionPeriodInDays, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS, false);
+
+            if (!durableExecutionTimeout.HasValue && !durableRetentionPeriodInDays.HasValue)
+            {
+                durableConfig = null;
+                return false;
+            }
+
+            durableConfig = new DurableConfig();
+            if (durableExecutionTimeout.HasValue)
+                durableConfig.ExecutionTimeout = durableExecutionTimeout.Value;
+            if (durableRetentionPeriodInDays.HasValue)
+                durableConfig.RetentionPeriodInDays = durableRetentionPeriodInDays.Value;
+            return true;
+        }
+
+        /// <summary>
+        /// A durable function's execution role must carry the AWSLambdaBasicDurableExecutionRolePolicy managed policy
+        /// so the function can call the durable-execution checkpoint APIs. When the tool created the role it attaches
+        /// the policy automatically. For a role the user supplied (or an existing function's role on update) the tool
+        /// does not mutate IAM it does not own; it only emits an informational note when the policy is not attached.
+        /// </summary>
+        /// <param name="roleArn">The resolved role ARN (or name) the function uses.</param>
+        /// <param name="toolCreatedRole">True when this deployment created the role, in which case the policy is attached.</param>
+        protected async Task EnsureDurableExecutionPolicyAsync(string roleArn, bool toolCreatedRole)
+        {
+            if (string.IsNullOrEmpty(roleArn))
+                return;
+
+            var policyArn = LambdaConstants.AWS_LAMBDA_BASIC_DURABLE_EXECUTION_MANAGED_POLICY;
+
+            try
+            {
+                if (toolCreatedRole)
+                {
+                    var attached = await RoleHelper.EnsureManagedPolicyAttachedAsync(this.IAMClient, roleArn, policyArn);
+                    if (attached)
+                        this.Logger.WriteLine($"Attached durable execution managed policy {policyArn} to role {roleArn}");
+                }
+                else if (!await RoleHelper.IsManagedPolicyAttachedAsync(this.IAMClient, roleArn, policyArn))
+                {
+                    this.Logger.WriteLine($"Using existing IAM role {roleArn} for Lambda function. Ensure this role has the " +
+                        $"required permissions for Durable Functions. The {policyArn} managed policy can be attached to grant permissions.");
+                }
+            }
+            catch (Exception e)
+            {
+                // The deployment role may have no IAM permissions (e.g. the caller lacks iam:AttachRolePolicy or
+                // iam:ListAttachedRolePolicies), which can be a best practice for locking down permissions. Don't fail
+                // the deployment over it; surface the same informational message so the user can act if needed.
+                this.Logger.WriteLine($"Using existing IAM role {roleArn} for Lambda function ({e.Message}). Ensure this role " +
+                    $"has the required permissions for Durable Functions. The {policyArn} managed policy can be attached to grant permissions.");
+            }
         }
 
         /// <summary>
@@ -717,6 +826,38 @@ namespace Amazon.Lambda.Tools.Commands
                     request.SnapStart.ApplyOn = snapStartApplyOn;
                     different = true;
                 }
+            }
+
+            var fileSystemConfigs = this.GetKeyValuePairOrDefault(this.FileSystemConfigs, LambdaDefinedCommandOptions.ARGUMENT_FILE_SYSTEM_CONFIGS, false);
+            if (fileSystemConfigs != null)
+            {
+                var existingFileSystemConfigs = existingConfiguration.FileSystemConfigs?.ToDictionary(x => x.Arn, x => x.LocalMountPath);
+                if (AreDifferent(fileSystemConfigs, existingFileSystemConfigs))
+                {
+                    request.FileSystemConfigs = fileSystemConfigs.Select(x => new FileSystemConfig { Arn = x.Key, LocalMountPath = x.Value }).ToList();
+                    request.IsFileSystemConfigsSet = true;
+                    different = true;
+                }
+            }
+
+            var durableExecutionTimeout = this.GetIntValueOrDefault(this.DurableExecutionTimeout, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT, false);
+            if (durableExecutionTimeout.HasValue && durableExecutionTimeout.Value != existingConfiguration.DurableConfig?.ExecutionTimeout)
+            {
+                if (request.DurableConfig == null)
+                    request.DurableConfig = new DurableConfig();
+
+                request.DurableConfig.ExecutionTimeout = durableExecutionTimeout.Value;
+                different = true;
+            }
+
+            var durableRetentionPeriodInDays = this.GetIntValueOrDefault(this.DurableRetentionPeriodInDays, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS, false);
+            if (durableRetentionPeriodInDays.HasValue && durableRetentionPeriodInDays.Value != existingConfiguration.DurableConfig?.RetentionPeriodInDays)
+            {
+                if (request.DurableConfig == null)
+                    request.DurableConfig = new DurableConfig();
+
+                request.DurableConfig.RetentionPeriodInDays = durableRetentionPeriodInDays.Value;
+                different = true;
             }
 
 

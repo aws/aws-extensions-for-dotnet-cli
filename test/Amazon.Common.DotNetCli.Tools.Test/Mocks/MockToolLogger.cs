@@ -1,3 +1,6 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 using System;
 using System.Text;
 
@@ -17,6 +20,11 @@ public class MockToolLogger : IToolLogger
     {
         _sbLog.AppendFormat(text, data);
         _sbLog.Append('\n');
+    }
+
+    public void Write(string text)
+    {
+        _sbLog.Append(text);
     }
 
     public string Log => _sbLog.ToString();

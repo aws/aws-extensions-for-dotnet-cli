@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -142,6 +145,66 @@ namespace Amazon.Common.DotNetCli.Tools
             }
 
             return task.Result;
+        }
+
+        /// <summary>
+        /// Extracts the IAM role name from a role identifier that may be either a bare name or a full ARN
+        /// (e.g. "arn:aws:iam::123456789012:role/path/MyRole" -> "MyRole"). IAM role names are unique within
+        /// an account, so the trailing path segment after the last '/' is the name.
+        /// </summary>
+        public static string GetRoleNameFromArnOrName(string roleArnOrName)
+        {
+            if (string.IsNullOrEmpty(roleArnOrName))
+                return roleArnOrName;
+
+            var slashIndex = roleArnOrName.LastIndexOf('/');
+            return slashIndex >= 0 ? roleArnOrName.Substring(slashIndex + 1) : roleArnOrName;
+        }
+
+        /// <summary>
+        /// Returns true if the given managed policy ARN is already attached to the role.
+        /// </summary>
+        public static async Task<bool> IsManagedPolicyAttachedAsync(IAmazonIdentityManagementService iamClient, string roleArnOrName, string policyArn)
+        {
+            var roleName = GetRoleNameFromArnOrName(roleArnOrName);
+
+            ListAttachedRolePoliciesResponse response = null;
+            do
+            {
+                response = await iamClient.ListAttachedRolePoliciesAsync(new ListAttachedRolePoliciesRequest
+                {
+                    RoleName = roleName,
+                    Marker = response?.Marker
+                }).ConfigureAwait(false);
+
+                if (response.AttachedPolicies != null &&
+                    response.AttachedPolicies.Any(p => string.Equals(p.PolicyArn, policyArn, StringComparison.Ordinal)))
+                {
+                    return true;
+                }
+
+            } while (response.IsTruncated.GetValueOrDefault());
+
+            return false;
+        }
+
+        /// <summary>
+        /// Idempotently attaches a managed policy to a role: checks whether the policy is already attached and only
+        /// calls AttachRolePolicy if it is missing. Returns true if a new attachment was made, false if it was already present.
+        /// </summary>
+        public static async Task<bool> EnsureManagedPolicyAttachedAsync(IAmazonIdentityManagementService iamClient, string roleArnOrName, string policyArn)
+        {
+            if (await IsManagedPolicyAttachedAsync(iamClient, roleArnOrName, policyArn).ConfigureAwait(false))
+                return false;
+
+            var roleName = GetRoleNameFromArnOrName(roleArnOrName);
+            await iamClient.AttachRolePolicyAsync(new AttachRolePolicyRequest
+            {
+                RoleName = roleName,
+                PolicyArn = policyArn
+            }).ConfigureAwait(false);
+
+            return true;
         }
 
         public static string CreateRole(IAmazonIdentityManagementService iamClient, string roleName, string assumeRolePolicy, params string[] managedPolicies)

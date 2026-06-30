@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>TestIntegerFunction</AssemblyName>
     <OutputType>Library</OutputType>
     <PackageId>TestIntegerFunction</PackageId>
@@ -9,6 +9,6 @@
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Amazon.Lambda.Serialization.Json" Version="2.0.0" />
+    <PackageReference Include="Amazon.Lambda.Serialization.Json" Version="3.0.0" />
   </ItemGroup>
 </Project>

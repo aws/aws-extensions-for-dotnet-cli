@@ -4,13 +4,13 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <PackageId>Amazon.ElasticBeanstalk.Tools</PackageId>
     <PackageTags>AWS;Amazon;Beanstalk</PackageTags>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dotnet-eb</ToolCommandName>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>5.0.2</Version>
+    <Version>6.0.0</Version>
     <AssemblyName>dotnet-eb</AssemblyName>
     <Authors>Amazon Web Services</Authors>
     <Copyright>Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
@@ -30,9 +30,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.ElasticBeanstalk" Version="4.0.1.1" />
-    <PackageReference Include="AWSSDK.IdentityManagement" Version="4.0.3.2" />
-    <PackageReference Include="AWSSDK.S3" Version="4.0.6.13" />
+    <PackageReference Include="AWSSDK.ElasticBeanstalk" Version="4.0.4.5" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="4.0.10.5" />
+    <PackageReference Include="AWSSDK.S3" Version="4.0.24.4" />
   </ItemGroup>
   
   <PropertyGroup>

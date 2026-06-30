@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+using System;
 using System.Linq;
 using System.IO;
 using System.Collections.Generic;
@@ -37,6 +40,11 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
 
             var mockS3Client = new Mock<IAmazonS3>();
             mockS3Client.Setup(client => client.Config).Returns(new AmazonS3Config());
+            mockS3Client.Setup(client => client.PutObjectAsync(It.IsAny<PutObjectRequest>(), It.IsAny<CancellationToken>()))
+                .Returns((PutObjectRequest r, CancellationToken token) =>
+                {
+                    return Task.FromResult(new PutObjectResponse());
+                });
 
             var calls = new Dictionary<string, int>();
             Action<string> addCall = x =>
@@ -162,6 +170,11 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
 
             var mockS3Client = new Mock<IAmazonS3>();
             mockS3Client.Setup(client => client.Config).Returns(new AmazonS3Config());
+            mockS3Client.Setup(client => client.PutObjectAsync(It.IsAny<PutObjectRequest>(), It.IsAny<CancellationToken>()))
+                .Returns((PutObjectRequest r, CancellationToken token) =>
+                {
+                    return Task.FromResult(new PutObjectResponse());
+                });
 
             var calls = new Dictionary<string, int>();
             Action<string> addCall = x =>
@@ -294,6 +307,11 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
 
             var mockS3Client = new Mock<IAmazonS3>();
             mockS3Client.Setup(client => client.Config).Returns(new AmazonS3Config());
+            mockS3Client.Setup(client => client.PutObjectAsync(It.IsAny<PutObjectRequest>(), It.IsAny<CancellationToken>()))
+                .Returns((PutObjectRequest r, CancellationToken token) =>
+                {
+                    return Task.FromResult(new PutObjectResponse());
+                });
 
             var calls = new Dictionary<string, int>();
             Action<string> addCall = x =>

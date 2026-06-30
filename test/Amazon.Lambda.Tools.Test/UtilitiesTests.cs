@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Xunit;
@@ -26,6 +29,7 @@ namespace Amazon.Lambda.Tools.Test
         }
 
         [Theory]
+        [InlineData("dotnet10", "net10.0")]
         [InlineData("dotnet8", "net8.0")]
         [InlineData("dotnet6", "net6.0")]
         [InlineData("dotnetcore2.1", "netcoreapp2.1")]
@@ -215,8 +219,8 @@ namespace Amazon.Lambda.Tools.Test
         [InlineData("../../../../../testapps/TestFunction", "net5.0", false, false)]
         [InlineData("../../../../../testapps/TestNativeAotSingleProject", "net7.0", true, false)]
         [InlineData("../../../../../testapps/TestNativeAotSingleProject", "net7.0", false, false)]
-        [InlineData("../../../../../testapps/TestNativeAotSingleProject", "net6.0", false, false)]
-        [InlineData("../../../../../testapps/TestNativeAotSingleProject", "net6.0", true, true)]
+        [InlineData("../../../../../testapps/TestNativeAotSingleProject", "net10.0", false, false)]
+        [InlineData("../../../../../testapps/TestNativeAotSingleProject", "net10.0", true, false)]
         [InlineData("../../../../../testapps/TestNativeAotSingleProject", "net5.0", true, true)]
         public void TestValidateTargetFramework(string projectLocation, string targetFramework, bool isNativeAot, bool shouldThrow)
         {

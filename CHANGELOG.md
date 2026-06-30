@@ -1,3 +1,17 @@
+## Release 2026-06-30
+
+### Amazon.Lambda.Tools (7.0.0)
+* When deploying a durable function with `deploy-function` or `update-function-config`, automatically attach the `AWSLambdaBasicDurableExecutionRolePolicy` managed policy to a tool-created execution role, and warn when a user-supplied role is missing it.
+* Added `--invoke-mode` switch to the `invoke-function` command with values RequestResponse (default), Event, Stream and DurableExecution. Stream invokes the function with InvokeWithResponseStream and streams the response to the console; Event invokes asynchronously and displays any function error and the durable execution ARN; DurableExecution invokes asynchronously and monitors the durable execution by polling GetDurableExecution and GetDurableExecutionHistory, resolving the latest published version ARN when a function name is supplied
+* The `deploy-function` and `update-function-config` commands now write the new function version ARN to the output when `--function-publish` is set to true
+* [Breaking Change] Tool's minimum .NET version updated from .NET 6 to .NET 8
+* Added `--file-system-configs`, `--durable-execution-timeout` and `--durable-retention-period` switches to the `deploy-function` and `update-function-config` commands to configure the function's file system (Amazon EFS/S3) and durable execution settings
+* Bumped AWS SDK for .NET dependencies to latest versions
+### Amazon.ECS.Tools (5.0.0)
+* [Breaking Change] Tool's minimum .NET version updated from .NET 6 to .NET 8
+### Amazon.ElasticBeanstalk.Tools (6.0.0)
+* [Breaking Change] Tool's minimum .NET version updated from .NET 6 to .NET 8
+
 ## Release 2026-06-01
 
 ### Amazon.Lambda.Tools (6.0.6)

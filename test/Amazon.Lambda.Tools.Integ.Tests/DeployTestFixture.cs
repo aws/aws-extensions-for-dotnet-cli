@@ -1,4 +1,7 @@
-﻿using Amazon.S3;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+using Amazon.S3;
 using Amazon.S3.Util;
 using System;
 using System.Collections.Generic;

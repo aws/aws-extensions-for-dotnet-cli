@@ -1,3 +1,6 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 using Amazon.Lambda.Model;
@@ -296,7 +299,7 @@ namespace Amazon.Lambda.Tools.Integ.Tests
             var command = new DeployFunctionCommand(toolLogger, fullPath, new string[0]);
             command.FunctionName = functionName;
             command.Role = await TestHelper.GetTestRoleArnAsync();
-            command.Runtime = "dotnet6";
+            command.Runtime = "dotnet10";
             command.EphemeralStorageSize = 750;
             command.EnvironmentVariables = new System.Collections.Generic.Dictionary<string, string> { { "Key1", "Value1" } };
             command.DisableInteractive = true;
@@ -313,7 +316,7 @@ namespace Amazon.Lambda.Tools.Integ.Tests
                 command = new DeployFunctionCommand(toolLogger, fullPath, new string[0]);
                 command.FunctionName = functionName;
                 command.Role = await TestHelper.GetTestRoleArnAsync();
-                command.Runtime = "dotnet6";
+                command.Runtime = "dotnet10";
                 command.EphemeralStorageSize = 800;
                 command.EnvironmentVariables = new System.Collections.Generic.Dictionary<string, string> ();
                 command.DisableInteractive = true;
@@ -429,7 +432,7 @@ namespace Amazon.Lambda.Tools.Integ.Tests
                 var command = new DeployFunctionCommand(toolLogger, fullPath, new string[0]);
                 command.FunctionName = functionName;
                 command.Role = await TestHelper.GetTestRoleArnAsync();
-                command.Runtime = "dotnet6";
+                command.Runtime = "dotnet10";
 
                 command.DisableInteractive = true;
                 

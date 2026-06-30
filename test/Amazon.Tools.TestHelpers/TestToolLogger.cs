@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -17,6 +20,11 @@ namespace Amazon.Tools.TestHelpers
         public void WriteLine(string message, params object[] args)
         {
             this._buffer.AppendLine(string.Format(message, args));
+        }
+
+        public void Write(string message)
+        {
+            this._buffer.Append(message);
         }
 
         public void ClearBuffer()

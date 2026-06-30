@@ -1,4 +1,7 @@
-﻿using System.Text;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+using System.Text;
 using Amazon.Common.DotNetCli.Tools;
 using Xunit.Abstractions;
 
@@ -28,6 +31,12 @@ namespace Amazon.Lambda.Tools.Test
         public void WriteLine(string message, params object[] args)
         {
             this.WriteLine(string.Format(message, args));
+        }
+
+        public void Write(string message)
+        {
+            this._buffer.Append(message);
+            _testOutputHelper?.WriteLine(message);
         }
 
         public void ClearBuffer()

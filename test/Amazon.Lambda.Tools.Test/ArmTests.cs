@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+using System;
 using System.Collections.Generic;
 using System.IO.Compression;
 using System.IO;
@@ -60,7 +63,7 @@ namespace Amazon.Lambda.Tools.Test
             command.MemorySize = 512;
             command.Role = await TestHelper.GetTestRoleArnAsync();
             command.Configuration = "Release";
-            command.Runtime = "dotnet6";
+            command.Runtime = "dotnet10";
             command.Architecture = LambdaConstants.ARCHITECTURE_ARM64;
             command.DisableInteractive = true;
             command.LambdaClient = mockClient.Object;

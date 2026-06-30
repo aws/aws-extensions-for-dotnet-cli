@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -82,7 +85,11 @@ namespace Amazon.Lambda.Tools.Commands
             LambdaDefinedCommandOptions.ARGUMENT_LOG_SYSTEM_LEVEL,
             LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP,
 
-            LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON
+            LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON,
+
+            LambdaDefinedCommandOptions.ARGUMENT_FILE_SYSTEM_CONFIGS,
+            LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT,
+            LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS
         });
 
         public string Architecture { get; set; }
@@ -341,15 +348,23 @@ namespace Amazon.Lambda.Tools.Commands
                 if (currentConfiguration == null)
                 {
                     this.Logger.WriteLine($"Creating new Lambda function {this.FunctionName}");
+
+                    // Track whether the role is one the tool resolves/creates interactively versus one the user
+                    // explicitly supplied. Only a tool-created role is safe to mutate (attach the durable policy);
+                    // for a user-supplied role we warn instead. The role is "user-supplied" when a value comes from
+                    // the --function-role switch or the defaults file rather than the interactive create-role prompt.
+                    var roleWasSupplied = !string.IsNullOrEmpty(this.Role)
+                        || !string.IsNullOrEmpty(this.DefaultConfig[LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE.Switch] as string);
+
                     var createRequest = new CreateFunctionRequest
                     {
                         PackageType = packageType,
                         FunctionName = this.GetStringValueOrDefault(this.FunctionName, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_NAME, true),
                         Description = this.GetStringValueOrDefault(this.Description, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_DESCRIPTION, false),
-                        Role = this.GetRoleValueOrDefault(this.Role, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE, 
-                            Constants.LAMBDA_PRINCIPAL, LambdaConstants.AWS_LAMBDA_MANAGED_POLICY_PREFIX, 
+                        Role = this.GetRoleValueOrDefault(this.Role, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_ROLE,
+                            Constants.LAMBDA_PRINCIPAL, LambdaConstants.AWS_LAMBDA_MANAGED_POLICY_PREFIX,
                             LambdaConstants.KNOWN_MANAGED_POLICY_DESCRIPTIONS, true),
-                        
+
                         Publish = this.GetBoolValueOrDefault(this.Publish, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_PUBLISH, false).GetValueOrDefault(),
                         MemorySize = this.GetIntValueOrDefault(this.MemorySize, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_MEMORY_SIZE, true).GetValueOrDefault(),
                         Timeout = this.GetIntValueOrDefault(this.Timeout, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_TIMEOUT, true).GetValueOrDefault(),
@@ -479,6 +494,20 @@ namespace Amazon.Lambda.Tools.Commands
                         createRequest.SnapStart = new SnapStart {ApplyOn = Amazon.Lambda.SnapStartApplyOn.FindValue(snapStartApplyOn)};
                     }
 
+                    var fileSystemConfigs = this.GetKeyValuePairOrDefault(this.FileSystemConfigs, LambdaDefinedCommandOptions.ARGUMENT_FILE_SYSTEM_CONFIGS, false);
+                    if (fileSystemConfigs != null && fileSystemConfigs.Count > 0)
+                    {
+                        createRequest.FileSystemConfigs = fileSystemConfigs
+                            .Select(x => new FileSystemConfig { Arn = x.Key, LocalMountPath = x.Value })
+                            .ToList();
+                    }
+
+                    var isDurable = this.TryResolveDurableConfig(out var durableConfig);
+                    if (isDurable)
+                    {
+                        createRequest.DurableConfig = durableConfig;
+                    }
+
                     try
                     {
                         await this.LambdaClient.CreateFunctionAsync(createRequest);
@@ -487,6 +516,13 @@ namespace Amazon.Lambda.Tools.Commands
                     catch (Exception e)
                     {
                         throw new LambdaToolsException($"Error creating Lambda function: {e.Message}", LambdaToolsException.LambdaErrorCode.LambdaCreateFunction, e);
+                    }
+
+                    // A durable function's execution role needs the durable-execution checkpoint permissions. Attach
+                    // the managed policy when the tool created the role; warn (but don't mutate) for a user-supplied role.
+                    if (isDurable)
+                    {
+                        await this.EnsureDurableExecutionPolicyAsync(createRequest.Role, toolCreatedRole: !roleWasSupplied);
                     }
 
                     if(this.GetBoolValueOrDefault(this.FunctionUrlEnable, LambdaDefinedCommandOptions.ARGUMENT_FUNCTION_URL_ENABLE, false).GetValueOrDefault())
@@ -687,6 +723,10 @@ namespace Amazon.Lambda.Tools.Commands
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP.ConfigFileKey, this.GetStringValueOrDefault(this.LogGroup, LambdaDefinedCommandOptions.ARGUMENT_LOG_GROUP, false));
 
             data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON.ConfigFileKey, this.GetStringValueOrDefault(this.SnapStartApplyOn, LambdaDefinedCommandOptions.ARGUMENT_SNAP_START_APPLY_ON, false));
+
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_FILE_SYSTEM_CONFIGS.ConfigFileKey, LambdaToolsDefaults.FormatKeyValue(this.GetKeyValuePairOrDefault(this.FileSystemConfigs, LambdaDefinedCommandOptions.ARGUMENT_FILE_SYSTEM_CONFIGS, false)));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT.ConfigFileKey, this.GetIntValueOrDefault(this.DurableExecutionTimeout, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT, false));
+            data.SetIfNotNull(LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS.ConfigFileKey, this.GetIntValueOrDefault(this.DurableRetentionPeriodInDays, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS, false));
 
         }
     }

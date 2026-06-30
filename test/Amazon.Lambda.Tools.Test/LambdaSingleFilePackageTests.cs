@@ -1,4 +1,7 @@
-﻿using Amazon.Common.DotNetCli.Tools;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+using Amazon.Common.DotNetCli.Tools;
 using Amazon.Lambda.Tools.Commands;
 using System;
 using System.IO;
@@ -181,13 +184,13 @@ namespace Amazon.Lambda.Tools.Test
             
             // Test with regular project - should use bin/Release/targetFramework/publish
             var regularProjectPath = Path.GetFullPath(Path.GetDirectoryName(assembly.Location) + "../../../../../../testapps/TestFunction");
-            var regularProjectPublishLocation = Utilities.DeterminePublishLocation(Environment.CurrentDirectory, regularProjectPath, "Release", "net6.0");
+            var regularProjectPublishLocation = Utilities.DeterminePublishLocation(Environment.CurrentDirectory, regularProjectPath, "Release", "net10.0");
             
             // Regular project should have "bin" and "publish" in the path
             Assert.Contains("bin", regularProjectPublishLocation);
             Assert.Contains("publish", regularProjectPublishLocation);
             Assert.Contains("Release", regularProjectPublishLocation);
-            Assert.Contains("net6.0", regularProjectPublishLocation);
+            Assert.Contains("net10.0", regularProjectPublishLocation);
         }
 
         [Fact]

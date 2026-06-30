@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
@@ -68,7 +71,7 @@ namespace Amazon.Lambda.Tools.Test
             command.MemorySize = 512;
             command.Role = await TestHelper.GetTestRoleArnAsync();
             command.Configuration = "Release";
-            command.Runtime = "dotnet6";
+            command.Runtime = "dotnet10";
             command.DisableInteractive = true;
             command.UseContainerForBuild = true;
 
@@ -282,7 +285,7 @@ namespace Amazon.Lambda.Tools.Test
             command.MemorySize = 512;
             command.Role = await TestHelper.GetTestRoleArnAsync();
             command.Configuration = "Release";
-            command.Runtime = "dotnet6";
+            command.Runtime = "dotnet10";
             command.DisableInteractive = true;
 
             var created = await command.ExecuteAsync();
@@ -325,7 +328,7 @@ namespace Amazon.Lambda.Tools.Test
             command.MemorySize = 512;
             command.Role = await TestHelper.GetTestRoleArnAsync();
             command.Configuration = "Release";
-            command.Runtime = "dotnet6";
+            command.Runtime = "dotnet10";
             command.DisableInteractive = true;
 
             var created = await command.ExecuteAsync();
@@ -413,7 +416,7 @@ namespace Amazon.Lambda.Tools.Test
             command.Timeout = 10;
             command.Role = await TestHelper.GetTestRoleArnAsync();
             command.Configuration = "Release";
-            command.Runtime = "dotnet6";
+            command.Runtime = "dotnet10";
             command.DisableInteractive = true;
 
             var created = await command.ExecuteAsync();
@@ -466,7 +469,7 @@ namespace Amazon.Lambda.Tools.Test
             deployCommand.MemorySize = 512;
             deployCommand.Role = await TestHelper.GetTestRoleArnAsync();
             deployCommand.Package = packageZip;
-            deployCommand.Runtime = "dotnet6";
+            deployCommand.Runtime = "dotnet10";
             deployCommand.Region = "us-east-1";
             deployCommand.DisableInteractive = true;
 
@@ -586,7 +589,7 @@ namespace Amazon.Lambda.Tools.Test
                 initialDeployCommand.MemorySize = 512;
                 initialDeployCommand.Role = await TestHelper.GetTestRoleArnAsync();
                 initialDeployCommand.Configuration = "Release";
-                initialDeployCommand.Runtime = "dotnet6";
+                initialDeployCommand.Runtime = "dotnet10";
                 initialDeployCommand.DeadLetterTargetArn = queueArn;
                 initialDeployCommand.DisableInteractive = true;
 
@@ -602,7 +605,7 @@ namespace Amazon.Lambda.Tools.Test
                     var redeployCommand = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, Array.Empty<string>());
                     redeployCommand.FunctionName = initialDeployCommand.FunctionName;
                     redeployCommand.Configuration = "Release";
-                    redeployCommand.Runtime = "dotnet6";
+                    redeployCommand.Runtime = "dotnet10";
                     redeployCommand.DisableInteractive = true;
 
                     var redeployed = await redeployCommand.ExecuteAsync();
@@ -614,7 +617,7 @@ namespace Amazon.Lambda.Tools.Test
                     redeployCommand = new DeployFunctionCommand(new TestToolLogger(_testOutputHelper), fullPath, Array.Empty<string>());
                     redeployCommand.FunctionName = initialDeployCommand.FunctionName;
                     redeployCommand.Configuration = "Release";
-                    redeployCommand.Runtime = "dotnet6";
+                    redeployCommand.Runtime = "dotnet10";
                     redeployCommand.DeadLetterTargetArn = "";
                     redeployCommand.DisableInteractive = true;
 

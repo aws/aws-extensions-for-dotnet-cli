@@ -686,7 +686,12 @@ invoke-function:
       -pcfg  | --persist-config-file          If true the arguments used for a successful deployment are persisted to a config file.
       -fn    | --function-name                AWS Lambda function name
       -p     | --payload                      The input payload to send to the Lambda function
+      -im    | --invoke-mode                  How the function is invoked. Valid values are: RequestResponse, Event, Stream or DurableExecution. Default is RequestResponse.
 ```
+
+When `--invoke-mode` is set to `Stream` the function is invoked with `InvokeWithResponseStream` and the response payload is streamed to the console as it is produced. When set to `Event` the function is invoked asynchronously and any function error and the durable execution ARN are displayed.
+
+When `--invoke-mode` is set to `DurableExecution` the function is assumed to be configured for durable execution. The function is invoked asynchronously, the durable execution ARN is read from the response, and the execution is monitored by polling the `GetDurableExecution` and `GetDurableExecutionHistory` APIs, writing progress to the console until the execution reaches a terminal state. For each history event any associated details (such as step inputs, results and errors) are written to the console; large string payload fields are truncated to the first 1000 characters with a note that the payload was truncated. If the supplied function name is not an ARN the latest published version is resolved and its ARN is used for the invocation (the resolved ARN is written to the console); if the function has no published versions an error is reported.
 
 ##### List Functions
 ```
@@ -1057,7 +1062,7 @@ Example of within the AWS SAM Template syntax `Globals` in a `serverless.templat
 ...
   "Globals": {
     "Function": {
-      "Runtime": "dotnet6",
+      "Runtime": "dotnet10",
       "Architectures": [
         "arm64"
       ]
