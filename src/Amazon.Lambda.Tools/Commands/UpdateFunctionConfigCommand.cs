@@ -496,7 +496,7 @@ namespace Amazon.Lambda.Tools.Commands
         /// A durable function's execution role must carry the AWSLambdaBasicDurableExecutionRolePolicy managed policy
         /// so the function can call the durable-execution checkpoint APIs. When the tool created the role it attaches
         /// the policy automatically. For a role the user supplied (or an existing function's role on update) the tool
-        /// does not mutate IAM it does not own; it only warns when the policy is missing.
+        /// does not mutate IAM it does not own; it only emits an informational note when the policy is not attached.
         /// </summary>
         /// <param name="roleArn">The resolved role ARN (or name) the function uses.</param>
         /// <param name="toolCreatedRole">True when this deployment created the role, in which case the policy is attached.</param>
@@ -517,16 +517,17 @@ namespace Amazon.Lambda.Tools.Commands
                 }
                 else if (!await RoleHelper.IsManagedPolicyAttachedAsync(this.IAMClient, roleArn, policyArn))
                 {
-                    this.Logger.WriteLine($"Warning: durable function role {roleArn} is missing the {policyArn} managed policy. " +
-                        "Durable execution checkpointing will fail until this policy is attached to the role.");
+                    this.Logger.WriteLine($"Using existing IAM role {roleArn} for Lambda function. Ensure this role has the " +
+                        $"required permissions for Durable Functions. The {policyArn} managed policy can be attached to grant permissions.");
                 }
             }
             catch (Exception e)
             {
-                // Don't fail the deployment over an IAM read/attach issue (e.g. the caller lacks iam:AttachRolePolicy
-                // or iam:ListAttachedRolePolicies on a user-managed role). Surface a warning so the user can act.
-                this.Logger.WriteLine($"Warning: unable to verify or attach the durable execution managed policy {policyArn} " +
-                    $"on role {roleArn}: {e.Message}. Ensure the policy is attached for durable execution to work.");
+                // The deployment role may have no IAM permissions (e.g. the caller lacks iam:AttachRolePolicy or
+                // iam:ListAttachedRolePolicies), which can be a best practice for locking down permissions. Don't fail
+                // the deployment over it; surface the same informational message so the user can act if needed.
+                this.Logger.WriteLine($"Using existing IAM role {roleArn} for Lambda function ({e.Message}). Ensure this role " +
+                    $"has the required permissions for Durable Functions. The {policyArn} managed policy can be attached to grant permissions.");
             }
         }
 

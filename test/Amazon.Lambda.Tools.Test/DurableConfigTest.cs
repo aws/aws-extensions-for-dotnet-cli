@@ -125,14 +125,14 @@ namespace Amazon.Lambda.Tools.Test
         }
 
         [Fact]
-        public async Task UserSuppliedRoleMissingDurablePolicyWarnsButDoesNotAttach()
+        public async Task UserSuppliedRoleMissingDurablePolicyNotifiesButDoesNotAttach()
         {
             var lambdaMock = new Mock<IAmazonLambda>();
             lambdaMock.Setup(c => c.CreateFunctionAsync(It.IsAny<CreateFunctionRequest>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new CreateFunctionResponse()));
 
             var attachCalls = new List<string>();
-            // User-supplied role with only the basic-execution policy => durable policy missing => warn only.
+            // User-supplied role with only the basic-execution policy => durable policy missing => notify only.
             var iamMock = BuildIamMock(attachCalls, "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole");
 
             var logger = new TestToolLogger(_testOutputHelper);
@@ -146,12 +146,12 @@ namespace Amazon.Lambda.Tools.Test
 
             Assert.True(created, command.LastToolsException?.Message);
             Assert.Empty(attachCalls);
-            Assert.Contains("missing", logger.Buffer, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("required permissions for Durable Functions", logger.Buffer, StringComparison.OrdinalIgnoreCase);
             Assert.Contains(DurablePolicyArn, logger.Buffer);
         }
 
         [Fact]
-        public async Task DurableConfigMappedOntoUpdateRequestAndWarnsWhenRoleMissingPolicy()
+        public async Task DurableConfigMappedOntoUpdateRequestAndNotifiesWhenRoleMissingPolicy()
         {
             DurableConfig captured = null;
             var lambdaMock = new Mock<IAmazonLambda>();
@@ -192,7 +192,7 @@ namespace Amazon.Lambda.Tools.Test
             Assert.True(updated, command.LastToolsException?.Message);
             Assert.NotNull(captured);
             Assert.Equal(900, captured.ExecutionTimeout);
-            // Update never creates a role, so it must warn rather than attach.
+            // Update never creates a role, so it must notify rather than attach.
             Assert.Empty(attachCalls);
             Assert.Contains(DurablePolicyArn, logger.Buffer);
         }
