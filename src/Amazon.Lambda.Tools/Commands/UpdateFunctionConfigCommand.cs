@@ -484,9 +484,21 @@ namespace Amazon.Lambda.Tools.Commands
                 return false;
             }
 
+            // Reaching here means at least one durable option was set, so the user is opting into durable
+            // execution. ExecutionTimeout is required for a durable configuration: the Lambda service rejects a
+            // DurableConfig with no ExecutionTimeout ("You cannot create a function with a durable configuration
+            // without an executionTimeout"). If only the retention period was supplied, fail fast with a clear
+            // message instead of surfacing the raw service error.
+            if (!durableExecutionTimeout.HasValue)
+            {
+                throw new LambdaToolsException(
+                    $"The {LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT.Switch} switch is required for a durable " +
+                    $"function. Specify it (in seconds) when configuring durable execution.",
+                    ToolsException.CommonErrorCode.CommandLineParseError);
+            }
+
             durableConfig = new DurableConfig();
-            if (durableExecutionTimeout.HasValue)
-                durableConfig.ExecutionTimeout = durableExecutionTimeout.Value;
+            durableConfig.ExecutionTimeout = durableExecutionTimeout.Value;
             if (durableRetentionPeriodInDays.HasValue)
                 durableConfig.RetentionPeriodInDays = durableRetentionPeriodInDays.Value;
             return true;
@@ -841,6 +853,21 @@ namespace Amazon.Lambda.Tools.Commands
             }
 
             var durableExecutionTimeout = this.GetIntValueOrDefault(this.DurableExecutionTimeout, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT, false);
+            var durableRetentionPeriodInDays = this.GetIntValueOrDefault(this.DurableRetentionPeriodInDays, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS, false);
+
+            // ExecutionTimeout is required for a durable configuration. Setting a retention period on a function
+            // that is not already durable, with no ExecutionTimeout, produces a DurableConfig the service rejects.
+            // Retention-only is allowed when the function already has an ExecutionTimeout (the existing value is
+            // preserved by the service).
+            if (durableRetentionPeriodInDays.HasValue && !durableExecutionTimeout.HasValue &&
+                !(existingConfiguration.DurableConfig?.ExecutionTimeout).HasValue)
+            {
+                throw new LambdaToolsException(
+                    $"The {LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT.Switch} switch is required for a durable " +
+                    $"function. Specify it (in seconds) when configuring durable execution.",
+                    ToolsException.CommonErrorCode.CommandLineParseError);
+            }
+
             if (durableExecutionTimeout.HasValue && durableExecutionTimeout.Value != existingConfiguration.DurableConfig?.ExecutionTimeout)
             {
                 if (request.DurableConfig == null)
@@ -850,7 +877,6 @@ namespace Amazon.Lambda.Tools.Commands
                 different = true;
             }
 
-            var durableRetentionPeriodInDays = this.GetIntValueOrDefault(this.DurableRetentionPeriodInDays, LambdaDefinedCommandOptions.ARGUMENT_DURABLE_RETENTION_PERIOD_IN_DAYS, false);
             if (durableRetentionPeriodInDays.HasValue && durableRetentionPeriodInDays.Value != existingConfiguration.DurableConfig?.RetentionPeriodInDays)
             {
                 if (request.DurableConfig == null)
