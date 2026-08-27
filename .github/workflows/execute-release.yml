@@ -1,6 +1,6 @@
 # Manually triggered to cut a release. Bumps the version and changelog in place on
 # the trunk (no release PR), commits to the trunk, then starts the CodePipeline.
-# Replaces "Create Release PR" + "Sync dev and the trunk". This workflow creates the
+# Replaces the previous multi-step release process. This workflow creates the
 # git tag + GitHub Release (computed by AutoVer while the change files still exist),
 # then starts the pipeline to publish to NuGet.
 name: Execute Release
