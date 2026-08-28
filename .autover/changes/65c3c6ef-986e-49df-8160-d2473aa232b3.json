@@ -1,0 +1,11 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.Lambda.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "The `deploy-function` and `update-function-config` commands now validate that `--durable-execution-timeout` is specified when configuring a durable function. Previously, supplying only `--durable-retention-period` produced a durable configuration with no execution timeout that the Lambda service rejects; the tools now fail fast with a clear message instead."
+      ]
+    }
+  ]
+}

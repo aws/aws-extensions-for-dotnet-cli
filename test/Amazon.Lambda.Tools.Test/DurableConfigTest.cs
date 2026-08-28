@@ -125,6 +125,61 @@ namespace Amazon.Lambda.Tools.Test
         }
 
         [Fact]
+        public async Task RetentionPeriodWithoutExecutionTimeoutFailsWithClearError()
+        {
+            var lambdaMock = new Mock<IAmazonLambda>();
+            var createCalled = false;
+            lambdaMock.Setup(c => c.CreateFunctionAsync(It.IsAny<CreateFunctionRequest>(), It.IsAny<CancellationToken>()))
+                .Callback<CreateFunctionRequest, CancellationToken>((request, token) => createCalled = true)
+                .Returns(Task.FromResult(new CreateFunctionResponse()));
+
+            var attachCalls = new List<string>();
+            var iamMock = BuildIamMock(attachCalls);
+
+            var command = NewDeployCommand();
+            command.Role = TestRoleArn;
+            // Retention period set but no execution timeout: the service would reject this DurableConfig, so
+            // the tool must fail fast with a clear message before calling CreateFunction.
+            command.DurableRetentionPeriodInDays = 30;
+            command.LambdaClient = lambdaMock.Object;
+            command.IAMClient = iamMock.Object;
+
+            var created = await command.ExecuteAsync();
+
+            Assert.False(created);
+            Assert.False(createCalled, "CreateFunction should not be called when the durable config is invalid.");
+            Assert.NotNull(command.LastToolsException);
+            Assert.Contains(LambdaDefinedCommandOptions.ARGUMENT_DURABLE_EXECUTION_TIMEOUT.Switch, command.LastToolsException.Message);
+        }
+
+        [Fact]
+        public async Task ExecutionTimeoutWithoutRetentionPeriodSucceeds()
+        {
+            DurableConfig captured = null;
+            var lambdaMock = new Mock<IAmazonLambda>();
+            lambdaMock.Setup(c => c.CreateFunctionAsync(It.IsAny<CreateFunctionRequest>(), It.IsAny<CancellationToken>()))
+                .Callback<CreateFunctionRequest, CancellationToken>((request, token) => captured = request.DurableConfig)
+                .Returns(Task.FromResult(new CreateFunctionResponse()));
+
+            var attachCalls = new List<string>();
+            var iamMock = BuildIamMock(attachCalls, DurablePolicyArn);
+
+            var command = NewDeployCommand();
+            command.Role = TestRoleArn;
+            // Only the execution timeout is set; RetentionPeriodInDays is optional and omitted.
+            command.DurableExecutionTimeout = 3600;
+            command.LambdaClient = lambdaMock.Object;
+            command.IAMClient = iamMock.Object;
+
+            var created = await command.ExecuteAsync();
+
+            Assert.True(created, command.LastToolsException?.Message);
+            Assert.NotNull(captured);
+            Assert.Equal(3600, captured.ExecutionTimeout);
+            Assert.Null(captured.RetentionPeriodInDays);
+        }
+
+        [Fact]
         public async Task UserSuppliedRoleMissingDurablePolicyNotifiesButDoesNotAttach()
         {
             var lambdaMock = new Mock<IAmazonLambda>();
