@@ -1,0 +1,25 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.Lambda.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Removed the hidden dependency on the native `zip` utility (and the vendored `build-lambda-zip.exe`) when creating deployment bundles. Bundles are now created with the built-in .NET compression libraries and marked with Unix file permissions so custom runtime files such as `bootstrap` remain executable on AWS Lambda. This fixes `deploy-function`, `package`, and `deploy-serverless` failing with `Failed to find the \"zip\" utility program in path` on minimal Linux environments such as the bare .NET SDK container images."
+      ]
+    },
+    {
+      "Name": "Amazon.ElasticBeanstalk.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Removed the hidden dependency on the native `zip` utility when creating deployment bundles on Linux/macOS; bundles are now created with the built-in .NET compression libraries."
+      ]
+    },
+    {
+      "Name": "Amazon.ECS.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Removed the hidden dependency on the native `zip` utility when creating deployment bundles on Linux/macOS; bundles are now created with the built-in .NET compression libraries."
+      ]
+    }
+  ]
+}
