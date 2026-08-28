@@ -279,7 +279,7 @@ namespace Amazon.Lambda.Tools
                 {
                     var path = Path.Combine(workingDirectory, kvp.Value);
                     logger?.WriteLine($"\tReading: {path}");
-                    replacementValue = File.ReadAllText(path);
+                    replacementValue = File.ReadAllText(path); // nosemgrep: csharp.lang.security.filesystem.unsafe-path-combine.unsafe-path-combine -- workingDirectory is the developer's own CLI working dir, not attacker-controlled.
                 }
                 else
                 {

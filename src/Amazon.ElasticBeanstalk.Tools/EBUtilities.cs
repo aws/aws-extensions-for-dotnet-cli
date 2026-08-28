@@ -87,7 +87,7 @@ namespace Amazon.ElasticBeanstalk.Tools
             logger?.WriteLine("\tIIS App Path: " + iisAppPath);
             logger?.WriteLine("\tIIS Web Site: " + iisWebSite);
 
-            File.WriteAllText(pathToManifest, manifest);
+            File.WriteAllText(pathToManifest, manifest); // nosemgrep: csharp.lang.security.filesystem.unsafe-path-combine.unsafe-path-combine -- publishLocation is the developer's own CLI publish dir, not attacker-controlled.
         }
 
         public static bool IsSolutionStackWindows(string solutionStackName)
@@ -151,7 +151,7 @@ namespace Amazon.ElasticBeanstalk.Tools
             var content = "web: " + webCommandLine;
             logger?.WriteLine($"... Procfile command used to start application");
             logger?.WriteLine($"    {content}");
-            File.WriteAllText(procfilePath, content);
+            File.WriteAllText(procfilePath, content); // nosemgrep: csharp.lang.security.filesystem.unsafe-path-combine.unsafe-path-combine -- publishLocation is the developer's own CLI publish dir, not attacker-controlled.
         }
 
         public static bool IsSelfContainedPublish(string runtimeConfigFile)

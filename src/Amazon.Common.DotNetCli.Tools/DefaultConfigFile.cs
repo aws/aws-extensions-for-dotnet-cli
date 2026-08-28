@@ -57,7 +57,7 @@ namespace Amazon.Common.DotNetCli.Tools
                     CommentHandling = JsonCommentHandling.Skip
                 };
 
-                string json = File.ReadAllText(path);
+                string json = File.ReadAllText(path); // nosemgrep: csharp.lang.security.filesystem.unsafe-path-combine.unsafe-path-combine -- projectLocation/configFile are the developer's own CLI inputs, not attacker-controlled.
                 using (JsonDocument doc = JsonDocument.Parse(json, options))
                 {
                     this._rootData = doc.RootElement.Clone();
