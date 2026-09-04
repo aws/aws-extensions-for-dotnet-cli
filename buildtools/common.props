@@ -10,12 +10,38 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     
     <PackageProjectUrl>https://github.com/aws/aws-extensions-for-dotnet-cli</PackageProjectUrl>
+
+    <!-- Deterministic builds and Source Link. Produces reproducible package output and
+         embeds source-control metadata so debuggers can step into the shipped libraries.
+         ContinuousIntegrationBuild is only enabled on a build server (CI/TF_BUILD/CodeBuild)
+         so it does not normalize paths for local developer builds. -->
+    <RepositoryUrl>https://github.com/aws/aws-extensions-for-dotnet-cli</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true' or '$(TF_BUILD)' == 'true' or '$(CODEBUILD_BUILD_ID)' != ''">true</ContinuousIntegrationBuild>
   </PropertyGroup>
   
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)/public.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>  
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Source Link enables debuggers to download matching source from GitHub for the shipped packages. -->
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- AWS release pipelines often pack from a .git-less source archive, so Source Link would otherwise
+       emit no source mapping. When the build provides a revision id, declare the source root explicitly.
+       Guarded on SourceRevisionId so local developer builds (which have a .git dir) are unaffected. -->
+  <ItemGroup Condition="'$(SourceRevisionId)' != ''">
+    <SourceRoot Include="$(MSBuildThisFileDirectory)"
+                SourceControl="git"
+                RepositoryUrl="$(RepositoryUrl)"
+                RevisionId="$(SourceRevisionId)" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)/../LICENSE" Pack="true" PackagePath="" />
