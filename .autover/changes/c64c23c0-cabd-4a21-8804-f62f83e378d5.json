@@ -1,0 +1,11 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.ECS.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Include README.md in the published NuGet package."
+      ]
+    }
+  ]
+}
