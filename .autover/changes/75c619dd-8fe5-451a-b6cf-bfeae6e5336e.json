@@ -1,0 +1,25 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.ECS.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Enable deterministic builds and Source Link for the produced NuGet packages."
+      ]
+    },
+    {
+      "Name": "Amazon.ElasticBeanstalk.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Enable deterministic builds and Source Link for the produced NuGet packages."
+      ]
+    },
+    {
+      "Name": "Amazon.Lambda.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Enable deterministic builds and Source Link for the produced NuGet packages."
+      ]
+    }
+  ]
+}
