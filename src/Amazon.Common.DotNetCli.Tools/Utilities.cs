@@ -956,13 +956,16 @@ namespace Amazon.Common.DotNetCli.Tools
         {
             public int ExitCode { get; }
             public string Stdout { get; }
+            public string Stderr { get; }
 
-            public ExecuteShellCommandResult(int exitCode, string stdout)
+            public ExecuteShellCommandResult(int exitCode, string stdout, string stderr)
             {
                 this.ExitCode = exitCode;
                 this.Stdout = stdout;
+                this.Stderr = stderr;
             }
         }
+
         public static ExecuteShellCommandResult ExecuteShellCommand(string workingDirectory, string process, string arguments)
         {
             var startInfo = new ProcessStartInfo
@@ -976,32 +979,17 @@ namespace Amazon.Common.DotNetCli.Tools
                 CreateNoWindow = true
             };
 
-
-            StringBuilder capturedOutput = new StringBuilder();
-            var handler = (DataReceivedEventHandler)((o, e) =>
+            using (var proc = Process.Start(startInfo))
             {
-                if (string.IsNullOrEmpty(e.Data))
-                    return;
-                capturedOutput.AppendLine(e.Data);
-            });
-
-            using (var proc = new Process())
-            {
-                proc.StartInfo = startInfo;
-                proc.Start();
-
-                if (startInfo.RedirectStandardOutput)
-                {
-                    proc.ErrorDataReceived += handler;
-                    proc.OutputDataReceived += handler;
-                    proc.BeginOutputReadLine();
-                    proc.BeginErrorReadLine();
-
-                    proc.EnableRaisingEvents = true;
-                }
+                // Read both streams concurrently. Reading them one after the other can deadlock
+                // if the child fills the pipe buffer of the stream not being read.
+                var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+                var stderrTask = proc.StandardError.ReadToEndAsync();
 
                 proc.WaitForExit();
-                return new ExecuteShellCommandResult(proc.ExitCode, capturedOutput.ToString());
+                Task.WaitAll(stdoutTask, stderrTask);
+
+                return new ExecuteShellCommandResult(proc.ExitCode, stdoutTask.Result, stderrTask.Result);
             }
         }
 

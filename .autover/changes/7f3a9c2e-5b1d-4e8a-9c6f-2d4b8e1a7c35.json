@@ -1,0 +1,25 @@
+{
+  "Projects": [
+    {
+      "Name": "Amazon.Lambda.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Fixed a thread-safety issue when capturing output from external commands such as `dotnet --list-sdks` that could cause the tool to exit unexpectedly."
+      ]
+    },
+    {
+      "Name": "Amazon.ECS.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Fixed a thread-safety issue when capturing output from external commands such as `dotnet --list-sdks` that could cause the tool to exit unexpectedly."
+      ]
+    },
+    {
+      "Name": "Amazon.ElasticBeanstalk.Tools",
+      "Type": "Patch",
+      "ChangelogMessages": [
+        "Fixed a thread-safety issue when capturing output from external commands such as `dotnet --list-sdks` that could cause the tool to exit unexpectedly."
+      ]
+    }
+  ]
+}
