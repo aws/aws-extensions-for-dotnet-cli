@@ -28,8 +28,15 @@ using Amazon.Runtime;
 
 namespace Amazon.ElasticBeanstalk.Tools.Test
 {
-    public class DeployTests
+    public class DeployTests : IClassFixture<TestBeanstalkWebAppFixture>
     {
+        private readonly TestBeanstalkWebAppFixture _webApp;
+
+        public DeployTests(TestBeanstalkWebAppFixture webApp)
+        {
+            _webApp = webApp;
+        }
+
         [Fact()]
         public async Task CreateEnvironmentTest()
         {
@@ -146,7 +153,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
                 });
 
 
-            var deployCommand = new DeployEnvironmentCommand(new ConsoleToolLogger(), TestUtilities.TestBeanstalkWebAppPath, 
+            var deployCommand = new DeployEnvironmentCommand(new ConsoleToolLogger(), _webApp.ProjectPath,
                 new string[] { "-app", application, "-env", environment, "--solution-stack", solutionStack,
                     "--instance-profile", iamProfile, "--region", "us-moq-1", "--enable-xray", "true" });
             deployCommand.DisableInteractive = true;
@@ -276,7 +283,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
                 });
 
             var outputPackage = Path.GetTempFileName().Replace(".tmp", ".zip");
-            var packageCommand = new PackageCommand(new ConsoleToolLogger(), TestUtilities.TestBeanstalkWebAppPath,
+            var packageCommand = new PackageCommand(new ConsoleToolLogger(), _webApp.ProjectPath,
                 new string[] { "--output-package", outputPackage, "--iis-website", "The WebSite", "--app-path", "/child" });
             packageCommand.DisableInteractive = true;
             await packageCommand.ExecuteAsync();
@@ -450,7 +457,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
                 });
 
 
-            var deployCommand = new DeployEnvironmentCommand(new ConsoleToolLogger(), TestUtilities.TestBeanstalkWebAppPath,
+            var deployCommand = new DeployEnvironmentCommand(new ConsoleToolLogger(), _webApp.ProjectPath,
                 new string[] { "-app", application, "-env", environment, "--solution-stack", solutionStack,
                     "--instance-profile", iamProfile, "--region", "us-moq-1", "--enable-xray", "true" });
             deployCommand.DisableInteractive = true;

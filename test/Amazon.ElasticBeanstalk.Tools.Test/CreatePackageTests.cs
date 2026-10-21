@@ -17,13 +17,20 @@ using Newtonsoft.Json.Linq;
 
 namespace Amazon.ElasticBeanstalk.Tools.Test
 {
-    public class CreatePackageTests
+    public class CreatePackageTests : IClassFixture<TestBeanstalkWebAppFixture>
     {
+        private readonly TestBeanstalkWebAppFixture _webApp;
+
+        public CreatePackageTests(TestBeanstalkWebAppFixture webApp)
+        {
+            _webApp = webApp;
+        }
+
         [Fact]
         public async Task NoIISSettings()
         {
             var outputPackage = Path.GetTempFileName();
-            var packageCommand = new PackageCommand(new ConsoleToolLogger(), TestUtilities.TestBeanstalkWebAppPath, new string[] { "--output-package", outputPackage });
+            var packageCommand = new PackageCommand(new ConsoleToolLogger(), _webApp.ProjectPath, new string[] { "--output-package", outputPackage });
             packageCommand.DisableInteractive = true;
             await packageCommand.ExecuteAsync();
             Assert.Null(packageCommand.LastToolsException);
@@ -42,7 +49,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
         public async Task ExplicitIISSettings()
         {
             var outputPackage = Path.GetTempFileName();
-            var packageCommand = new PackageCommand(new ConsoleToolLogger(), TestUtilities.TestBeanstalkWebAppPath, 
+            var packageCommand = new PackageCommand(new ConsoleToolLogger(), _webApp.ProjectPath,
                 new string[] { "--output-package", outputPackage, "--iis-website", "The WebSite", "--app-path", "/child" });
             packageCommand.DisableInteractive = true;
             await packageCommand.ExecuteAsync();
@@ -65,7 +72,7 @@ namespace Amazon.ElasticBeanstalk.Tools.Test
             Environment.SetEnvironmentVariable(envName, outputPackage);
             try
             {
-                var packageCommand = new PackageCommand(new ConsoleToolLogger(), TestUtilities.TestBeanstalkWebAppPath, new string[] { "--config-file", "env-eb-config.json" });
+                var packageCommand = new PackageCommand(new ConsoleToolLogger(), _webApp.ProjectPath, new string[] { "--config-file", "env-eb-config.json" });
                 await packageCommand.ExecuteAsync();
 
                 var manifest = ReadManifestFromPackage(outputPackage);
