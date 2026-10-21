@@ -134,8 +134,8 @@ namespace Amazon.Common.DotNetCli.Tools
 
             var results = Utilities.ExecuteShellCommand(null, dotnetCLI, "--list-sdks");
             if(results.ExitCode != 0)
-                throw new Exception("Command \"dotnet --list-sdks\" failed, captured output: \n" + results.Stdout);
-            
+                throw new Exception("Command \"dotnet --list-sdks\" failed, captured output: \n" + results.Stdout + results.Stderr);
+
 
             var maxSdkVersion = ParseListSdkOutput(results.Stdout);
             if (maxSdkVersion == null)
