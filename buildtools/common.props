@@ -8,6 +8,7 @@
     
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     
     <PackageProjectUrl>https://github.com/aws/aws-extensions-for-dotnet-cli</PackageProjectUrl>
   </PropertyGroup>
@@ -20,6 +21,7 @@
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)/../LICENSE" Pack="true" PackagePath="" />
     <None Include="$(MSBuildThisFileDirectory)/../icon.png" Pack="true" PackagePath="" />
+    <None Include="$(MSBuildThisFileDirectory)/../README.md" Pack="true" PackagePath="" />
   </ItemGroup>
   
 </Project>
