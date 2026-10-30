@@ -76,6 +76,19 @@ namespace Amazon.Lambda.Tools.Test
         }
 
         [Theory]
+        [InlineData(LambdaConstants.ARCHITECTURE_X86_64, "x64")]
+        [InlineData(LambdaConstants.ARCHITECTURE_ARM64, "arm64")]
+        [InlineData("ARM64", "arm64")]
+        [InlineData(null, "x64")]
+        [InlineData("", "x64")]
+        [InlineData("foo", "x64")]
+        public void TestDetermineStoreArchitectureDirectory(string architecture, string expectedValue)
+        {
+            var directory = LambdaUtilities.DetermineStoreArchitectureDirectory(architecture);
+            Assert.Equal(expectedValue, directory);
+        }
+
+        [Theory]
         [InlineData("repo:old", "repo", "old")]
         [InlineData("repo", "repo", "latest")]
         [InlineData("repo:", "repo", "latest")]

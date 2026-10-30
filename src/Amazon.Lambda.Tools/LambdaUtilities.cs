@@ -917,6 +917,24 @@ namespace Amazon.Lambda.Tools
             }
         }
 
+        /// <summary>
+        /// Maps the AWS Lambda architecture value (e.g. "x86_64") to the .NET architecture directory
+        /// name that the "dotnet store" command uses when composing the local store (e.g. "x64").
+        /// The AWS Lambda name "x86_64" differs from the .NET name "x64", while "arm64" is identical.
+        /// </summary>
+        /// <param name="architecture">The AWS Lambda architecture value, or null/empty for the default.</param>
+        /// <returns>The .NET store architecture directory name.</returns>
+        public static string DetermineStoreArchitectureDirectory(string architecture)
+        {
+            if (string.Equals(LambdaConstants.ARCHITECTURE_ARM64, architecture, StringComparison.InvariantCultureIgnoreCase))
+            {
+                return "arm64";
+            }
+
+            // x86_64, empty, and any unspecified value map to the default .NET store directory name.
+            return "x64";
+        }
+
         public static async Task WaitTillFunctionAvailableAsync(IToolLogger logger, IAmazonLambda lambdaClient, string functionName)
         {
             const int POLL_INTERVAL = 3000;
