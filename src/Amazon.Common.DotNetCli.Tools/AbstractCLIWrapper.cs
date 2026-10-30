@@ -64,7 +64,6 @@ namespace Amazon.Common.DotNetCli.Tools
         {
             {"dotnet.exe", @"C:\Program Files\dotnet\dotnet.exe" },
             {"chmod", @"/bin/chmod" },
-            {"zip", @"/usr/bin/zip" },
             {"docker.exe", @"C:\Program Files\Docker\Docker\Resources\bin\docker.exe" }
         };
 
